@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "license": "MIT",
+  "packageManager": "pnpm@10.33.0",
   "description": "One-page dashboard for SonarCloud findings, with Markdown/CSV export designed for LLM-assisted remediation planning.",
   "scripts": {
     "dev": "vite",
