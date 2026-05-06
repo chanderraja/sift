@@ -6,15 +6,36 @@ export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
-    environmentMatchGlobs: [
-      ['tests/unit/**/*.test.{ts,tsx}', 'node'],
-      ['src/lib/**/*.test.ts', 'node'],
-      ['src/**/*.test.tsx', 'jsdom'],
-      ['tests/integration/**/*.test.{ts,tsx}', 'jsdom'],
-    ],
     setupFiles: ['./tests/setup.ts'],
-    include: ['tests/unit/**/*.test.{ts,tsx}', 'tests/integration/**/*.test.{ts,tsx}', 'src/**/*.test.{ts,tsx}'],
+    include: [
+      'tests/unit/**/*.test.{ts,tsx}',
+      'tests/integration/**/*.test.{ts,tsx}',
+      'src/**/*.test.{ts,tsx}',
+    ],
     exclude: ['tests/e2e/**', 'node_modules', 'dist'],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['tests/unit/**/*.test.ts', 'src/lib/**/*.test.ts', 'proxy/**/*.test.ts'],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'jsdom',
+          environment: 'jsdom',
+          include: [
+            'src/**/*.test.tsx',
+            'src/**/*.test.ts',
+            'tests/integration/**/*.test.{ts,tsx}',
+          ],
+          exclude: ['src/lib/**/*.test.ts'],
+        },
+      },
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
