@@ -1,0 +1,67 @@
+
+/* ---------- Light theme overrides ---------- */
+[data-theme="light"] {
+  --bg-base: #FFFFFF;
+  --bg-surface: #F7F8FA;
+  --bg-surface-2: #F0F2F5;
+  --bg-surface-hover: #ECEEF2;
+  --bg-elevated: #FFFFFF;
+  --border-subtle: #E5E7EB;
+  --border-default: #D1D5DB;
+  --border-strong: #9CA3AF;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary: #94A3B8;
+  --text-disabled: #CBD5E1;
+  --accent: #0284C7;
+  --accent-soft: rgba(2, 132, 199, 0.08);
+  --accent-muted: #0369A1;
+
+  /* Severity: deepened per SPEC §16.3 ("unchanged with slightly higher contrast")
+     so geometric icons and badge text both pass AA on white. */
+  --severity-blocker: #DC2626;
+  --severity-critical: #C2410C;
+  --severity-major: #A16207;
+  --severity-minor: #4D7C0F;
+  --severity-info: #1D4ED8;
+
+  --qg-pass: #047857;
+  --qg-fail: #DC2626;
+  --qg-warn: #A16207;
+
+  --shadow-modal: 0 16px 32px rgba(15,17,21,0.10), 0 4px 12px rgba(15,17,21,0.06);
+}
+
+/* Type badges in light mode — deeper text colors for AA contrast on white */
+[data-theme="light"] .sift-type[data-type="BUG"]           { color: #B91C1C; border-color: rgba(185,28,28,0.30); }
+[data-theme="light"] .sift-type[data-type="VULNERABILITY"] { color: #C2410C; border-color: rgba(194,65,12,0.30); }
+[data-theme="light"] .sift-type[data-type="CODE_SMELL"]    { color: #6D28D9; border-color: rgba(109,40,217,0.30); }
+
+/* Status badges in light mode — text deepened, backgrounds slightly stronger */
+[data-theme="light"] .sift-status[data-status="OPEN"]      { color: #B91C1C; background: rgba(220,38,38,0.08);  border-color: rgba(220,38,38,0.22); }
+[data-theme="light"] .sift-status[data-status="CONFIRMED"] { color: #A16207; background: rgba(202,138,4,0.10);  border-color: rgba(202,138,4,0.25); }
+[data-theme="light"] .sift-status[data-status="REOPENED"]  { color: #B91C1C; background: rgba(220,38,38,0.06);  border-color: rgba(220,38,38,0.18); }
+[data-theme="light"] .sift-status[data-status="RESOLVED"]  { color: #047857; background: rgba(4,120,87,0.08);   border-color: rgba(4,120,87,0.22); }
+[data-theme="light"] .sift-status[data-status="TO_REVIEW"] { color: #C2410C; background: rgba(194,65,12,0.08);  border-color: rgba(194,65,12,0.22); }
+[data-theme="light"] .sift-status[data-status="REVIEWED"]  { color: #047857; background: rgba(4,120,87,0.08);   border-color: rgba(4,120,87,0.22); }
+
+/* Probability badges — match status pattern */
+[data-theme="light"] .sift-prob[data-prob="HIGH"]   { color: var(--severity-blocker);  background: rgba(220,38,38,0.10); }
+[data-theme="light"] .sift-prob[data-prob="MEDIUM"] { color: var(--severity-critical); background: rgba(194,65,12,0.10); }
+[data-theme="light"] .sift-prob[data-prob="LOW"]    { color: var(--severity-info);     background: rgba(29,78,216,0.10); }
+
+/* Banners (error / warn) — adjust for white background */
+[data-theme="light"] .sift-banner-error { background: rgba(220,38,38,0.05); border-bottom-color: rgba(220,38,38,0.25); }
+[data-theme="light"] .sift-banner-warn  { background: rgba(202,138,4,0.06); border-bottom-color: rgba(202,138,4,0.30); }
+
+/* Code-snippet highlight on the offending line */
+[data-theme="light"] .sift-snippet-hl { background: rgba(220,38,38,0.06); border-left-color: var(--severity-blocker); }
+
+/* Token field error state */
+[data-theme="light"] .sift-token-error { background: rgba(220,38,38,0.04); }
+
+/* QG pills and condition statuses */
+[data-theme="light"] .sift-qg-status[data-status="ERROR"] .sift-qg-pill { background: rgba(220,38,38,0.08); border-color: rgba(220,38,38,0.40); }
+[data-theme="light"] .sift-qg-status[data-status="OK"]    .sift-qg-pill { background: rgba(4,120,87,0.08);  border-color: rgba(4,120,87,0.40);  }
+[data-theme="light"] .sift-qg-cond[data-status="OK"]    .sift-qg-cond-status { background: rgba(4,120,87,0.15); color: var(--qg-pass); }
+[data-theme="light"] .sift-qg-cond[data-status="ERROR"] .sift-qg-cond-status { background: rgba(220,38,38,0.15); color: var(--qg-fail); }
