@@ -1,0 +1,28 @@
+{
+  "name": "sift",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "One-page dashboard for SonarCloud findings, with Markdown/CSV export designed for LLM-assisted remediation planning.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.28",
+    "@types/react-dom": "18.3.7",
+    "@vitejs/plugin-react": "6.0.1",
+    "typescript": "5.9.3",
+    "vite": "8.0.10"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}
