@@ -59,8 +59,12 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
-      - name: Install dependencies (production tree)
-        run: pnpm install --frozen-lockfile --prod
+      - name: Install dependencies (production tree, no lifecycle scripts)
+        # --prod skips devDependencies (which is what we want for a license
+        # scan), but pnpm still runs the \`prepare\` script — and \`husky\` lives
+        # in devDependencies. --ignore-scripts gets us the dep tree without
+        # executing anything.
+        run: pnpm install --frozen-lockfile --prod --ignore-scripts
 
       - name: Verify license allow-list
         run: >
