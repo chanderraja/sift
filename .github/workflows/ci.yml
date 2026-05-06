@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-typecheck-test-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit + integration tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Bundle-size budget
+        run: pnpm size
+
+  license-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies (production tree, no lifecycle scripts)
+        # --prod skips devDependencies (which is what we want for a license
+        # scan), but pnpm still runs the \`prepare\` script — and \`husky\` lives
+        # in devDependencies. --ignore-scripts gets us the dep tree without
+        # executing anything.
+        run: pnpm install --frozen-lockfile --prod --ignore-scripts
+
+      - name: Verify license allow-list
+        # --excludePrivatePackages skips the sift application itself (which is
+        # \`private: true\`); the allow-list is for production dependencies that
+        # ship in the bundle, not the app's own license.
+        run: >
+          pnpm dlx license-checker
+          --production
+          --summary
+          --excludePrivatePackages
+          --onlyAllow="MIT;MIT-0;Apache-2.0;BSD-2-Clause;BSD-3-Clause;0BSD;ISC;MPL-2.0;Unlicense;CC0-1.0"
+
+  no-stray-console:
+    # Per SPEC §13: only src/lib/logger.ts may call console.*. Grep enforces.
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: No console.* outside the logger
+        run: |
+          set -e
+          # Search src/ and proxy/ for console.* calls, excluding the logger file.
+          # rg exits with 1 when no match — that's the success case.
+          if grep -rnE '\bconsole\.(log|warn|error|info|debug|trace|dir)\b' \
+              --include='*.ts' --include='*.tsx' \
+              src proxy 2>/dev/null \
+              | grep -v 'src/lib/logger.ts' ; then
+            echo "::error::Found console.* outside src/lib/logger.ts. All logging must go through the redacting logger."
+            exit 1
+          fi
+          echo "OK: no stray console calls."

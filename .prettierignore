@@ -1,0 +1,15 @@
+dist
+coverage
+playwright-report
+test-results
+node_modules
+pnpm-lock.yaml
+
+# Source-of-truth docs are hand-formatted; avoid prettier reflow.
+SPEC.md
+ARCHITECTURE.md
+IMPLEMENTATION.md
+CLAUDE.md
+
+# Design mocks are exported assets, not authored CSS.
+docs/mocks
