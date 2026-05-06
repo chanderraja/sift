@@ -1,0 +1,60 @@
+name: Bug report
+description: Report a defect in Sift.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please fill in the fields below so we can reproduce quickly.
+        **Do not paste a SonarCloud token, even a redacted one.** If a request URL or response body is relevant, scrub the `Authorization` header and any project keys you do not want public.
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      description: Tag, commit SHA, or "latest main".
+      placeholder: v1.0.0 or 9568b8f
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: Firefox 127 on Fedora 40
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the app
+        2. Paste a token
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: Browser console output (optional)
+      description: Strip any `Authorization:` headers before pasting.
+      render: shell
+  - type: checkboxes
+    id: privacy-check
+    attributes:
+      label: Privacy check
+      options:
+        - label: I have removed any tokens, secrets, or non-public project keys from this report.
+          required: true

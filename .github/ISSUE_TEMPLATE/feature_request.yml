@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose a new feature or enhancement.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For substantial feature work, please open a [Discussion](https://github.com/chanderraja/sift/discussions) first to align on approach. This template is for focused, well-scoped requests.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What is the user trying to do that Sift does not currently support?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: A concrete sketch — UI, API, configuration. Rough is fine.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and impact
+      description: Which modules in `ARCHITECTURE.md` are affected? Does this need an ADR?
