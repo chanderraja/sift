@@ -26,3 +26,8 @@ test-results/
 
 # TypeScript incremental build info
 *.tsbuildinfo
+
+# Raw SonarCloud captures from scripts/capture-fixtures.sh.
+# These contain real org/project data and may contain partial PII.
+# Only the redacted copies under tests/fixtures/*.json are committed.
+tests/fixtures/raw/
