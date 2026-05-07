@@ -18,9 +18,9 @@ Visual references for design phases live in `docs/mocks/` (1440×900 PNGs of all
 
 ## Current phase
 
-**Phase 0 — Foundation.** See `IMPLEMENTATION.md` §"Phase 0".
+**Phase 1 — Types, Validators, and Test Fixtures.** See `IMPLEMENTATION.md` §"Phase 1".
 
-When this phase is complete (all acceptance criteria met, CI green on `master`, maintainer has merged the foundation PR), update this line to the next phase. Do not advance phases without maintainer sign-off on the current one.
+When this phase is complete (all acceptance criteria met, CI green on `master`, maintainer has merged the phase's PR), update this line to the next phase. Do not advance phases without maintainer sign-off on the current one.
 
 ## Working principles — non-negotiable
 
