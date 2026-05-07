@@ -22,6 +22,25 @@ updates:
       types:
         patterns:
           - '@types/*'
+    # Major-version pins enforced by SPEC §10 / CLAUDE.md.
+    # Patch + minor bumps within the pinned majors continue to flow.
+    ignore:
+      # SPEC §10 pins React 18. v18 → v19 would need an ADR.
+      - dependency-name: 'react'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'react-dom'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/react'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/react-dom'
+        update-types: ['version-update:semver-major']
+      # SPEC §10 pins Tailwind v3. v3 → v4 would need an ADR.
+      - dependency-name: 'tailwindcss'
+        update-types: ['version-update:semver-major']
+      # @types/node is pinned to the same major as the .nvmrc Node version.
+      # Bump this manually when .nvmrc moves.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     labels:
       - dependencies
 
