@@ -32,7 +32,7 @@ These are the rules of engagement, codified in [`IMPLEMENTATION.md`](./IMPLEMENT
 
 ## Branch model and PRs
 
-Trunk-based: feature branches off `main`, squash-merge via PR. Each PR should:
+Trunk-based: feature branches off `master`, squash-merge via PR. Each PR should:
 
 - Reference an issue (or a GitHub Discussion for design-heavy work).
 - Contain a focused change. Two unrelated changes → two PRs.

@@ -871,9 +871,9 @@ QG:
 
 There's no test for "the app is on the internet"; instead, this phase is gated by:
 
-1. All previous phases' tests pass on `main`.
+1. All previous phases' tests pass on `master`.
 2. `pnpm build && pnpm preview` works locally end-to-end with a real token.
-3. CI is green on `main`.
+3. CI is green on `master`.
 
 **Implementation order.**
 

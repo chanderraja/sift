@@ -49,7 +49,7 @@ No environment variables are needed for v1.0. The proxy reads no secrets — it 
 
 If not done during `vercel link`: in the Vercel dashboard, connect the project to the `chanderraja/sift` repo. Enable:
 
-- ✅ Production deploys from `main`.
+- ✅ Production deploys from `master`.
 - ✅ Preview deploys for every PR and every branch.
 - ❌ Comments on commits / PRs (off, to keep PR noise down). The maintainer can opt back in.
 

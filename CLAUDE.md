@@ -20,7 +20,7 @@ Visual references for design phases live in `docs/mocks/` (1440×900 PNGs of all
 
 **Phase 0 — Foundation.** See `IMPLEMENTATION.md` §"Phase 0".
 
-When this phase is complete (all acceptance criteria met, CI green on `main`, maintainer has merged the foundation PR), update this line to the next phase. Do not advance phases without maintainer sign-off on the current one.
+When this phase is complete (all acceptance criteria met, CI green on `master`, maintainer has merged the foundation PR), update this line to the next phase. Do not advance phases without maintainer sign-off on the current one.
 
 ## Working principles — non-negotiable
 
@@ -48,7 +48,7 @@ Stop work and post a question (not a guess) when any of these happen:
 
 1. Read this file.
 2. Read the current-phase section of `IMPLEMENTATION.md` and the architectural references it points at.
-3. Verify the prerequisite phases are merged on `main`.
+3. Verify the prerequisite phases are merged on `master`.
 4. Begin with the next failing test in the phase's "Tests first" list. Watch it fail. Then implement the minimum to make it pass. Refactor while green. Repeat.
 5. Before every commit: run `pnpm lint && pnpm typecheck && pnpm test`. They must all pass. CI runs the same checks; local pass should mean CI pass.
 6. End of session: every in-flight change is either committed or stashed. No half-done work in the working tree.
@@ -60,14 +60,14 @@ Stop work and post a question (not a guess) when any of these happen:
 - Do not skip the test-first step "just for this small thing."
 - Do not suppress lint or type errors; fix them.
 - Do not commit `.env` files, real tokens, real customer data, or anything that looks like a credential.
-- Do not push directly to `main`; everything goes through PRs.
+- Do not push directly to `master`; everything goes through PRs.
 - Do not call live SonarCloud from CI or tests. Manual verification by the maintainer only.
 - Do not add third-party scripts (analytics, error reporters, telemetry) to the production bundle.
 
 ## Repository conventions
 
 - **Package manager:** pnpm. Node 20 LTS (see `.nvmrc`).
-- **Branch model:** trunk-based. Feature branches off `main`, squash-merge via PR.
+- **Branch model:** trunk-based. Feature branches off `master`, squash-merge via PR.
 - **PR template:** linked issue, summary, screenshots if UI changed, test plan, accessibility checklist.
 - **Commit messages:** Conventional Commits. Scope in parens for clarity: `feat(api): add searchIssues filter encoding`.
 - **File creation:** every `.ts`/`.tsx` file in `src/`, `proxy/`, and `tests/` begins with `// SPDX-License-Identifier: MIT`. Enforced by ESLint.

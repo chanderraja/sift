@@ -65,7 +65,7 @@ A "Forget everything" affordance in Settings clears the token, all storage, and 
 ## Dependency policy
 
 - Production dependencies must be licensed under the SPEC §12.1 allow-list (MIT / Apache-2.0 / BSD / ISC / MPL-2.0 / Unlicense / CC0-1.0). Enforced by CI.
-- Dependabot is configured for weekly updates on `main`.
+- Dependabot is configured for weekly updates on `master`.
 - Lockfile diffs in PRs are reviewed for unexpected transitive additions, especially anything resembling analytics or telemetry.
 - Major-version bumps are evaluated for new permissions or new network calls before being accepted.
 
