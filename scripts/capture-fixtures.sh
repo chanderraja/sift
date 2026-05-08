@@ -77,6 +77,7 @@ curl_get() {
     -H "Authorization: Bearer $SONAR_TOKEN" \
     -H "Accept: application/json" \
     -o "$out" "$url"
+  return $?
 }
 
 # Auto-detect default branch unless caller pinned one.
@@ -149,6 +150,7 @@ jq_scrub() {
        );
      scrub
      '
+  return $?
 }
 
 capture() {
@@ -157,7 +159,7 @@ capture() {
   local out="$FIX_DIR/${name}.json"
 
   if ! curl_get "$BASE$path" "$raw"; then
-    echo "  ✗ $name failed (HTTP error or timeout)"
+    echo "  ✗ $name failed (HTTP error or timeout)" >&2
     FAILED_FIXTURES+=("$name")
     return 1
   fi
@@ -171,7 +173,7 @@ capture() {
 
   # 2. jq scrub: known-sensitive fields by name (author, sha, uuids, …).
   if ! jq_scrub < "$SED_TMP" > "$out"; then
-    echo "  ✗ $name failed (jq scrub error)"
+    echo "  ✗ $name failed (jq scrub error)" >&2
     FAILED_FIXTURES+=("$name")
     return 1
   fi
@@ -208,9 +210,9 @@ capture "measures-component" \
 echo ""
 echo "Summary: ${#OK_FIXTURES[@]} captured, ${#FAILED_FIXTURES[@]} failed."
 if (( ${#FAILED_FIXTURES[@]} > 0 )); then
-  echo "Failed: ${FAILED_FIXTURES[*]}"
-  echo "Common causes: project has no data for that endpoint (e.g. no security"
-  echo "analysis → no hotspots), branch name mismatch, or a stale endpoint."
+  echo "Failed: ${FAILED_FIXTURES[*]}" >&2
+  echo "Common causes: project has no data for that endpoint (e.g. no security" >&2
+  echo "analysis → no hotspots), branch name mismatch, or a stale endpoint." >&2
 fi
 echo ""
 echo "Next steps:"
