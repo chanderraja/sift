@@ -1,0 +1,27 @@
+{
+  "paging": {
+    "pageIndex": 1,
+    "pageSize": 20,
+    "total": 2
+  },
+  "components": [
+    {
+      "organization": "acme",
+      "key": "acme_widget-service",
+      "name": "widget-service",
+      "qualifier": "TRK",
+      "visibility": "public",
+      "lastAnalysisDate": "2026-05-06T08:01:58+0000",
+      "revision": "0000000000000000000000000000000000000000"
+    },
+    {
+      "organization": "acme",
+      "key": "acme_sift",
+      "name": "sift",
+      "qualifier": "TRK",
+      "visibility": "public",
+      "lastAnalysisDate": "2026-05-08T22:09:54+0000",
+      "revision": "0000000000000000000000000000000000000000"
+    }
+  ]
+}

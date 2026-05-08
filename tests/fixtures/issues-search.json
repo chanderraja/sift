@@ -1,0 +1,2458 @@
+{
+  "total": 115,
+  "p": 1,
+  "ps": 50,
+  "paging": {
+    "pageIndex": 1,
+    "pageSize": 50,
+    "total": 115
+  },
+  "effortTotal": 1086,
+  "debtTotal": 1086,
+  "issues": [
+    {
+      "key": "AZ36TAlewQuoEp6UcinL",
+      "rule": "cpp:S3656",
+      "severity": "CRITICAL",
+      "component": "acme_widget-service:tests/unit/sdk/simple_span_processor_test.cpp",
+      "project": "acme_widget-service",
+      "line": 40,
+      "hash": "6544eba564c86d89682c09339dbcb736",
+      "textRange": {
+        "startLine": 40,
+        "endLine": 40,
+        "startOffset": 6,
+        "endOffset": 29
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "acme_widget-service:tests/unit/sdk/simple_span_processor_test.cpp",
+              "textRange": {
+                "startLine": 43,
+                "endLine": 43,
+                "startOffset": 30,
+                "endOffset": 40
+              },
+              "msg": "Make the member variable \"m_exporter\" \"private\"."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "acme_widget-service:tests/unit/sdk/simple_span_processor_test.cpp",
+              "textRange": {
+                "startLine": 44,
+                "endLine": 44,
+                "startOffset": 40,
+                "endOffset": 50
+              },
+              "msg": "Make the member variable \"m_resource\" \"private\"."
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "acme_widget-service:tests/unit/sdk/simple_span_processor_test.cpp",
+              "textRange": {
+                "startLine": 45,
+                "endLine": 45,
+                "startOffset": 39,
+                "endOffset": 46
+              },
+              "msg": "Make the member variable \"m_scope\" \"private\"."
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Member variables should not be \"protected\".",
+      "effort": "20min",
+      "debt": "20min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["based-on-misra", "cppcoreguidelines", "pitfall"],
+      "creationDate": "2026-05-05T22:38:38+0000",
+      "updateDate": "2026-05-05T22:38:44+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "MODULAR",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34O94jLNFE-pES3EWA",
+      "rule": "cpp:S6022",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:include/widget-service/trace.hpp",
+      "project": "acme_widget-service",
+      "line": 124,
+      "hash": "7963b0c482e3cdc335c308c9e801e95c",
+      "textRange": {
+        "startLine": 124,
+        "endLine": 124,
+        "startOffset": 16,
+        "endOffset": 33
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use \"std::byte\" for byte-oriented data manipulation.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["clumsy", "pitfall", "since-c++17"],
+      "creationDate": "2026-05-05T13:01:54+0000",
+      "updateDate": "2026-05-05T13:01:54+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34NUMTa2vPcHDFCEfM",
+      "rule": "cpp:S5566",
+      "severity": "MINOR",
+      "component": "acme_widget-service:include/widget-service/trace.hpp",
+      "project": "acme_widget-service",
+      "line": 30,
+      "hash": "8008be30fac893c310f8aef9d04489e4",
+      "textRange": {
+        "startLine": 30,
+        "endLine": 30,
+        "startOffset": 8,
+        "endOffset": 11
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Replace this range for-loop by \"std::ranges::any_of\".",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["clumsy", "cppcoreguidelines"],
+      "creationDate": "2026-05-05T12:55:02+0000",
+      "updateDate": "2026-05-05T12:55:02+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34NUMTa2vPcHDFCEfN",
+      "rule": "cpp:S5566",
+      "severity": "MINOR",
+      "component": "acme_widget-service:include/widget-service/trace.hpp",
+      "project": "acme_widget-service",
+      "line": 65,
+      "hash": "8008be30fac893c310f8aef9d04489e4",
+      "textRange": {
+        "startLine": 65,
+        "endLine": 65,
+        "startOffset": 8,
+        "endOffset": 11
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Replace this range for-loop by \"std::ranges::any_of\".",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["clumsy", "cppcoreguidelines"],
+      "creationDate": "2026-05-05T12:55:02+0000",
+      "updateDate": "2026-05-05T12:55:02+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CONVENTIONAL",
+      "cleanCodeAttributeCategory": "CONSISTENT",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34NUQla2vPcHDFCEfO",
+      "rule": "cpp:S6177",
+      "severity": "MINOR",
+      "component": "acme_widget-service:src/sdk/sampler_factories.cpp",
+      "project": "acme_widget-service",
+      "line": 168,
+      "hash": "f95b70fdc3088560732a5ac135644506",
+      "textRange": {
+        "startLine": 168,
+        "endLine": 168,
+        "startOffset": 4,
+        "endOffset": 5
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Reduce verbosity with \"using enum\" for \"widget-service::internal::SamplingDecision\".",
+      "effort": "2min",
+      "debt": "2min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["since-c++20"],
+      "creationDate": "2026-05-05T12:55:02+0000",
+      "updateDate": "2026-05-05T12:55:02+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeMYRMnEmp3w2595",
+      "rule": "cpp:S6177",
+      "severity": "MINOR",
+      "component": "acme_widget-service:src/common/log_sink.cpp",
+      "project": "acme_widget-service",
+      "line": 49,
+      "hash": "f95b70fdc3088560732a5ac135644506",
+      "textRange": {
+        "startLine": 49,
+        "endLine": 49,
+        "startOffset": 4,
+        "endOffset": 5
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Reduce verbosity with \"using enum\" for \"widget-service::LogLevel\".",
+      "effort": "2min",
+      "debt": "2min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["since-c++20"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeMYRMnEmp3w2597",
+      "rule": "cpp:S2486",
+      "severity": "MINOR",
+      "component": "acme_widget-service:src/common/log_sink.cpp",
+      "project": "acme_widget-service",
+      "line": 113,
+      "hash": "f25ed0e903498adc05a803868e0c90ee",
+      "textRange": {
+        "startLine": 113,
+        "endLine": 113,
+        "startOffset": 8,
+        "endOffset": 13
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Handle this exception or don't catch it at all.",
+      "effort": "1h",
+      "debt": "1h",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["cwe", "error-handling", "suspicious"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeMYRMnEmp3w2596",
+      "rule": "cpp:S6494",
+      "severity": "MINOR",
+      "component": "acme_widget-service:src/common/log_sink.cpp",
+      "project": "acme_widget-service",
+      "line": 122,
+      "hash": "7a862d65b480508f4f91815ffa8b98d3",
+      "textRange": {
+        "startLine": 122,
+        "endLine": 122,
+        "startOffset": 4,
+        "endOffset": 16
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use \"std::print\" instead of \"fprintf\".",
+      "effort": "10min",
+      "debt": "10min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "since-c++20"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeKhRMnEmp3w259r",
+      "rule": "cpp:S3608",
+      "severity": "CRITICAL",
+      "component": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "project": "acme_widget-service",
+      "line": 47,
+      "hash": "be471ac5363de86ab04d0a68f162c7fa",
+      "textRange": {
+        "startLine": 47,
+        "endLine": 47,
+        "startOffset": 20,
+        "endOffset": 21
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Explicitly capture the required scope variables.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["since-c++11", "suspicious"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeKhRMnEmp3w259s",
+      "rule": "cpp:S6003",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "project": "acme_widget-service",
+      "line": 48,
+      "hash": "1aa41cfff2e63978e44068b431ab4e22",
+      "textRange": {
+        "startLine": 48,
+        "endLine": 48,
+        "startOffset": 21,
+        "endOffset": 64
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Replace this use of \"push_back\" with \"emplace_back\".",
+      "effort": "2min",
+      "debt": "2min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["clumsy", "performance", "since-c++11"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "EFFICIENT",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeKhRMnEmp3w259t",
+      "rule": "cpp:S3608",
+      "severity": "CRITICAL",
+      "component": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "project": "acme_widget-service",
+      "line": 63,
+      "hash": "21a6c2dc78f05da4431a900e907eecbc",
+      "textRange": {
+        "startLine": 63,
+        "endLine": 63,
+        "startOffset": 20,
+        "endOffset": 21
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Explicitly capture the required scope variables.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["since-c++11", "suspicious"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeKhRMnEmp3w259u",
+      "rule": "cpp:S3574",
+      "severity": "MINOR",
+      "component": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "project": "acme_widget-service",
+      "line": 75,
+      "hash": "65668375906261397520376d33fb9720",
+      "textRange": {
+        "startLine": 75,
+        "endLine": 75,
+        "startOffset": 57,
+        "endOffset": 61
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Remove the redundant return type of this lambda.",
+      "effort": "2min",
+      "debt": "2min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "since-c++11"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeKhRMnEmp3w259v",
+      "rule": "cpp:S112",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "project": "acme_widget-service",
+      "line": 76,
+      "hash": "2cdbdd76bd78a280215a952b19918760",
+      "textRange": {
+        "startLine": 76,
+        "endLine": 76,
+        "startOffset": 27,
+        "endOffset": 53
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Define and throw a dedicated exception instead of using a generic one.",
+      "effort": "20min",
+      "debt": "20min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["cert", "cppcoreguidelines", "cwe", "error-handling"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeKhRMnEmp3w259w",
+      "rule": "cpp:S6168",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "project": "acme_widget-service",
+      "line": 95,
+      "hash": "4599a7ede4a8b2c4a23d7cf7e9da345a",
+      "textRange": {
+        "startLine": 95,
+        "endLine": 95,
+        "startOffset": 21,
+        "endOffset": 27
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Replace this use of \"std::thread\" with \"std::jthread\".",
+      "effort": "1min",
+      "debt": "1min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "cppcoreguidelines", "since-c++20"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeKhRMnEmp3w259x",
+      "rule": "cpp:S6168",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "project": "acme_widget-service",
+      "line": 101,
+      "hash": "71c6fe9633e17ae34399f2c583738065",
+      "textRange": {
+        "startLine": 101,
+        "endLine": 101,
+        "startOffset": 9,
+        "endOffset": 13
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Replace this use of \"std::thread\" with \"std::jthread\".",
+      "effort": "1min",
+      "debt": "1min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "cppcoreguidelines", "since-c++20"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeKhRMnEmp3w259y",
+      "rule": "cpp:S6012",
+      "severity": "MINOR",
+      "component": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "project": "acme_widget-service",
+      "line": 112,
+      "hash": "2671233350a79214f15d9d8f3ce8ce63",
+      "textRange": {
+        "startLine": 112,
+        "endLine": 112,
+        "startOffset": 4,
+        "endOffset": 31
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Avoid explicitly specifying the template arguments by relying on the class template argument deduction.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["clumsy", "since-c++17"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeKhRMnEmp3w259z",
+      "rule": "cpp:S3608",
+      "severity": "CRITICAL",
+      "component": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "project": "acme_widget-service",
+      "line": 113,
+      "hash": "819017c7de9796ab454b0f448b8be477",
+      "textRange": {
+        "startLine": 113,
+        "endLine": 113,
+        "startOffset": 20,
+        "endOffset": 21
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Explicitly capture the required scope variables.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["since-c++11", "suspicious"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeKhRMnEmp3w2590",
+      "rule": "cpp:S6012",
+      "severity": "MINOR",
+      "component": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "project": "acme_widget-service",
+      "line": 121,
+      "hash": "2671233350a79214f15d9d8f3ce8ce63",
+      "textRange": {
+        "startLine": 121,
+        "endLine": 121,
+        "startOffset": 4,
+        "endOffset": 31
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Avoid explicitly specifying the template arguments by relying on the class template argument deduction.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["clumsy", "since-c++17"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeKhRMnEmp3w2591",
+      "rule": "cpp:S3608",
+      "severity": "CRITICAL",
+      "component": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "project": "acme_widget-service",
+      "line": 122,
+      "hash": "819017c7de9796ab454b0f448b8be477",
+      "textRange": {
+        "startLine": 122,
+        "endLine": 122,
+        "startOffset": 20,
+        "endOffset": 21
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Explicitly capture the required scope variables.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["since-c++11", "suspicious"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeKhRMnEmp3w2592",
+      "rule": "cpp:S6168",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "project": "acme_widget-service",
+      "line": 123,
+      "hash": "2ff531c5735429bcc7edbbb791826e7a",
+      "textRange": {
+        "startLine": 123,
+        "endLine": 123,
+        "startOffset": 9,
+        "endOffset": 15
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Replace this use of \"std::thread\" with \"std::jthread\".",
+      "effort": "1min",
+      "debt": "1min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "cppcoreguidelines", "since-c++20"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeKhRMnEmp3w2593",
+      "rule": "cpp:S3608",
+      "severity": "CRITICAL",
+      "component": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "project": "acme_widget-service",
+      "line": 123,
+      "hash": "2ff531c5735429bcc7edbbb791826e7a",
+      "textRange": {
+        "startLine": 123,
+        "endLine": 123,
+        "startOffset": 25,
+        "endOffset": 26
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Explicitly capture the required scope variables.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["since-c++11", "suspicious"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34GeKhRMnEmp3w2594",
+      "rule": "cpp:S3608",
+      "severity": "CRITICAL",
+      "component": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "project": "acme_widget-service",
+      "line": 126,
+      "hash": "819017c7de9796ab454b0f448b8be477",
+      "textRange": {
+        "startLine": 126,
+        "endLine": 126,
+        "startOffset": 24,
+        "endOffset": 25
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Explicitly capture the required scope variables.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["since-c++11", "suspicious"],
+      "creationDate": "2026-05-05T12:24:55+0000",
+      "updateDate": "2026-05-05T12:25:03+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34AW50hlpmWIdX89d_",
+      "rule": "cpp:S7035",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:include/widget-service/internal/reactor.hpp",
+      "project": "acme_widget-service",
+      "line": 28,
+      "hash": "c7ddf814aaff096464864a55e993f45f",
+      "textRange": {
+        "startLine": 28,
+        "endLine": 28,
+        "startOffset": 34,
+        "endOffset": 63
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use \"std::to_underlying\" to cast enums to their underlying type.",
+      "effort": "15min",
+      "debt": "15min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["pitfall", "since-c++23"],
+      "creationDate": "2026-05-05T11:58:21+0000",
+      "updateDate": "2026-05-05T11:58:21+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "FOCUSED",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34AW50hlpmWIdX89eA",
+      "rule": "cpp:S7035",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:include/widget-service/internal/reactor.hpp",
+      "project": "acme_widget-service",
+      "line": 28,
+      "hash": "c7ddf814aaff096464864a55e993f45f",
+      "textRange": {
+        "startLine": 28,
+        "endLine": 28,
+        "startOffset": 66,
+        "endOffset": 95
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use \"std::to_underlying\" to cast enums to their underlying type.",
+      "effort": "15min",
+      "debt": "15min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["pitfall", "since-c++23"],
+      "creationDate": "2026-05-05T11:58:21+0000",
+      "updateDate": "2026-05-05T11:58:21+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "FOCUSED",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34AW9NhlpmWIdX89eB",
+      "rule": "cpp:S1238",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:tests/mocks/mock_transport.hpp",
+      "project": "acme_widget-service",
+      "line": 47,
+      "hash": "477023c9aa586f3db182410d1c895fe0",
+      "textRange": {
+        "startLine": 47,
+        "endLine": 47,
+        "startOffset": 47,
+        "endOffset": 68
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Pass this large object by reference to const.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["cppcoreguidelines", "performance"],
+      "creationDate": "2026-05-05T11:58:21+0000",
+      "updateDate": "2026-05-05T11:58:21+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "EFFICIENT",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ34AW9phlpmWIdX89eC",
+      "rule": "cpp:S3608",
+      "severity": "CRITICAL",
+      "component": "acme_widget-service:tests/unit/fakes_smoke_test.cpp",
+      "project": "acme_widget-service",
+      "line": 133,
+      "hash": "d28c827eadb5154e6a43585dc482c2fe",
+      "textRange": {
+        "startLine": 133,
+        "endLine": 133,
+        "startOffset": 15,
+        "endOffset": 16
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Explicitly capture the required scope variables.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["since-c++11", "suspicious"],
+      "creationDate": "2026-05-05T11:58:21+0000",
+      "updateDate": "2026-05-05T11:58:21+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33_3l6Kh58lTQ7XL9m",
+      "rule": "cpp:S7035",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:tests/fakes/fake_diagnostics_sink.hpp",
+      "project": "acme_widget-service",
+      "line": 36,
+      "hash": "5c4ebc746b81bbb1e850e73f1c37ad5a",
+      "textRange": {
+        "startLine": 36,
+        "endLine": 36,
+        "startOffset": 22,
+        "endOffset": 54
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use an intermediary \"std::to_underlying\" to cast an enum to an integral type that is not the underlying type.",
+      "effort": "15min",
+      "debt": "15min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["pitfall", "since-c++23"],
+      "creationDate": "2026-05-05T11:56:07+0000",
+      "updateDate": "2026-05-05T11:56:13+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "FOCUSED",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33_3p1Kh58lTQ7XL9n",
+      "rule": "cpp:S5414",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:tests/fakes/fake_reactor.hpp",
+      "project": "acme_widget-service",
+      "line": 27,
+      "hash": "32aeffcc8a6bfc7a9be34e541fd3beba",
+      "textRange": {
+        "startLine": 27,
+        "endLine": 27,
+        "startOffset": 6,
+        "endOffset": 17
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "acme_widget-service:tests/fakes/fake_reactor.hpp",
+              "textRange": {
+                "startLine": 38,
+                "endLine": 38,
+                "startOffset": 4,
+                "endOffset": 45
+              },
+              "msg": "Public non-const data member"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "acme_widget-service:tests/fakes/fake_reactor.hpp",
+              "textRange": {
+                "startLine": 41,
+                "endLine": 41,
+                "startOffset": 4,
+                "endOffset": 22
+              },
+              "msg": "Public non-const data member"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "acme_widget-service:tests/fakes/fake_reactor.hpp",
+              "textRange": {
+                "startLine": 43,
+                "endLine": 43,
+                "startOffset": 4,
+                "endOffset": 31
+              },
+              "msg": "Public non-const data member"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "acme_widget-service:tests/fakes/fake_reactor.hpp",
+              "textRange": {
+                "startLine": 47,
+                "endLine": 47,
+                "startOffset": 4,
+                "endOffset": 35
+              },
+              "msg": "Public non-const data member"
+            }
+          ]
+        },
+        {
+          "locations": [
+            {
+              "component": "acme_widget-service:tests/fakes/fake_reactor.hpp",
+              "textRange": {
+                "startLine": 104,
+                "endLine": 104,
+                "startOffset": 4,
+                "endOffset": 46
+              },
+              "msg": "Private data member"
+            }
+          ]
+        }
+      ],
+      "status": "OPEN",
+      "message": "Don't mix public and private data members.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "cppcoreguidelines", "pitfall"],
+      "creationDate": "2026-05-05T11:56:07+0000",
+      "updateDate": "2026-05-05T11:56:13+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "MODULAR",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33_3qBKh58lTQ7XL9o",
+      "rule": "cpp:S6003",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:tests/fakes/fake_transport.hpp",
+      "project": "acme_widget-service",
+      "line": 64,
+      "hash": "ab70b57f11810b6f153a133c946691ff",
+      "textRange": {
+        "startLine": 64,
+        "endLine": 64,
+        "startOffset": 8,
+        "endOffset": 50
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Replace this use of \"push_back\" with \"emplace_back\".",
+      "effort": "2min",
+      "debt": "2min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["clumsy", "performance", "since-c++11"],
+      "creationDate": "2026-05-05T11:56:07+0000",
+      "updateDate": "2026-05-05T11:56:13+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "EFFICIENT",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33_3qqKh58lTQ7XL9p",
+      "rule": "cpp:S6003",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:tests/unit/fakes_smoke_test.cpp",
+      "project": "acme_widget-service",
+      "hash": "5bf47fe37ba84f8b7fb095a27ad55deb",
+      "textRange": {
+        "startLine": 66,
+        "endLine": 66,
+        "startOffset": 4,
+        "endOffset": 74
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Replace this use of \"push_back\" with \"emplace_back\".",
+      "effort": "2min",
+      "debt": "2min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["clumsy", "performance", "since-c++11"],
+      "creationDate": "2026-05-05T11:56:07+0000",
+      "updateDate": "2026-05-05T12:07:25+0000",
+      "closeDate": "2026-05-05T12:07:25+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "EFFICIENT",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33_3qqKh58lTQ7XL9q",
+      "rule": "cpp:S6003",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:tests/unit/fakes_smoke_test.cpp",
+      "project": "acme_widget-service",
+      "hash": "c1188676118f1ea028641203d8adedf3",
+      "textRange": {
+        "startLine": 67,
+        "endLine": 67,
+        "startOffset": 4,
+        "endOffset": 75
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Replace this use of \"push_back\" with \"emplace_back\".",
+      "effort": "2min",
+      "debt": "2min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["clumsy", "performance", "since-c++11"],
+      "creationDate": "2026-05-05T11:56:07+0000",
+      "updateDate": "2026-05-05T12:07:25+0000",
+      "closeDate": "2026-05-05T12:07:25+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "EFFICIENT",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33_3qqKh58lTQ7XL9r",
+      "rule": "cpp:S3608",
+      "severity": "CRITICAL",
+      "component": "acme_widget-service:tests/unit/fakes_smoke_test.cpp",
+      "project": "acme_widget-service",
+      "hash": "a925436cd82a80003201b763ffd03703",
+      "textRange": {
+        "startLine": 134,
+        "endLine": 134,
+        "startOffset": 15,
+        "endOffset": 16
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Explicitly capture the required scope variables.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["since-c++11", "suspicious"],
+      "creationDate": "2026-05-05T11:56:07+0000",
+      "updateDate": "2026-05-05T11:58:21+0000",
+      "closeDate": "2026-05-05T11:58:21+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33ZUcqN3xgS25IN_GE",
+      "rule": "cpp:S1238",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:tests/mocks/mock_transport.hpp",
+      "project": "acme_widget-service",
+      "hash": "c24bf225c665e4847afd673cfb3d6d50",
+      "textRange": {
+        "startLine": 50,
+        "endLine": 50,
+        "startOffset": 13,
+        "endOffset": 34
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Pass this large object by reference to const.",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["cppcoreguidelines", "performance"],
+      "creationDate": "2026-05-05T09:07:49+0000",
+      "updateDate": "2026-05-05T11:58:21+0000",
+      "closeDate": "2026-05-05T11:58:21+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "EFFICIENT",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33XuEJ7ZrcJR12EpSX",
+      "rule": "cpp:S7035",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:tests/unit/headers_smoke_test.cpp",
+      "project": "acme_widget-service",
+      "line": 59,
+      "hash": "29fd1c04d5733e9e5401b3d8158a62fa",
+      "textRange": {
+        "startLine": 59,
+        "endLine": 59,
+        "startOffset": 18,
+        "endOffset": 63
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Use an intermediary \"std::to_underlying\" to cast an enum to an integral type that is not the underlying type.",
+      "effort": "15min",
+      "debt": "15min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["pitfall", "since-c++23"],
+      "creationDate": "2026-05-05T09:01:00+0000",
+      "updateDate": "2026-05-05T09:01:06+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "FOCUSED",
+      "cleanCodeAttributeCategory": "ADAPTABLE",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUK",
+      "rule": "cpp:S6177",
+      "severity": "MINOR",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "d149699c4e04231953a9e7c4f5210c36",
+      "textRange": {
+        "startLine": 54,
+        "endLine": 54,
+        "startOffset": 45,
+        "endOffset": 46
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Reduce verbosity with \"using enum\" for \"Variant\".",
+      "effort": "2min",
+      "debt": "2min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["since-c++20"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUL",
+      "rule": "cpp:S6494",
+      "severity": "MINOR",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "8623c98bd5dd554c2cfee03b05e408a7",
+      "textRange": {
+        "startLine": 58,
+        "endLine": 58,
+        "startOffset": 4,
+        "endOffset": 16
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Use \"std::print\" instead of \"fprintf\".",
+      "effort": "10min",
+      "debt": "10min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "since-c++20"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUM",
+      "rule": "cpp:S6177",
+      "severity": "MINOR",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "21f93c4a2d941e707b0ff87b084d946a",
+      "textRange": {
+        "startLine": 64,
+        "endLine": 64,
+        "startOffset": 15,
+        "endOffset": 16
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Reduce verbosity with \"using enum\" for \"Variant\".",
+      "effort": "2min",
+      "debt": "2min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["since-c++20"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUN",
+      "rule": "cpp:S6494",
+      "severity": "MINOR",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "9f15c855e8f277defb36a2f41c29ed66",
+      "textRange": {
+        "startLine": 74,
+        "endLine": 74,
+        "startOffset": 4,
+        "endOffset": 16
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Use \"std::print\" instead of \"fprintf\".",
+      "effort": "10min",
+      "debt": "10min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "since-c++20"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUO",
+      "rule": "cpp:S6494",
+      "severity": "MINOR",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "fe43d9e6957619ac87360f8f1157e993",
+      "textRange": {
+        "startLine": 79,
+        "endLine": 79,
+        "startOffset": 4,
+        "endOffset": 16
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Use \"std::print\" instead of \"fprintf\".",
+      "effort": "10min",
+      "debt": "10min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "since-c++20"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUQ",
+      "rule": "cpp:S6178",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "d1b6a401a128be8b68b253a25276fee0",
+      "textRange": {
+        "startLine": 95,
+        "endLine": 95,
+        "startOffset": 8,
+        "endOffset": 46
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Use \"starts_with()\" to check the prefix of the string.",
+      "effort": "2min",
+      "debt": "2min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "since-c++20"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUR",
+      "rule": "cpp:S6494",
+      "severity": "MINOR",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "09fcd58f5dd19b458e54a6db4bcf7a04",
+      "textRange": {
+        "startLine": 96,
+        "endLine": 96,
+        "startOffset": 8,
+        "endOffset": 20
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Use \"std::print\" instead of \"fprintf\".",
+      "effort": "10min",
+      "debt": "10min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "since-c++20"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUP",
+      "rule": "cpp:S6004",
+      "severity": "MINOR",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "3d9ac011d8495795662281652bd80fc1",
+      "textRange": {
+        "startLine": 104,
+        "endLine": 104,
+        "startOffset": 8,
+        "endOffset": 39
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+              "textRange": {
+                "startLine": 103,
+                "endLine": 103,
+                "startOffset": 4,
+                "endOffset": 36
+              },
+              "msg": "Variable \"colon\" is declared here."
+            }
+          ]
+        }
+      ],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Use the init-statement to declare \"colon\" inside the if statement.",
+      "effort": "2min",
+      "debt": "2min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["clumsy", "since-c++17"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUS",
+      "rule": "cpp:S6494",
+      "severity": "MINOR",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "876904cba2425bf55023cb31240edec9",
+      "textRange": {
+        "startLine": 117,
+        "endLine": 117,
+        "startOffset": 8,
+        "endOffset": 20
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Use \"std::print\" instead of \"fprintf\".",
+      "effort": "10min",
+      "debt": "10min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "since-c++20"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUT",
+      "rule": "cpp:S6004",
+      "severity": "MINOR",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "e9b81337c13c03e76c9e11856c3fbfdf",
+      "textRange": {
+        "startLine": 130,
+        "endLine": 130,
+        "startOffset": 8,
+        "endOffset": 15
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+              "textRange": {
+                "startLine": 129,
+                "endLine": 129,
+                "startOffset": 4,
+                "endOffset": 68
+              },
+              "msg": "Variable \"rc\" is declared here."
+            }
+          ]
+        }
+      ],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Use the init-statement to declare \"rc\" inside the if statement.",
+      "effort": "2min",
+      "debt": "2min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["clumsy", "since-c++17"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUU",
+      "rule": "cpp:S6494",
+      "severity": "MINOR",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "7657d03596fdb4a8931ff9f60618feea",
+      "textRange": {
+        "startLine": 131,
+        "endLine": 131,
+        "startOffset": 8,
+        "endOffset": 20
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Use \"std::print\" instead of \"fprintf\".",
+      "effort": "10min",
+      "debt": "10min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "since-c++20"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRlyMkwttOgymU1",
+      "rule": "cpp:S5527",
+      "severity": "CRITICAL",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "933ccdff960d77ef66b026942f50c6bb",
+      "textRange": {
+        "startLine": 154,
+        "endLine": 154,
+        "startOffset": 8,
+        "endOffset": 24
+      },
+      "flows": [
+        {
+          "locations": [
+            {
+              "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+              "textRange": {
+                "startLine": 154,
+                "endLine": 154,
+                "startOffset": 8,
+                "endOffset": 24
+              },
+              "msg": "Enable server hostname verification on this SSL/TLS connection"
+            },
+            {
+              "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+              "textRange": {
+                "startLine": 153,
+                "endLine": 153,
+                "startOffset": 4,
+                "endOffset": 6
+              },
+              "msg": "Taking false branch"
+            },
+            {
+              "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+              "textRange": {
+                "startLine": 153,
+                "endLine": 153,
+                "startOffset": 8,
+                "endOffset": 32
+              },
+              "msg": "Assuming the condition is false"
+            },
+            {
+              "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+              "textRange": {
+                "startLine": 150,
+                "endLine": 150,
+                "startOffset": 4,
+                "endOffset": 6
+              },
+              "msg": "Taking false branch"
+            },
+            {
+              "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+              "textRange": {
+                "startLine": 150,
+                "endLine": 150,
+                "startOffset": 8,
+                "endOffset": 56
+              },
+              "msg": "Assuming the condition is false"
+            },
+            {
+              "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+              "textRange": {
+                "startLine": 149,
+                "endLine": 149,
+                "startOffset": 4,
+                "endOffset": 6
+              },
+              "msg": "Taking false branch"
+            },
+            {
+              "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+              "textRange": {
+                "startLine": 149,
+                "endLine": 149,
+                "startOffset": 8,
+                "endOffset": 12
+              },
+              "msg": "Assuming 'ssl' is non-null"
+            },
+            {
+              "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+              "textRange": {
+                "startLine": 148,
+                "endLine": 148,
+                "startOffset": 15,
+                "endOffset": 27
+              },
+              "msg": "Connection created here"
+            }
+          ],
+          "type": "EXECUTION"
+        },
+        {
+          "locations": [
+            {
+              "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+              "textRange": {
+                "startLine": 154,
+                "endLine": 154,
+                "startOffset": 20,
+                "endOffset": 23
+              },
+              "msg": "SSL pointer"
+            },
+            {
+              "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+              "textRange": {
+                "startLine": 149,
+                "endLine": 149,
+                "startOffset": 8,
+                "endOffset": 12
+              },
+              "msg": "Assuming \"ssl\" is not null"
+            },
+            {
+              "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+              "textRange": {
+                "startLine": 148,
+                "endLine": 148,
+                "startOffset": 4,
+                "endOffset": 28
+              },
+              "msg": "Using \"ssl\" from here"
+            },
+            {
+              "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+              "textRange": {
+                "startLine": 147,
+                "endLine": 147,
+                "startOffset": 15,
+                "endOffset": 27
+              },
+              "msg": "Using \"ctx\" declared here"
+            }
+          ],
+          "description": "SSL pointer",
+          "type": "DATA"
+        }
+      ],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Enable server hostname verification on this SSL/TLS connection",
+      "effort": "5min",
+      "debt": "5min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["cwe", "full-project", "privacy", "ssl", "symbolic-execution"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "VULNERABILITY",
+      "organization": "acme",
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUV",
+      "rule": "cpp:S6494",
+      "severity": "MINOR",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "e52a08ec9b5e3e6ce57787600c996295",
+      "textRange": {
+        "startLine": 160,
+        "endLine": 160,
+        "startOffset": 8,
+        "endOffset": 20
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Use \"std::print\" instead of \"fprintf\".",
+      "effort": "10min",
+      "debt": "10min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "since-c++20"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUW",
+      "rule": "cpp:S5827",
+      "severity": "MAJOR",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "64e4ad3b79ef80ba579c31869db1caa1",
+      "textRange": {
+        "startLine": 174,
+        "endLine": 174,
+        "startOffset": 4,
+        "endOffset": 17
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Replace the redundant type with \"auto\".",
+      "effort": "2min",
+      "debt": "2min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["clumsy", "cppcoreguidelines", "since-c++11"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUw",
+      "rule": "cpp:S5008",
+      "severity": "CRITICAL",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "4de52a36be2c982b7a43d0e0933e492a",
+      "textRange": {
+        "startLine": 213,
+        "endLine": 213,
+        "startOffset": 24,
+        "endOffset": 29
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Replace this use of \"void *\" with a more meaningful type.",
+      "effort": "10min",
+      "debt": "10min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["based-on-misra", "cppcoreguidelines"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "HIGH"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    },
+    {
+      "key": "AZ33OjRkyMkwttOgymUX",
+      "rule": "cpp:S6494",
+      "severity": "MINOR",
+      "component": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "project": "acme_widget-service",
+      "hash": "1867c5f79a112fd1ac8b2c801e4f0d41",
+      "textRange": {
+        "startLine": 224,
+        "endLine": 224,
+        "startOffset": 8,
+        "endOffset": 20
+      },
+      "flows": [],
+      "resolution": "FIXED",
+      "status": "CLOSED",
+      "message": "Use \"std::print\" instead of \"fprintf\".",
+      "effort": "10min",
+      "debt": "10min",
+      "assignee": "octocat@github",
+      "author": "octocat@example.com",
+      "tags": ["bad-practice", "since-c++20"],
+      "creationDate": "2026-05-05T08:21:03+0000",
+      "updateDate": "2026-05-05T08:39:31+0000",
+      "closeDate": "2026-05-05T08:39:31+0000",
+      "type": "CODE_SMELL",
+      "organization": "acme",
+      "cleanCodeAttribute": "CLEAR",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "FIXED",
+      "projectName": "widget-service",
+      "internalTags": [],
+      "lastChangeAnalysisUuid": "00000000-0000-0000-0000-000000000000",
+      "lastChangeSource": "ANALYSIS"
+    }
+  ],
+  "components": [
+    {
+      "organization": "acme",
+      "key": "acme_widget-service:spike/grpc_unary/main.cpp",
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "enabled": false,
+      "qualifier": "FIL",
+      "name": "main.cpp",
+      "longName": "spike/grpc_unary/main.cpp",
+      "path": "spike/grpc_unary/main.cpp"
+    },
+    {
+      "organization": "acme",
+      "key": "acme_widget-service:tests/unit/sdk/simple_span_processor_test.cpp",
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "simple_span_processor_test.cpp",
+      "longName": "tests/unit/sdk/simple_span_processor_test.cpp",
+      "path": "tests/unit/sdk/simple_span_processor_test.cpp"
+    },
+    {
+      "organization": "acme",
+      "key": "acme_widget-service",
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "enabled": true,
+      "qualifier": "TRK",
+      "name": "widget-service",
+      "longName": "widget-service"
+    },
+    {
+      "organization": "acme",
+      "key": "acme_widget-service:tests/fakes/fake_diagnostics_sink.hpp",
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "fake_diagnostics_sink.hpp",
+      "longName": "tests/fakes/fake_diagnostics_sink.hpp",
+      "path": "tests/fakes/fake_diagnostics_sink.hpp"
+    },
+    {
+      "organization": "acme",
+      "key": "acme_widget-service:tests/fakes/fake_transport.hpp",
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "fake_transport.hpp",
+      "longName": "tests/fakes/fake_transport.hpp",
+      "path": "tests/fakes/fake_transport.hpp"
+    },
+    {
+      "organization": "acme",
+      "key": "acme_widget-service:tests/fakes/fake_reactor.hpp",
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "fake_reactor.hpp",
+      "longName": "tests/fakes/fake_reactor.hpp",
+      "path": "tests/fakes/fake_reactor.hpp"
+    },
+    {
+      "organization": "acme",
+      "key": "acme_widget-service:tests/mocks/mock_transport.hpp",
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "mock_transport.hpp",
+      "longName": "tests/mocks/mock_transport.hpp",
+      "path": "tests/mocks/mock_transport.hpp"
+    },
+    {
+      "organization": "acme",
+      "key": "acme_widget-service:tests/unit/fakes_smoke_test.cpp",
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "fakes_smoke_test.cpp",
+      "longName": "tests/unit/fakes_smoke_test.cpp",
+      "path": "tests/unit/fakes_smoke_test.cpp"
+    },
+    {
+      "organization": "acme",
+      "key": "acme_widget-service:include/widget-service/internal/reactor.hpp",
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "reactor.hpp",
+      "longName": "include/widget-service/internal/reactor.hpp",
+      "path": "include/widget-service/internal/reactor.hpp"
+    },
+    {
+      "organization": "acme",
+      "key": "acme_widget-service:src/sdk/sampler_factories.cpp",
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "sampler_factories.cpp",
+      "longName": "src/sdk/sampler_factories.cpp",
+      "path": "src/sdk/sampler_factories.cpp"
+    },
+    {
+      "organization": "acme",
+      "key": "acme_widget-service:tests/unit/log_sink_test.cpp",
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "log_sink_test.cpp",
+      "longName": "tests/unit/log_sink_test.cpp",
+      "path": "tests/unit/log_sink_test.cpp"
+    },
+    {
+      "organization": "acme",
+      "key": "acme_widget-service:src/common/log_sink.cpp",
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "log_sink.cpp",
+      "longName": "src/common/log_sink.cpp",
+      "path": "src/common/log_sink.cpp"
+    },
+    {
+      "organization": "acme",
+      "key": "acme_widget-service:include/widget-service/trace.hpp",
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "trace.hpp",
+      "longName": "include/widget-service/trace.hpp",
+      "path": "include/widget-service/trace.hpp"
+    },
+    {
+      "organization": "acme",
+      "key": "acme_widget-service:tests/unit/headers_smoke_test.cpp",
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "headers_smoke_test.cpp",
+      "longName": "tests/unit/headers_smoke_test.cpp",
+      "path": "tests/unit/headers_smoke_test.cpp"
+    }
+  ],
+  "organizations": [
+    {
+      "key": "acme",
+      "name": "acme"
+    }
+  ],
+  "facets": []
+}
