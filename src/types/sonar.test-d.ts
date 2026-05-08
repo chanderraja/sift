@@ -8,10 +8,17 @@
 import { expectTypeOf } from 'expect-type';
 
 import type {
+  Branch,
+  Hotspot,
+  Issue,
   IssueKey,
   IssueType,
+  Measure,
+  Organization,
   OrgKey,
+  Project,
   ProjectKey,
+  QualityGate,
   Resolution,
   RuleKey,
   Severity,
@@ -89,3 +96,28 @@ expectTypeOf<Status>().toEqualTypeOf<'OPEN' | 'CONFIRMED' | 'REOPENED' | 'RESOLV
 expectTypeOf<Resolution>().toEqualTypeOf<
   'FALSE-POSITIVE' | 'WONTFIX' | 'FIXED' | 'REMOVED' | null
 >();
+
+// === Domain interface key fields carry the right brands ===
+
+// These prove the brands flow into interfaces; cross-interface key swaps
+// would fail to type-check, mirroring what the validators will enforce
+// at runtime in the next commits.
+expectTypeOf<Organization>().toHaveProperty('key').toEqualTypeOf<OrgKey>();
+expectTypeOf<Project>().toHaveProperty('key').toEqualTypeOf<ProjectKey>();
+expectTypeOf<Project>().toHaveProperty('organization').toEqualTypeOf<OrgKey>();
+expectTypeOf<Issue>().toHaveProperty('key').toEqualTypeOf<IssueKey>();
+expectTypeOf<Issue>().toHaveProperty('rule').toEqualTypeOf<RuleKey>();
+expectTypeOf<Issue>().toHaveProperty('project').toEqualTypeOf<ProjectKey>();
+expectTypeOf<Issue>().toHaveProperty('severity').toEqualTypeOf<Severity>();
+expectTypeOf<Issue>().toHaveProperty('type').toEqualTypeOf<IssueType>();
+expectTypeOf<Issue>().toHaveProperty('status').toEqualTypeOf<Status>();
+expectTypeOf<Issue>().toHaveProperty('resolution').toEqualTypeOf<Resolution>();
+expectTypeOf<Hotspot>().toHaveProperty('ruleKey').toEqualTypeOf<RuleKey>();
+expectTypeOf<Hotspot>().toHaveProperty('project').toEqualTypeOf<ProjectKey>();
+
+// Reference Branch / QualityGate / Measure once so the imports aren't
+// flagged as unused by the lint pass; deeper structural assertions are
+// covered by the runtime Zod validators in upcoming commits.
+expectTypeOf<Branch>().toHaveProperty('isMain').toEqualTypeOf<boolean>();
+expectTypeOf<QualityGate>().toHaveProperty('projectStatus');
+expectTypeOf<Measure>().toHaveProperty('metric').toEqualTypeOf<string>();

@@ -33,3 +33,114 @@ export type Status = 'OPEN' | 'CONFIRMED' | 'REOPENED' | 'RESOLVED' | 'CLOSED';
 
 /** Issue resolution; `null` means unresolved. */
 export type Resolution = 'FALSE-POSITIVE' | 'WONTFIX' | 'FIXED' | 'REMOVED' | null;
+
+/** Quality-gate status used on projects, branches, and individual conditions. */
+export type QualityGateStatus = 'OK' | 'WARN' | 'ERROR' | 'NONE';
+
+// === Domain interfaces ===
+
+/** A character-range citation inside a source file. */
+export interface TextRange {
+  startLine: number;
+  endLine: number;
+  startOffset: number;
+  endOffset: number;
+}
+
+export interface Organization {
+  key: OrgKey;
+  name: string;
+  description?: string;
+  /**
+   * Documented values are `'FREE'` and `'PAID'`, but the API has historically
+   * returned additional internal values; the type is the wider `string` so a
+   * fresh response can't fail validation in production while we update the
+   * spec. Feature code that branches on this should match the documented
+   * values explicitly and have a fallback for the unknown case.
+   */
+  subscription: string;
+  alm?: { key: string; url: string; personal: boolean };
+  actions?: { admin: boolean; delete: boolean; provision: boolean };
+  avatar?: string;
+}
+
+export interface Project {
+  key: ProjectKey;
+  name: string;
+  organization: OrgKey;
+  qualifier: 'TRK';
+  visibility: 'public' | 'private';
+  lastAnalysisDate?: string;
+  qualityGate?: QualityGateStatus;
+}
+
+export interface Branch {
+  name: string;
+  isMain: boolean;
+  type: 'LONG' | 'SHORT' | 'PULL_REQUEST';
+  status?: { qualityGateStatus: QualityGateStatus };
+  analysisDate?: string;
+}
+
+export interface Issue {
+  key: IssueKey;
+  rule: RuleKey;
+  severity: Severity;
+  type: IssueType;
+  status: Status;
+  resolution: Resolution;
+  /** Component key in `projectKey:path/to/file` form, per V1 convention. */
+  component: string;
+  project: ProjectKey;
+  line?: number;
+  hash?: string;
+  textRange?: TextRange;
+  flows: {
+    locations: { component: string; textRange: TextRange; msg: string }[];
+  }[];
+  message: string;
+  effort?: string;
+  debt?: string;
+  author?: string;
+  tags: string[];
+  creationDate: string;
+  updateDate: string;
+  closeDate?: string;
+  assignee?: string;
+  comments?: { key: string; htmlText: string; createdAt: string }[];
+}
+
+export interface Hotspot {
+  key: string;
+  component: string;
+  project: ProjectKey;
+  securityCategory: string;
+  vulnerabilityProbability: 'HIGH' | 'MEDIUM' | 'LOW';
+  status: 'TO_REVIEW' | 'REVIEWED';
+  resolution?: 'FIXED' | 'SAFE' | 'ACKNOWLEDGED';
+  line: number;
+  message: string;
+  creationDate: string;
+  updateDate: string;
+  ruleKey: RuleKey;
+}
+
+export interface QualityGate {
+  projectStatus: {
+    status: QualityGateStatus;
+    conditions: {
+      status: 'OK' | 'WARN' | 'ERROR';
+      metricKey: string;
+      comparator: 'GT' | 'LT' | 'EQ' | 'NE';
+      errorThreshold: string;
+      actualValue: string;
+    }[];
+  };
+}
+
+export interface Measure {
+  metric: string;
+  value?: string;
+  bestValue?: boolean;
+  period?: { index: number; value: string };
+}
