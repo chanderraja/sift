@@ -1,4 +1,4 @@
-# ADR-0008 — No proxy-side caching; SPA owns all caching
+# ADR-008 — No proxy-side caching; SPA owns all caching
 
 **Status:** Accepted
 **Date:** 2026-05-08
