@@ -344,7 +344,7 @@ Stop and ask the maintainer when any of these happen:
 7. Implement `searchHotspots()`.
 8. Implement `getQualityGate()`.
 9. Implement `getMeasures()`.
-10. Build a thin TanStack Query layer in `src/api/queries.ts`: `useOrganizations()`, `useProjects(orgKey)`, etc., wrapping `SonarClient` methods with appropriate `queryKey`s and stale times.
+10. Build a thin TanStack Query layer in `src/api/queries.ts`: `useOrganizations()`, `useProjects(orgKey)`, etc., wrapping `SonarClient` methods with appropriate `queryKey`s and the per-query `staleTime` values codified by ADR-008 (`searchIssues`/`searchHotspots` 60_000 ms; `listOrganizations`/`listProjects`/`listBranches` 300_000 ms; `getQualityGate` 10_000 ms; `getMeasures` 60_000 ms). `staleTime` is set explicitly on every query — never left at zero or the library default.
 
 **Acceptance criteria.**
 
@@ -374,7 +374,7 @@ Stop and ask the maintainer when any of these happen:
 
 **When to ask the maintainer.**
 
-- Default stale time for TanStack Query (suggestion: 30s).
+- Default `staleTime` for TanStack Query is fixed by ADR-008 — see step 10 above. No maintainer input needed; deviations require a new ADR.
 - Whether to surface upstream `paging.total` even on `ok` results so the UI can show "showing 100 of 1,247."
 
 ---

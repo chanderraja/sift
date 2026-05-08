@@ -4,7 +4,7 @@
 >
 > **This document is the gate.** No implementation phase from `IMPLEMENTATION.md` may begin until the relevant section here is in place. If you (the implementer) are about to make a structural decision and don't see it covered here, **stop and escalate to the maintainer** so a new ADR can be written.
 
-**Document version:** 0.2
+**Document version:** 0.3
 **Spec version:** 0.4 (`SPEC.md`)
 **Status:** Pre-implementation
 
@@ -717,23 +717,23 @@ The proxy core is vendor-neutral: it imports nothing from any platform's SDK, ac
 - The narrowing-chip suggestions are computed client-side from the visible page's distribution (most common file path prefix, oldest creation date, lowest severity present); this is a heuristic, not a SonarCloud feature.
 - The export modal must check this variant before enabling the action buttons. Captured in the export feature's tests in Phase 10.
 
+### ADR-008 — No proxy-side caching; SPA owns all caching
+
+**Status:** Accepted • **Date:** 2026-05-08 • **Closes:** Q-2
+
+**Context.** Open question Q-2 asked where to cache SonarCloud responses: at the edge proxy, or in the SPA via TanStack Query. Edge caching keyed by `(token, URL)` would put bearer tokens at the edge for the cache window — weakening the stateless-proxy property promised in `SPEC.md` §13 and ADR-001. A cross-tenant cache without token in the key would risk cross-user data exposure. Conditional GET via `If-Modified-Since` is unattractive because SonarCloud V1 does not reliably emit `Last-Modified` on `/api/issues/search`.
+
+**Decision.** No caching at the proxy layer. The SPA owns all caching via TanStack Query, with explicit per-query `staleTime` defaults: `searchIssues` and `searchHotspots` 60s; `listOrganizations`, `listProjects`, `listBranches` 300s; `getQualityGate` 10s; `getMeasures` 60s. The proxy emits `Cache-Control: no-store` on every response. Vercel and Cloudflare adapters explicitly disable platform caching. The proxy continues to log no request/response bodies and no headers beyond status; CI grep on `proxy/` enforces.
+
+**Consequences.** Proxy code stays minimal and the trust model is preserved. The Phase 3 `staleTime` defaults are codified by this ADR (closing the open question in Phase 3's "When to ask the maintainer" list). For users iterating on filters, the SPA-side cache absorbs the common case via TanStack Query's deduplication and stale-while-revalidate. Proxy caching may be revisited in v1.x only with a new ADR that updates the threat model first.
+
 ---
 
 ## 8. Open Architectural Questions
 
 Decisions that are *not yet* made and must be resolved before the affected implementation phase begins.
 
-> **Recently resolved:** Q-1 (over-cap handling) — see ADR-007.
-
-### Q-2: Caching strategy for the proxy
-
-Currently planned: no caching. Every request hits SonarCloud. For projects with thousands of issues this means refetching on every filter change. Options:
-
-- Cache by (token, URL) for 30 seconds at the proxy edge.
-- Defer caching entirely to TanStack Query in the SPA.
-- Conditional GET via `If-Modified-Since` if SonarCloud returns `Last-Modified`.
-
-**Resolution required by:** Phase 2 (Proxy).
+> **Recently resolved:** Q-1 (over-cap handling) — see ADR-007. Q-2 (proxy caching) — see ADR-008.
 
 ### Q-3: Bundle splitting threshold
 
@@ -755,6 +755,7 @@ Edge case: a branch named `release/2024.q4` may have a stale entry. Behavior on 
 |---|---|---|---|
 | 0.1 | 2026-05-06 | initial | Created from SPEC.md v0.2; ADRs 001–006 captured |
 | 0.2 | 2026-05-06 | design-feedback | ADR-007 added (closes Q-1, over-cap handling); design-mock review lifted decisions on cold-start guide, export modal previews, and over-cap UX into SPEC.md §7.1, §7.4, §9 |
+| 0.3 | 2026-05-08 | design-feedback | ADR-008 added (closes Q-2, no proxy caching); IMPLEMENTATION.md Phase 3 staleTime defaults codified |
 
 When this document is updated, append a row here. Major restructures should also bump the version number visible at the top.
 
