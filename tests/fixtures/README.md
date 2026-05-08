@@ -16,14 +16,16 @@ The committed fixtures use the fictitious organization key `acme` and project ke
 
 2. **Generate a SonarCloud user token** at `sonarcloud.io/account/security`. Keep it in your shell environment only. **Never commit it. Never paste it into an issue, PR, or chat.**
 
-3. **Run the capture script:**
+3. **Install `jq`** if you don't have it (`dnf install jq` / `apt-get install jq` / `brew install jq`). The script uses it for field-targeted PII scrubs that string substitution can't reach.
+
+4. **Run the capture script:**
 
    ```bash
    export SONAR_TOKEN=...                    # from step 2 — keep secret
    export SONAR_ORG=your-real-org-key
-   export SONAR_PROJECT=your-real-project-key
+   export SONAR_PROJECT=your-real-project-key  # typically <org>_<repo>
    # optional:
-   export SONAR_BRANCH=main                  # default
+   export SONAR_BRANCH=...                   # default: auto-detected from /project_branches/list
    export SONAR_REGION=eu                    # eu (default) or us
 
    ./scripts/capture-fixtures.sh
@@ -31,18 +33,19 @@ The committed fixtures use the fictitious organization key `acme` and project ke
 
    Two things happen:
    - Raw responses land in `tests/fixtures/raw/` (gitignored — for your eyes only).
-   - Redacted copies (org → `acme`, project → `acme_widget-service`) land in `tests/fixtures/*.json` ready for review.
+   - Scrubbed copies land in `tests/fixtures/*.json` ready for review. The script does two passes: a substring rename of `$SONAR_ORG → acme` and `$SONAR_PROJECT → acme_widget-service`, then a `jq`-based walk that rewrites known-sensitive structured fields by name (`author.{name,login,avatar}`, `assignee`, `authorLogin`, `avatar`, `sha`, `branchId`, `branchUuidV1`, generic `uuid`). Free-text fields (issue / comment / commit messages, descriptions) are intentionally **not** auto-scrubbed; the manual checklist below covers them, since false positives there would corrupt fixture realism.
+   - Per-endpoint failures are logged but don't abort the run; a summary at the end lists what succeeded and what failed.
 
-4. **Review** `tests/fixtures/raw/` and `tests/fixtures/` side-by-side. The script's substitution is intentionally conservative — it only renames the two known keys. The checklist below catches the rest.
+5. **Review** `tests/fixtures/raw/` and `tests/fixtures/` side-by-side. The script's automated scrubs cover the common cases. The checklist below catches the rest.
 
-5. **Commit only the redacted copies:**
+6. **Commit only the redacted copies:**
 
    ```bash
    git add tests/fixtures/*.json     # not raw/
    git commit -m "chore: add sonarcloud fixtures"
    ```
 
-6. Open a PR. Reviewers should be able to confirm at a glance that no real PII or secrets leaked through.
+7. Open a PR. Reviewers should be able to confirm at a glance that no real PII or secrets leaked through.
 
 ## Manual redaction checklist
 
