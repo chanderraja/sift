@@ -144,3 +144,80 @@ export interface Measure {
   bestValue?: boolean;
   period?: { index: number; value: string };
 }
+
+// === Filter types ===
+
+export interface IssueFilters {
+  componentKeys?: ProjectKey[];
+  branch?: string;
+  severities?: Severity[];
+  types?: IssueType[];
+  statuses?: Status[];
+  resolutions?: Resolution[];
+  tags?: string[];
+  rules?: RuleKey[];
+  assignees?: string[];
+  filePathPrefix?: string;
+  createdAfter?: string;
+  createdBefore?: string;
+  hasComments?: boolean;
+}
+
+export interface HotspotFilters {
+  projectKey: ProjectKey;
+  branch?: string;
+  status?: 'TO_REVIEW' | 'REVIEWED';
+  resolution?: 'FIXED' | 'SAFE' | 'ACKNOWLEDGED';
+}
+
+/** Pagination options accepted by every paginated SonarCloud V1 endpoint. */
+export interface PageOpts {
+  /** 1-indexed page number. */
+  p?: number;
+  /** Page size; SonarCloud V1 caps this at 500 for most endpoints. */
+  ps?: number;
+}
+
+// === Result and Page ===
+
+/**
+ * One paginated slice of a list endpoint.
+ *
+ * `total` reflects the upstream-reported total, which for `/issues/search`
+ * may exceed the 10,000 hard cap. Over-cap detection lives in the API client
+ * (per ADR-007) and surfaces a separate `Result.kind === 'over_cap'` variant.
+ */
+export interface Page<T> {
+  items: T[];
+  pageIndex: number;
+  pageSize: number;
+  total: number;
+}
+
+/**
+ * Discriminated union returned by every public `SonarClient` method. Per
+ * ARCHITECTURE.md §5 ("Errors as values, not exceptions"), the client never
+ * throws — every failure mode becomes a typed variant the UI can pattern-
+ * match on.
+ *
+ * Variants:
+ *   - `ok`             : successful response, value is the parsed payload.
+ *   - `unauthorized`   : 401 from upstream — token bad / expired.
+ *   - `forbidden`      : 403 — token lacks permission for this resource.
+ *   - `not_found`      : 404 — resource does not exist.
+ *   - `rate_limited`   : 429 — surface upstream Retry-After if provided.
+ *   - `server_error`   : 5xx — preserve upstream status for diagnostics.
+ *   - `network_error`  : fetch threw / DNS / proxy unreachable.
+ *   - `over_cap`       : `/issues/search`-only — `paging.total` exceeds the
+ *                        10,000 ceiling; UI must narrow the filter set.
+ *                        See ADR-007.
+ */
+export type Result<T> =
+  | { kind: 'ok'; value: T }
+  | { kind: 'unauthorized' }
+  | { kind: 'forbidden'; message: string }
+  | { kind: 'not_found' }
+  | { kind: 'rate_limited'; retryAfterSeconds?: number }
+  | { kind: 'server_error'; status: number }
+  | { kind: 'network_error'; message: string }
+  | { kind: 'over_cap'; total: number };

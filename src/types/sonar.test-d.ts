@@ -10,16 +10,20 @@ import { expectTypeOf } from 'expect-type';
 import type {
   Branch,
   Hotspot,
+  HotspotFilters,
   Issue,
+  IssueFilters,
   IssueKey,
   IssueType,
   Measure,
   Organization,
   OrgKey,
+  Page,
   Project,
   ProjectKey,
   QualityGate,
   Resolution,
+  Result,
   RuleKey,
   Severity,
   Status,
@@ -121,3 +125,30 @@ expectTypeOf<Hotspot>().toHaveProperty('project').toEqualTypeOf<ProjectKey>();
 expectTypeOf<Branch>().toHaveProperty('isMain').toEqualTypeOf<boolean>();
 expectTypeOf<QualityGate>().toHaveProperty('projectStatus');
 expectTypeOf<Measure>().toHaveProperty('metric').toEqualTypeOf<string>();
+
+// === Filter and result types ===
+
+// Filter arrays carry brand-typed keys, not bare strings. A function that
+// hands `filtersStore.issuesFilters.componentKeys` to the API client must
+// pass branded ProjectKeys (or undefined when the filter is not set).
+expectTypeOf<IssueFilters>()
+  .toHaveProperty('componentKeys')
+  .toEqualTypeOf<ProjectKey[] | undefined>();
+expectTypeOf<IssueFilters>().toHaveProperty('rules').toEqualTypeOf<RuleKey[] | undefined>();
+expectTypeOf<IssueFilters>().toHaveProperty('severities').toEqualTypeOf<Severity[] | undefined>();
+expectTypeOf<HotspotFilters>().toHaveProperty('projectKey').toEqualTypeOf<ProjectKey>();
+
+// Result<T> is a discriminated union. Narrowing on `kind` should give the
+// payload its proper type — verified by extracting each variant.
+type OkVariant<T> = Extract<Result<T>, { kind: 'ok' }>;
+expectTypeOf<OkVariant<Issue>>().toHaveProperty('value').toEqualTypeOf<Issue>();
+
+type RateLimited = Extract<Result<unknown>, { kind: 'rate_limited' }>;
+expectTypeOf<RateLimited>().toHaveProperty('retryAfterSeconds').toEqualTypeOf<number | undefined>();
+
+type OverCap = Extract<Result<unknown>, { kind: 'over_cap' }>;
+expectTypeOf<OverCap>().toHaveProperty('total').toEqualTypeOf<number>();
+
+// Page<T> is generic over the item type; each method's result preserves it.
+expectTypeOf<Page<Issue>>().toHaveProperty('items').toEqualTypeOf<Issue[]>();
+expectTypeOf<Page<Issue>>().toHaveProperty('total').toEqualTypeOf<number>();
