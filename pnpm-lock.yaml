@@ -14,6 +14,9 @@ importers:
       react-dom:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
     devDependencies:
       '@eslint/js':
         specifier: 10.0.1
@@ -66,6 +69,9 @@ importers:
       eslint-plugin-react-hooks:
         specifier: 7.1.1
         version: 7.1.1(eslint@10.3.0(jiti@1.21.7))
+      expect-type:
+        specifier: 1.3.0
+        version: 1.3.0
       globals:
         specifier: 17.6.0
         version: 17.6.0
