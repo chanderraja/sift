@@ -12,8 +12,11 @@
 #   SONAR_PROJECT   — real project key in that org (typically <org>_<repo>).
 #
 # Optional env vars:
-#   SONAR_BRANCH    — default: auto-detected (main branch from project_branches/list).
-#   SONAR_REGION    — "eu" (default) or "us".
+#   SONAR_BRANCH       — default: auto-detected (main branch from project_branches/list).
+#   SONAR_PROJECT_NAME — default: auto-detected (display name from projects/search).
+#                        Substituted to "widget-service" in fixtures so the bare
+#                        project name doesn't leak through file paths.
+#   SONAR_REGION       — "eu" (default) or "us".
 #
 # Output:
 #   tests/fixtures/raw/        real responses, gitignored, for diff review.
@@ -52,8 +55,10 @@ esac
 # Fictitious values that committed fixtures use (per SPEC §16.7).
 FAKE_ORG="acme"
 FAKE_PROJECT="acme_widget-service"
+FAKE_PROJECT_NAME="widget-service"
 FAKE_AUTHOR_NAME="Octo Cat"
 FAKE_AUTHOR_LOGIN="octocat@github"
+FAKE_AUTHOR_EMAIL="octocat@example.com"
 FAKE_AVATAR="00000000000000000000000000000000"
 FAKE_SHA="0000000000000000000000000000000000000000"
 FAKE_UUID="00000000-0000-0000-0000-000000000000"
@@ -93,11 +98,30 @@ else
   branch_source="from SONAR_BRANCH"
 fi
 
+# Auto-detect the project's display name (distinct from the project key).
+# Substring-substituted in the captured fixtures so the bare project name
+# doesn't leak through file paths, projectName fields, etc.
+if [[ -z "${SONAR_PROJECT_NAME:-}" ]]; then
+  projects_probe="$(mktemp)"
+  if curl_get "$BASE/projects/search?organization=$SONAR_ORG&ps=500" "$projects_probe" 2>/dev/null; then
+    SONAR_PROJECT_NAME="$(jq -r --arg key "$SONAR_PROJECT" '.components[] | select(.key==$key) | .name' "$projects_probe" | head -n1)"
+  fi
+  rm -f "$projects_probe"
+  project_name_source="auto-detected"
+else
+  project_name_source="from SONAR_PROJECT_NAME"
+fi
+
 echo "Capture target:"
-echo "  region   = $SONAR_REGION ($BASE)"
-echo "  org      = $SONAR_ORG     → fixtures will use '$FAKE_ORG'"
-echo "  project  = $SONAR_PROJECT → fixtures will use '$FAKE_PROJECT'"
-echo "  branch   = $SONAR_BRANCH ($branch_source)"
+echo "  region        = $SONAR_REGION ($BASE)"
+echo "  org           = $SONAR_ORG → '$FAKE_ORG'"
+echo "  project key   = $SONAR_PROJECT → '$FAKE_PROJECT'"
+if [[ -n "$SONAR_PROJECT_NAME" && "$SONAR_PROJECT_NAME" != "$SONAR_PROJECT" ]]; then
+  echo "  project name  = $SONAR_PROJECT_NAME → '$FAKE_PROJECT_NAME' ($project_name_source)"
+else
+  echo "  project name  = (none distinct from key)"
+fi
+echo "  branch        = $SONAR_BRANCH ($branch_source)"
 echo ""
 echo "Output:"
 echo "  raw       → $RAW_DIR/        (gitignored, for diff review)"
@@ -120,6 +144,7 @@ jq_scrub() {
   #     would defeat the point of having a real fixture).
   jq --arg name "$FAKE_AUTHOR_NAME" \
      --arg login "$FAKE_AUTHOR_LOGIN" \
+     --arg email "$FAKE_AUTHOR_EMAIL" \
      --arg avatar "$FAKE_AVATAR" \
      --arg sha "$FAKE_SHA" \
      --arg uuid "$FAKE_UUID" \
@@ -129,19 +154,25 @@ jq_scrub() {
        walk(
          if type == "object" then
            with_entries(
+             # Commit-style author object: nested fields handled inline.
              if   .key == "author"        and (.value | type) == "object"
                then .value |= (
                  (if has("name")   then .name   = $name   else . end)
                  | (if has("login")  then .login  = $login  else . end)
                  | (if has("avatar") then .avatar = $avatar else . end)
                )
+             # Issue-style author: a flat string (typically an email).
+             elif .key == "author"            and (.value | type) == "string" then .value = $email
              elif .key == "assignee"          then .value = $login
              elif .key == "authorLogin"       then .value = $login
              elif .key == "avatar"            then .value = $avatar
              elif .key == "sha"               then .value = $sha
+             elif .key == "revision"          then .value = $sha
              elif .key == "branchId"          then .value = $uuid
              elif .key == "branchUuidV1"      then .value = $branchUuidV1
-             elif .key == "uuid"              then .value = $uuid
+             # Catch-all for *Uuid-suffixed and bare uuid fields. Handled
+             # last so the more specific branch* rules above win.
+             elif (.key | tostring) | test("[Uu]uid$") then .value = $uuid
              else .
              end
            )
@@ -164,12 +195,19 @@ capture() {
     return 1
   fi
 
-  # 1. Substring substitution: real org / project keys → fictitious.
-  #    Project key first, then org, since project keys typically contain
-  #    the org key as a prefix.
-  sed -e "s|$SONAR_PROJECT|$FAKE_PROJECT|g" \
-      -e "s|$SONAR_ORG|$FAKE_ORG|g" \
-      "$raw" > "$SED_TMP"
+  # 1. Substring substitution: real org / project key / project display
+  #    name → fictitious. Order matters:
+  #      a) project key first (longest, typically contains the org key)
+  #      b) bare project name next (catches projectName, file paths)
+  #      c) org last (shortest)
+  #    The project-name pass only runs if the API gave us a name distinct
+  #    from the key, otherwise it would be a no-op or could over-match.
+  local -a sed_args=(-e "s|$SONAR_PROJECT|$FAKE_PROJECT|g")
+  if [[ -n "$SONAR_PROJECT_NAME" && "$SONAR_PROJECT_NAME" != "$SONAR_PROJECT" ]]; then
+    sed_args+=(-e "s|$SONAR_PROJECT_NAME|$FAKE_PROJECT_NAME|g")
+  fi
+  sed_args+=(-e "s|$SONAR_ORG|$FAKE_ORG|g")
+  sed "${sed_args[@]}" "$raw" > "$SED_TMP"
 
   # 2. jq scrub: known-sensitive fields by name (author, sha, uuids, …).
   if ! jq_scrub < "$SED_TMP" > "$out"; then

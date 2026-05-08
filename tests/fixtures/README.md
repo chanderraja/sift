@@ -33,7 +33,12 @@ The committed fixtures use the fictitious organization key `acme` and project ke
 
    Two things happen:
    - Raw responses land in `tests/fixtures/raw/` (gitignored — for your eyes only).
-   - Scrubbed copies land in `tests/fixtures/*.json` ready for review. The script does two passes: a substring rename of `$SONAR_ORG → acme` and `$SONAR_PROJECT → acme_widget-service`, then a `jq`-based walk that rewrites known-sensitive structured fields by name (`author.{name,login,avatar}`, `assignee`, `authorLogin`, `avatar`, `sha`, `branchId`, `branchUuidV1`, generic `uuid`). Free-text fields (issue / comment / commit messages, descriptions) are intentionally **not** auto-scrubbed; the manual checklist below covers them, since false positives there would corrupt fixture realism.
+   - Scrubbed copies land in `tests/fixtures/*.json` ready for review. The script does two passes:
+     - **Substring rename:** `$SONAR_PROJECT → acme_widget-service`, the bare project display name → `widget-service` (auto-detected via `/projects/search`, override with `SONAR_PROJECT_NAME`), and `$SONAR_ORG → acme`.
+     - **`jq` field-targeted scrub:** rewrites known-sensitive structured fields by name — `author` (object form: `{name, login, avatar}` sub-fields; string form: replaced with a fictitious email), `assignee`, `authorLogin`, `avatar`, `sha`, `revision`, `branchId`, `branchUuidV1`, plus a catch-all for any `*Uuid$`-suffixed or bare `uuid` field.
+
+     Free-text fields (issue / comment / commit messages, descriptions) are intentionally **not** auto-scrubbed; the manual checklist below covers them, since false positives there would corrupt fixture realism.
+
    - Per-endpoint failures are logged but don't abort the run; a summary at the end lists what succeeded and what failed.
 
 5. **Review** `tests/fixtures/raw/` and `tests/fixtures/` side-by-side. The script's automated scrubs cover the common cases. The checklist below catches the rest.
