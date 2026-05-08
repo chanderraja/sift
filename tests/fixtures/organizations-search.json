@@ -1,0 +1,34 @@
+{
+  "organizations": [
+    {
+      "key": "acme",
+      "name": "acme",
+      "description": "",
+      "url": "",
+      "avatar": "00000000000000000000000000000000",
+      "alm": {
+        "key": "github",
+        "url": "https://github.com/acme",
+        "personal": true,
+        "membersSync": false
+      },
+      "actions": {
+        "admin": true,
+        "delete": true,
+        "provision": true
+      },
+      "subscription": "FREE",
+      "defaultLeakPeriod": "previous_version",
+      "defaultLeakPeriodType": "previous_version",
+      "onlyPrivateProjects": {
+        "enabled": false,
+        "available": false
+      }
+    }
+  ],
+  "paging": {
+    "pageIndex": 1,
+    "pageSize": 10,
+    "total": 1
+  }
+}

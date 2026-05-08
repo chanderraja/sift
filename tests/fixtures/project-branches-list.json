@@ -1,0 +1,28 @@
+{
+  "branches": [
+    {
+      "name": "master",
+      "isMain": true,
+      "type": "LONG",
+      "status": {
+        "qualityGateStatus": "OK",
+        "bugs": 0,
+        "vulnerabilities": 0,
+        "codeSmells": 34
+      },
+      "analysisDate": "2026-05-06T08:01:58+0000",
+      "commit": {
+        "sha": "0000000000000000000000000000000000000000",
+        "author": {
+          "name": "Octo Cat",
+          "login": "octocat@github",
+          "avatar": "00000000000000000000000000000000"
+        },
+        "date": "2026-05-06T08:01:51+0000",
+        "message": "Merge pull request #2 from acme/m3-f1a-vendor-otel-proto"
+      },
+      "branchId": "00000000-0000-0000-0000-000000000000",
+      "branchUuidV1": "AAAAAAAAAAAAAAAAAAAA"
+    }
+  ]
+}
