@@ -107,10 +107,29 @@ export async function handleSonarRequest(req: Request, opts: ProxyOptions = {}):
     upstreamHeaders.set('Authorization', auth);
   }
 
-  const upstream = await fetch(upstreamUrl, {
-    method: 'GET',
-    headers: upstreamHeaders,
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(upstreamUrl, {
+      method: 'GET',
+      headers: upstreamHeaders,
+    });
+  } catch (err) {
+    // Network-level failure (DNS, TCP, TLS, abort, etc.). The proxy never
+    // exposes the underlying error class to the caller — only a typed
+    // JSON envelope with a short message. Upstream 5xx responses are not
+    // routed through this branch; they're mirrored verbatim by the
+    // success path below.
+    const message = err instanceof Error ? err.message : 'unknown network error';
+    return new Response(JSON.stringify({ error: 'upstream_unreachable', message }), {
+      status: 502,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders(allowedOrigin),
+        'Cache-Control': 'no-store',
+        'x-sift-upstream': upstreamUrl,
+      },
+    });
+  }
 
   // Outbound-header processing: copy upstream headers, drop Set-Cookie
   // (defends against any upstream session quirk), add CORS, expose

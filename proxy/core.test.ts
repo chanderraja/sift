@@ -236,3 +236,41 @@ describe('handleSonarRequest — header forwarding and response post-processing'
     expect(await res.text()).toBe(payload);
   });
 });
+
+describe('handleSonarRequest — error mapping', () => {
+  beforeEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it.each([500, 502, 503, 504])('mirrors upstream %d verbatim', async (status) => {
+    const body = `{"upstream":${String(status)}}`;
+    stubFetch(new Response(body, { status }));
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
+    const res = await handleSonarRequest(req);
+    expect(res.status).toBe(status);
+    expect(await res.text()).toBe(body);
+  });
+
+  it('returns 502 with a typed JSON body when fetch throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed: ECONNREFUSED')));
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
+    const res = await handleSonarRequest(req);
+    expect(res.status).toBe(502);
+    expect(res.headers.get('Content-Type')).toContain('application/json');
+    const body = (await res.json()) as { error: string; message: string };
+    expect(body.error).toBe('upstream_unreachable');
+    expect(body.message).toContain('ECONNREFUSED');
+  });
+
+  it('keeps CORS and no-store on a 502 from a fetch failure', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('boom')));
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
+    const res = await handleSonarRequest(req);
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    expect(res.headers.get('Cache-Control')).toBe('no-store');
+  });
+});
