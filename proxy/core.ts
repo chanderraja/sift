@@ -15,8 +15,12 @@ export interface ProxyOptions {
 }
 
 const ALLOWED_METHODS = ['GET', 'OPTIONS'] as const;
+const ALLOWED_REQUEST_HEADERS = 'Authorization, Content-Type';
+const PREFLIGHT_MAX_AGE_SECONDS = 86_400;
 
-export function handleSonarRequest(req: Request): Promise<Response> {
+export function handleSonarRequest(req: Request, opts: ProxyOptions = {}): Promise<Response> {
+  const allowedOrigin = opts.allowedOrigin ?? '*';
+
   if (req.method !== 'GET' && req.method !== 'OPTIONS') {
     return Promise.resolve(
       new Response(null, {
@@ -29,7 +33,29 @@ export function handleSonarRequest(req: Request): Promise<Response> {
     );
   }
 
-  // Subsequent commits in this phase implement the rest. Fail safe in the
-  // meantime so any path that reaches here is loud, not silent.
+  if (req.method === 'OPTIONS') {
+    return Promise.resolve(
+      new Response(null, {
+        status: 204,
+        headers: {
+          ...corsHeaders(allowedOrigin),
+          'Access-Control-Allow-Methods': ALLOWED_METHODS.join(', '),
+          'Access-Control-Allow-Headers': ALLOWED_REQUEST_HEADERS,
+          'Access-Control-Max-Age': String(PREFLIGHT_MAX_AGE_SECONDS),
+          'Cache-Control': 'no-store',
+        },
+      }),
+    );
+  }
+
+  // GET branch — implemented in subsequent commits.
   return Promise.resolve(new Response(null, { status: 501 }));
+}
+
+function corsHeaders(allowedOrigin: string): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Expose-Headers': 'x-sift-upstream',
+    Vary: 'Origin',
+  };
 }
