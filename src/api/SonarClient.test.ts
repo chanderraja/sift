@@ -501,3 +501,53 @@ describe('SonarClient.getQualityGate', () => {
     expect(result.kind).toBe('network_error');
   });
 });
+
+describe('SonarClient.getMeasures', () => {
+  const PATH = '/api/sonar/v1/measures/component';
+
+  it('returns ok with the parsed measures on 200', async () => {
+    const result = await makeClient().getMeasures('acme_widget-service', 'master', ['complexity']);
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(result.value.length).toBeGreaterThan(0);
+      expect(result.value[0]?.metric).toBeDefined();
+    }
+  });
+
+  it('encodes component, branch, and comma-joined metricKeys', async () => {
+    let receivedUrl = '';
+    server.use(
+      http.get(PATH, ({ request }) => {
+        receivedUrl = request.url;
+        return HttpResponse.json({ component: { measures: [] } });
+      }),
+    );
+    await makeClient().getMeasures('acme_widget-service', 'master', [
+      'coverage',
+      'duplicated_lines_density',
+      'ncloc',
+    ]);
+    const params = new URL(receivedUrl).searchParams;
+    expect(params.get('component')).toBe('acme_widget-service');
+    expect(params.get('branch')).toBe('master');
+    expect(params.get('metricKeys')).toBe('coverage,duplicated_lines_density,ncloc');
+  });
+
+  it.each([
+    [401, 'unauthorized'],
+    [403, 'forbidden'],
+    [404, 'not_found'],
+    [429, 'rate_limited'],
+    [500, 'server_error'],
+  ] as const)('maps %d → %s', async (status, expectedKind) => {
+    stubGet(PATH, { status });
+    const result = await makeClient().getMeasures('acme_widget-service', 'master', ['ncloc']);
+    expect(result.kind).toBe(expectedKind);
+  });
+
+  it('returns network_error when fetch throws', async () => {
+    server.use(http.get(PATH, () => HttpResponse.error()));
+    const result = await makeClient().getMeasures('acme_widget-service', 'master', ['ncloc']);
+    expect(result.kind).toBe('network_error');
+  });
+});

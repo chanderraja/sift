@@ -10,6 +10,7 @@ import {
   parseBranchesListResponse,
   parseHotspotsSearchResponse,
   parseIssuesSearchResponse,
+  parseMeasuresComponentResponse,
   parseOrganizationsSearchResponse,
   parseProjectsSearchResponse,
   parseQualityGate,
@@ -20,6 +21,7 @@ import type {
   HotspotFilters,
   Issue,
   IssueFilters,
+  Measure,
   Organization,
   Page,
   PageOpts,
@@ -109,6 +111,22 @@ export class SonarClient {
     return this.get(
       `${PROXY_BASE}/qualitygates/project_status?${params.toString()}`,
       parseQualityGate,
+    );
+  }
+
+  async getMeasures(
+    projectKey: string,
+    branch: string,
+    metricKeys: string[],
+  ): Promise<Result<Measure[]>> {
+    const params = new URLSearchParams({
+      component: projectKey,
+      branch,
+      metricKeys: metricKeys.join(','),
+    });
+    return this.get(
+      `${PROXY_BASE}/measures/component?${params.toString()}`,
+      parseMeasuresComponentResponse,
     );
   }
 
