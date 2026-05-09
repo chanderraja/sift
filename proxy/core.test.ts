@@ -4,20 +4,46 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { handleSonarRequest } from './core';
 
-const stubFetch = (response: Response): ReturnType<typeof vi.fn> => {
+const ORIGIN = 'https://sift.example.com';
+const SPA_V1 = `${ORIGIN}/api/sonar/v1/issues/search`;
+const SPA_V2 = `${ORIGIN}/api/sonar/v2/projects`;
+
+// All test helpers below collapse the repeated boilerplate of building a
+// `Request` for the SPA-side path, swapping in a fake `fetch`, and pulling
+// the upstream URL/init out of the mock for assertions.
+
+const req = (url = SPA_V1, init?: RequestInit): Request => new Request(url, init);
+
+const stubFetch = (
+  response: Response = new Response('{}', { status: 200 }),
+): ReturnType<typeof vi.fn> => {
   const mock = vi.fn().mockResolvedValue(response);
   vi.stubGlobal('fetch', mock);
   return mock;
 };
 
+const stubFetchReject = (err: Error): ReturnType<typeof vi.fn> => {
+  const mock = vi.fn().mockRejectedValue(err);
+  vi.stubGlobal('fetch', mock);
+  return mock;
+};
+
+const callUrl = (m: ReturnType<typeof vi.fn>): string => String(m.mock.calls[0]?.[0]);
+const callInit = (m: ReturnType<typeof vi.fn>): RequestInit | undefined =>
+  m.mock.calls[0]?.[1] as RequestInit | undefined;
+
+beforeEach(() => {
+  vi.unstubAllGlobals();
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe('handleSonarRequest — method allowlist', () => {
   it.each(['POST', 'PUT', 'DELETE', 'PATCH'])(
     'rejects %s with 405 and an Allow header',
     async (method) => {
-      const req = new Request('https://sift.example.com/api/sonar/v1/issues/search', {
-        method,
-      });
-      const res = await handleSonarRequest(req);
+      const res = await handleSonarRequest(req(SPA_V1, { method }));
       expect(res.status).toBe(405);
       const allow = res.headers.get('Allow') ?? '';
       expect(allow).toContain('GET');
@@ -28,167 +54,116 @@ describe('handleSonarRequest — method allowlist', () => {
 
 describe('handleSonarRequest — OPTIONS preflight', () => {
   it('returns 204 with CORS headers and no body', async () => {
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search', {
-      method: 'OPTIONS',
-    });
-    const res = await handleSonarRequest(req);
+    const res = await handleSonarRequest(req(SPA_V1, { method: 'OPTIONS' }));
     expect(res.status).toBe(204);
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*');
     expect(res.headers.get('Access-Control-Allow-Methods') ?? '').toContain('GET');
     expect(res.headers.get('Access-Control-Allow-Methods') ?? '').toContain('OPTIONS');
-    const allowHeaders = (res.headers.get('Access-Control-Allow-Headers') ?? '').toLowerCase();
-    expect(allowHeaders).toContain('authorization');
+    expect((res.headers.get('Access-Control-Allow-Headers') ?? '').toLowerCase()).toContain(
+      'authorization',
+    );
     expect(res.headers.get('Cache-Control')).toBe('no-store');
     // Preflights don't carry a body.
     expect(await res.text()).toBe('');
   });
 
   it('honors a custom allowedOrigin', async () => {
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search', {
-      method: 'OPTIONS',
+    const res = await handleSonarRequest(req(SPA_V1, { method: 'OPTIONS' }), {
+      allowedOrigin: 'https://sift.example.com',
     });
-    const res = await handleSonarRequest(req, { allowedOrigin: 'https://sift.example.com' });
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://sift.example.com');
   });
 });
 
 describe('handleSonarRequest — path validation and upstream routing', () => {
-  beforeEach(() => {
-    // Ensures stale stubs from earlier files don't leak into these tests.
-    vi.unstubAllGlobals();
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it.each(['/api/sonar/v3/foo', '/api/sonar/v1/', '/api/sonar/', '/api/foo', '/foo', '/'])(
     'returns 404 for non-matching path %s',
     async (path) => {
-      const req = new Request(`https://sift.example.com${path}`);
-      const res = await handleSonarRequest(req);
+      const res = await handleSonarRequest(req(`${ORIGIN}${path}`));
       expect(res.status).toBe(404);
     },
   );
 
   it('forwards a v1 path to https://sonarcloud.io/api/...', async () => {
-    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
-    await handleSonarRequest(req);
-    expect(fetchMock).toHaveBeenCalledOnce();
-    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://sonarcloud.io/api/issues/search');
+    const m = stubFetch();
+    await handleSonarRequest(req(SPA_V1));
+    expect(m).toHaveBeenCalledOnce();
+    expect(callUrl(m)).toBe('https://sonarcloud.io/api/issues/search');
   });
 
   it('forwards a v2 path to https://api.sonarcloud.io/...', async () => {
-    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
-    const req = new Request('https://sift.example.com/api/sonar/v2/projects');
-    await handleSonarRequest(req);
-    expect(fetchMock).toHaveBeenCalledOnce();
-    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.sonarcloud.io/projects');
+    const m = stubFetch();
+    await handleSonarRequest(req(SPA_V2));
+    expect(callUrl(m)).toBe('https://api.sonarcloud.io/projects');
   });
 
   it('preserves nested path segments and query strings', async () => {
-    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
-    const req = new Request(
-      'https://sift.example.com/api/sonar/v1/issues/search?severities=BLOCKER&p=2',
-    );
-    await handleSonarRequest(req);
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      'https://sonarcloud.io/api/issues/search?severities=BLOCKER&p=2',
-    );
+    const m = stubFetch();
+    await handleSonarRequest(req(`${SPA_V1}?severities=BLOCKER&p=2`));
+    expect(callUrl(m)).toBe('https://sonarcloud.io/api/issues/search?severities=BLOCKER&p=2');
   });
 
   it('mirrors the upstream status code', async () => {
     stubFetch(new Response('{"errors":[{"msg":"Insufficient privileges"}]}', { status: 403 }));
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
-    const res = await handleSonarRequest(req);
+    const res = await handleSonarRequest(req(SPA_V1));
     expect(res.status).toBe(403);
   });
 });
 
 describe('handleSonarRequest — region selection', () => {
-  beforeEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it('routes ?region=us to sonarqube.us', async () => {
-    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search?region=us');
-    await handleSonarRequest(req);
-    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://sonarqube.us/api/issues/search');
+    const m = stubFetch();
+    await handleSonarRequest(req(`${SPA_V1}?region=us`));
+    expect(callUrl(m)).toBe('https://sonarqube.us/api/issues/search');
   });
 
   it('routes ?region=us on v2 to api.sonarqube.us', async () => {
-    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
-    const req = new Request('https://sift.example.com/api/sonar/v2/projects?region=us');
-    await handleSonarRequest(req);
-    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.sonarqube.us/projects');
+    const m = stubFetch();
+    await handleSonarRequest(req(`${SPA_V2}?region=us`));
+    expect(callUrl(m)).toBe('https://api.sonarqube.us/projects');
   });
 
   it('routes ?region=eu to sonarcloud.io', async () => {
-    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search?region=eu');
-    await handleSonarRequest(req);
-    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://sonarcloud.io/api/issues/search');
+    const m = stubFetch();
+    await handleSonarRequest(req(`${SPA_V1}?region=eu`));
+    expect(callUrl(m)).toBe('https://sonarcloud.io/api/issues/search');
   });
 
   it('strips the region param from the forwarded query', async () => {
-    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
-    const req = new Request(
-      'https://sift.example.com/api/sonar/v1/issues/search?region=us&severities=BLOCKER&p=2',
-    );
-    await handleSonarRequest(req);
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      'https://sonarqube.us/api/issues/search?severities=BLOCKER&p=2',
-    );
+    const m = stubFetch();
+    await handleSonarRequest(req(`${SPA_V1}?region=us&severities=BLOCKER&p=2`));
+    expect(callUrl(m)).toBe('https://sonarqube.us/api/issues/search?severities=BLOCKER&p=2');
   });
 
   it('rejects an unknown region with 400', async () => {
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search?region=apac');
-    const res = await handleSonarRequest(req);
+    const res = await handleSonarRequest(req(`${SPA_V1}?region=apac`));
     expect(res.status).toBe(400);
   });
 });
 
 describe('handleSonarRequest — header forwarding and response post-processing', () => {
-  beforeEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  const upstreamHeadersFor = (mock: ReturnType<typeof vi.fn>): Headers => {
-    const init = mock.mock.calls[0]?.[1] as RequestInit | undefined;
-    return new Headers(init?.headers);
-  };
+  const upstreamHeaders = (m: ReturnType<typeof vi.fn>): Headers =>
+    new Headers(callInit(m)?.headers);
 
   it('forwards the Authorization header to upstream', async () => {
-    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search', {
-      headers: { Authorization: 'Bearer squ_abc123' },
-    });
-    await handleSonarRequest(req);
-    expect(upstreamHeadersFor(fetchMock).get('Authorization')).toBe('Bearer squ_abc123');
+    const m = stubFetch();
+    await handleSonarRequest(req(SPA_V1, { headers: { Authorization: 'Bearer squ_abc123' } }));
+    expect(upstreamHeaders(m).get('Authorization')).toBe('Bearer squ_abc123');
   });
 
   it('drops every other request header (no Cookie, no custom headers)', async () => {
-    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search', {
-      headers: {
-        Authorization: 'Bearer squ_abc123',
-        Cookie: 'session=leak',
-        'X-Forwarded-For': '1.2.3.4',
-        'X-Custom-Header': 'snoop',
-      },
-    });
-    await handleSonarRequest(req);
-    const sent = upstreamHeadersFor(fetchMock);
+    const m = stubFetch();
+    await handleSonarRequest(
+      req(SPA_V1, {
+        headers: {
+          Authorization: 'Bearer squ_abc123',
+          Cookie: 'session=leak',
+          'X-Forwarded-For': '1.2.3.4',
+          'X-Custom-Header': 'snoop',
+        },
+      }),
+    );
+    const sent = upstreamHeaders(m);
     expect(sent.get('Authorization')).toBe('Bearer squ_abc123');
     expect(sent.get('Cookie')).toBeNull();
     expect(sent.get('X-Forwarded-For')).toBeNull();
@@ -202,15 +177,13 @@ describe('handleSonarRequest — header forwarding and response post-processing'
         headers: { 'Set-Cookie': 'JSESSIONID=abc; Path=/' },
       }),
     );
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
-    const res = await handleSonarRequest(req);
+    const res = await handleSonarRequest(req(SPA_V1));
     expect(res.headers.get('Set-Cookie')).toBeNull();
   });
 
   it('adds CORS, x-sift-upstream, and Cache-Control: no-store on a forwarded response', async () => {
-    stubFetch(new Response('{}', { status: 200 }));
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search?region=us');
-    const res = await handleSonarRequest(req);
+    stubFetch();
+    const res = await handleSonarRequest(req(`${SPA_V1}?region=us`));
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*');
     expect(res.headers.get('Cache-Control')).toBe('no-store');
     expect(res.headers.get('x-sift-upstream')).toBe('https://sonarqube.us/api/issues/search');
@@ -222,43 +195,33 @@ describe('handleSonarRequest — header forwarding and response post-processing'
   });
 
   it('honors a custom allowedOrigin on forwarded responses', async () => {
-    stubFetch(new Response('{}', { status: 200 }));
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
-    const res = await handleSonarRequest(req, { allowedOrigin: 'https://sift.example.com' });
+    stubFetch();
+    const res = await handleSonarRequest(req(SPA_V1), {
+      allowedOrigin: 'https://sift.example.com',
+    });
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://sift.example.com');
   });
 
   it('passes the response body through unchanged', async () => {
     const payload = '{"total":42,"issues":[]}';
     stubFetch(new Response(payload, { status: 200 }));
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
-    const res = await handleSonarRequest(req);
+    const res = await handleSonarRequest(req(SPA_V1));
     expect(await res.text()).toBe(payload);
   });
 });
 
 describe('handleSonarRequest — error mapping', () => {
-  beforeEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it.each([500, 502, 503, 504])('mirrors upstream %d verbatim', async (status) => {
     const body = `{"upstream":${String(status)}}`;
     stubFetch(new Response(body, { status }));
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
-    const res = await handleSonarRequest(req);
+    const res = await handleSonarRequest(req(SPA_V1));
     expect(res.status).toBe(status);
     expect(await res.text()).toBe(body);
   });
 
   it('returns 502 with a typed JSON body when fetch throws', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed: ECONNREFUSED')));
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
-    const res = await handleSonarRequest(req);
+    stubFetchReject(new TypeError('fetch failed: ECONNREFUSED'));
+    const res = await handleSonarRequest(req(SPA_V1));
     expect(res.status).toBe(502);
     expect(res.headers.get('Content-Type')).toContain('application/json');
     const body = (await res.json()) as { error: string; message: string };
@@ -267,9 +230,8 @@ describe('handleSonarRequest — error mapping', () => {
   });
 
   it('keeps CORS and no-store on a 502 from a fetch failure', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('boom')));
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
-    const res = await handleSonarRequest(req);
+    stubFetchReject(new TypeError('boom'));
+    const res = await handleSonarRequest(req(SPA_V1));
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*');
     expect(res.headers.get('Cache-Control')).toBe('no-store');
   });
@@ -282,13 +244,10 @@ describe('handleSonarRequest — injectable fetchImpl', () => {
     vi.stubGlobal('fetch', globalFetch);
 
     const customFetch = vi.fn().mockResolvedValue(new Response('{"ok":true}', { status: 200 }));
-    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
-    const res = await handleSonarRequest(req, { fetchImpl: customFetch });
+    const res = await handleSonarRequest(req(SPA_V1), { fetchImpl: customFetch });
 
     expect(globalFetch).not.toHaveBeenCalled();
     expect(customFetch).toHaveBeenCalledOnce();
     expect(res.status).toBe(200);
-
-    vi.unstubAllGlobals();
   });
 });
