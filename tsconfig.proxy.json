@@ -23,5 +23,5 @@
 
     "types": []
   },
-  "include": ["proxy"]
+  "include": ["proxy", "api"]
 }
