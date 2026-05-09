@@ -9,6 +9,12 @@ import { SonarClient } from './SonarClient';
 const makeClient = (token = 'squ_test'): SonarClient =>
   new SonarClient({ region: 'eu', getToken: () => token });
 
+// One-off MSW overlay for an error status. Body defaults to empty so the
+// tests focus on the status→Result mapping.
+const stubGet = (path: string, init: ResponseInit, body: BodyInit | null = null): void => {
+  server.use(http.get(path, () => new HttpResponse(body, init)));
+};
+
 describe('SonarClient.listOrganizations', () => {
   it('returns ok with the parsed organizations on 200', async () => {
     const result = await makeClient().listOrganizations();
@@ -99,5 +105,88 @@ describe('SonarClient.listOrganizations', () => {
     );
     const result = await makeClient().listOrganizations();
     expect(result.kind).toBe('server_error');
+  });
+});
+
+describe('SonarClient.listProjects', () => {
+  const PATH = '/api/sonar/v1/projects/search';
+
+  it('returns ok with the parsed projects on 200', async () => {
+    const result = await makeClient().listProjects('acme');
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(result.value.items).toHaveLength(2);
+      expect(result.value.items[0]?.key).toBe('acme_widget-service');
+      expect(result.value.pageIndex).toBe(1);
+      expect(result.value.total).toBe(2);
+    }
+  });
+
+  it('encodes the organization key as a query param', async () => {
+    let receivedUrl = '';
+    server.use(
+      http.get(PATH, ({ request }) => {
+        receivedUrl = request.url;
+        return HttpResponse.json({
+          paging: { pageIndex: 1, pageSize: 20, total: 0 },
+          components: [],
+        });
+      }),
+    );
+    await makeClient().listProjects('acme');
+    expect(new URL(receivedUrl).searchParams.get('organization')).toBe('acme');
+  });
+
+  it('encodes pagination opts (p, ps) when provided', async () => {
+    let receivedUrl = '';
+    server.use(
+      http.get(PATH, ({ request }) => {
+        receivedUrl = request.url;
+        return HttpResponse.json({
+          paging: { pageIndex: 2, pageSize: 100, total: 215 },
+          components: [],
+        });
+      }),
+    );
+    await makeClient().listProjects('acme', { p: 2, ps: 100 });
+    const params = new URL(receivedUrl).searchParams;
+    expect(params.get('p')).toBe('2');
+    expect(params.get('ps')).toBe('100');
+  });
+
+  it('omits p and ps when opts is undefined', async () => {
+    let receivedUrl = '';
+    server.use(
+      http.get(PATH, ({ request }) => {
+        receivedUrl = request.url;
+        return HttpResponse.json({
+          paging: { pageIndex: 1, pageSize: 100, total: 0 },
+          components: [],
+        });
+      }),
+    );
+    await makeClient().listProjects('acme');
+    const params = new URL(receivedUrl).searchParams;
+    expect(params.get('p')).toBeNull();
+    expect(params.get('ps')).toBeNull();
+  });
+
+  it.each([
+    [401, 'unauthorized'],
+    [403, 'forbidden'],
+    [404, 'not_found'],
+    [429, 'rate_limited'],
+    [500, 'server_error'],
+    [503, 'server_error'],
+  ] as const)('maps %d → %s', async (status, expectedKind) => {
+    stubGet(PATH, { status });
+    const result = await makeClient().listProjects('acme');
+    expect(result.kind).toBe(expectedKind);
+  });
+
+  it('returns network_error when fetch throws', async () => {
+    server.use(http.get(PATH, () => HttpResponse.error()));
+    const result = await makeClient().listProjects('acme');
+    expect(result.kind).toBe('network_error');
   });
 });

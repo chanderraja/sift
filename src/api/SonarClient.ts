@@ -6,8 +6,8 @@
 // `Result<T>`; the client never throws.
 
 import type { ParseResult } from '../lib/validators';
-import { parseOrganizationsSearchResponse } from '../lib/validators';
-import type { Organization, Result } from '../types/sonar';
+import { parseOrganizationsSearchResponse, parseProjectsSearchResponse } from '../lib/validators';
+import type { Organization, Page, PageOpts, Project, Result } from '../types/sonar';
 
 export interface SonarClientOptions {
   region: 'eu' | 'us';
@@ -32,6 +32,16 @@ export class SonarClient {
     );
     if (result.kind !== 'ok') return result;
     return { kind: 'ok', value: result.value.items };
+  }
+
+  async listProjects(orgKey: string, opts?: PageOpts): Promise<Result<Page<Project>>> {
+    const params = new URLSearchParams({ organization: orgKey });
+    if (opts?.p !== undefined) params.set('p', String(opts.p));
+    if (opts?.ps !== undefined) params.set('ps', String(opts.ps));
+    return this.get(
+      `${PROXY_BASE}/projects/search?${params.toString()}`,
+      parseProjectsSearchResponse,
+    );
   }
 
   // Internal: GET a same-origin proxy URL with Bearer auth and map the
