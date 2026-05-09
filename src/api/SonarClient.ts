@@ -8,12 +8,15 @@
 import type { ParseResult } from '../lib/validators';
 import {
   parseBranchesListResponse,
+  parseHotspotsSearchResponse,
   parseIssuesSearchResponse,
   parseOrganizationsSearchResponse,
   parseProjectsSearchResponse,
 } from '../lib/validators';
 import type {
   Branch,
+  Hotspot,
+  HotspotFilters,
   Issue,
   IssueFilters,
   Organization,
@@ -84,6 +87,19 @@ export class SonarClient {
       return { kind: 'over_cap', total: result.value.total };
     }
     return result;
+  }
+
+  async searchHotspots(filters: HotspotFilters, opts?: PageOpts): Promise<Result<Page<Hotspot>>> {
+    const params = new URLSearchParams({ projectKey: filters.projectKey });
+    if (filters.branch !== undefined) params.set('branch', filters.branch);
+    if (filters.status !== undefined) params.set('status', filters.status);
+    if (filters.resolution !== undefined) params.set('resolution', filters.resolution);
+    if (opts?.p !== undefined) params.set('p', String(opts.p));
+    if (opts?.ps !== undefined) params.set('ps', String(opts.ps));
+    return this.get(
+      `${PROXY_BASE}/hotspots/search?${params.toString()}`,
+      parseHotspotsSearchResponse,
+    );
   }
 
   // Internal: GET a same-origin proxy URL with Bearer auth and map the

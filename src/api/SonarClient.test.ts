@@ -383,3 +383,76 @@ describe('SonarClient.searchIssues', () => {
     expect(result.kind).toBe('network_error');
   });
 });
+
+describe('SonarClient.searchHotspots', () => {
+  const PATH = '/api/sonar/v1/hotspots/search';
+  const projectKey = 'acme_widget-service' as never;
+
+  it('returns ok with the parsed hotspots on 200', async () => {
+    const result = await makeClient().searchHotspots({ projectKey });
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(result.value.items).toEqual([]);
+      expect(result.value.total).toBe(0);
+    }
+  });
+
+  it('encodes projectKey, branch, status, resolution', async () => {
+    let receivedUrl = '';
+    server.use(
+      http.get(PATH, ({ request }) => {
+        receivedUrl = request.url;
+        return HttpResponse.json({
+          paging: { pageIndex: 1, pageSize: 50, total: 0 },
+          hotspots: [],
+        });
+      }),
+    );
+    await makeClient().searchHotspots({
+      projectKey,
+      branch: 'main',
+      status: 'TO_REVIEW',
+      resolution: 'SAFE',
+    });
+    const params = new URL(receivedUrl).searchParams;
+    expect(params.get('projectKey')).toBe('acme_widget-service');
+    expect(params.get('branch')).toBe('main');
+    expect(params.get('status')).toBe('TO_REVIEW');
+    expect(params.get('resolution')).toBe('SAFE');
+  });
+
+  it('encodes pagination opts', async () => {
+    let receivedUrl = '';
+    server.use(
+      http.get(PATH, ({ request }) => {
+        receivedUrl = request.url;
+        return HttpResponse.json({
+          paging: { pageIndex: 3, pageSize: 200, total: 0 },
+          hotspots: [],
+        });
+      }),
+    );
+    await makeClient().searchHotspots({ projectKey }, { p: 3, ps: 200 });
+    const params = new URL(receivedUrl).searchParams;
+    expect(params.get('p')).toBe('3');
+    expect(params.get('ps')).toBe('200');
+  });
+
+  it.each([
+    [401, 'unauthorized'],
+    [403, 'forbidden'],
+    [404, 'not_found'],
+    [429, 'rate_limited'],
+    [500, 'server_error'],
+  ] as const)('maps %d → %s', async (status, expectedKind) => {
+    stubGet(PATH, { status });
+    const result = await makeClient().searchHotspots({ projectKey });
+    expect(result.kind).toBe(expectedKind);
+  });
+
+  it('returns network_error when fetch throws', async () => {
+    server.use(http.get(PATH, () => HttpResponse.error()));
+    const result = await makeClient().searchHotspots({ projectKey });
+    expect(result.kind).toBe('network_error');
+  });
+});
