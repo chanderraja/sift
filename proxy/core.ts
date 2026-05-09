@@ -22,6 +22,15 @@ const PREFLIGHT_MAX_AGE_SECONDS = 86_400;
 // route. Anything else is a 404 — the proxy is not a generic forwarder.
 const PATH_RE = /^\/api\/sonar\/(v1|v2)\/(.+)$/;
 
+// Region routing. `?region=eu` (default) → sonarcloud.io; `?region=us` →
+// sonarqube.us. Anything else is a 400 so misconfiguration is loud.
+const REGION_HOSTS = {
+  eu: 'sonarcloud.io',
+  us: 'sonarqube.us',
+} as const;
+
+type Region = keyof typeof REGION_HOSTS;
+
 export async function handleSonarRequest(req: Request, opts: ProxyOptions = {}): Promise<Response> {
   const allowedOrigin = opts.allowedOrigin ?? '*';
 
@@ -62,10 +71,31 @@ export async function handleSonarRequest(req: Request, opts: ProxyOptions = {}):
 
   const version = match[1] as 'v1' | 'v2';
   const rest = match[2] ?? '';
+
+  const regionParam = url.searchParams.get('region');
+  if (regionParam !== null && regionParam !== 'eu' && regionParam !== 'us') {
+    return new Response(JSON.stringify({ error: 'bad_region', given: regionParam }), {
+      status: 400,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+      },
+    });
+  }
+  const region: Region = regionParam ?? 'eu';
+  const host = REGION_HOSTS[region];
+
+  // Strip the region param from the forwarded query — it's a proxy-routing
+  // signal, not a SonarCloud parameter.
+  const forwardedParams = new URLSearchParams(url.search);
+  forwardedParams.delete('region');
+  const forwardedQuery = forwardedParams.toString();
+  const querySuffix = forwardedQuery.length > 0 ? `?${forwardedQuery}` : '';
+
   const upstreamUrl =
     version === 'v1'
-      ? `https://sonarcloud.io/api/${rest}${url.search}`
-      : `https://api.sonarcloud.io/${rest}${url.search}`;
+      ? `https://${host}/api/${rest}${querySuffix}`
+      : `https://api.${host}/${rest}${querySuffix}`;
 
   const upstream = await fetch(upstreamUrl, { method: 'GET' });
   return upstream;

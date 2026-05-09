@@ -105,3 +105,51 @@ describe('handleSonarRequest — path validation and upstream routing', () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe('handleSonarRequest — region selection', () => {
+  beforeEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('routes ?region=us to sonarqube.us', async () => {
+    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search?region=us');
+    await handleSonarRequest(req);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://sonarqube.us/api/issues/search');
+  });
+
+  it('routes ?region=us on v2 to api.sonarqube.us', async () => {
+    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
+    const req = new Request('https://sift.example.com/api/sonar/v2/projects?region=us');
+    await handleSonarRequest(req);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.sonarqube.us/projects');
+  });
+
+  it('routes ?region=eu to sonarcloud.io', async () => {
+    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search?region=eu');
+    await handleSonarRequest(req);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://sonarcloud.io/api/issues/search');
+  });
+
+  it('strips the region param from the forwarded query', async () => {
+    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
+    const req = new Request(
+      'https://sift.example.com/api/sonar/v1/issues/search?region=us&severities=BLOCKER&p=2',
+    );
+    await handleSonarRequest(req);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://sonarqube.us/api/issues/search?severities=BLOCKER&p=2',
+    );
+  });
+
+  it('rejects an unknown region with 400', async () => {
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search?region=apac');
+    const res = await handleSonarRequest(req);
+    expect(res.status).toBe(400);
+  });
+});
