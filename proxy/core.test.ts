@@ -1,8 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { handleSonarRequest } from './core';
+
+const stubFetch = (response: Response): ReturnType<typeof vi.fn> => {
+  const mock = vi.fn().mockResolvedValue(response);
+  vi.stubGlobal('fetch', mock);
+  return mock;
+};
 
 describe('handleSonarRequest — method allowlist', () => {
   it.each(['POST', 'PUT', 'DELETE', 'PATCH'])(
@@ -43,5 +49,59 @@ describe('handleSonarRequest — OPTIONS preflight', () => {
     });
     const res = await handleSonarRequest(req, { allowedOrigin: 'https://sift.example.com' });
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://sift.example.com');
+  });
+});
+
+describe('handleSonarRequest — path validation and upstream routing', () => {
+  beforeEach(() => {
+    // Ensures stale stubs from earlier files don't leak into these tests.
+    vi.unstubAllGlobals();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it.each(['/api/sonar/v3/foo', '/api/sonar/v1/', '/api/sonar/', '/api/foo', '/foo', '/'])(
+    'returns 404 for non-matching path %s',
+    async (path) => {
+      const req = new Request(`https://sift.example.com${path}`);
+      const res = await handleSonarRequest(req);
+      expect(res.status).toBe(404);
+    },
+  );
+
+  it('forwards a v1 path to https://sonarcloud.io/api/...', async () => {
+    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
+    await handleSonarRequest(req);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://sonarcloud.io/api/issues/search');
+  });
+
+  it('forwards a v2 path to https://api.sonarcloud.io/...', async () => {
+    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
+    const req = new Request('https://sift.example.com/api/sonar/v2/projects');
+    await handleSonarRequest(req);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.sonarcloud.io/projects');
+  });
+
+  it('preserves nested path segments and query strings', async () => {
+    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
+    const req = new Request(
+      'https://sift.example.com/api/sonar/v1/issues/search?severities=BLOCKER&p=2',
+    );
+    await handleSonarRequest(req);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://sonarcloud.io/api/issues/search?severities=BLOCKER&p=2',
+    );
+  });
+
+  it('mirrors the upstream status code', async () => {
+    stubFetch(new Response('{"errors":[{"msg":"Insufficient privileges"}]}', { status: 403 }));
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
+    const res = await handleSonarRequest(req);
+    expect(res.status).toBe(403);
   });
 });
