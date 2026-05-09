@@ -12,6 +12,13 @@ export interface ProxyOptions {
   // Origin allowed via CORS. Defaults to '*' for the canonical open instance;
   // hardened forks can pass a specific origin.
   allowedOrigin?: string;
+
+  // Outbound fetch implementation. Defaults to globalThis.fetch. Adapters
+  // pass a wrapped fetch when a platform requires explicit cache-disable
+  // options on outbound requests (e.g. Cloudflare's `cf: { cacheTtl: 0,
+  // cacheEverything: false }` per ADR-008(c)). Keeping fetch overridable
+  // also makes core unit-testable without stubbing globals.
+  fetchImpl?: (input: string, init: RequestInit) => Promise<Response>;
 }
 
 const ALLOWED_METHODS = ['GET', 'OPTIONS'] as const;
@@ -107,9 +114,10 @@ export async function handleSonarRequest(req: Request, opts: ProxyOptions = {}):
     upstreamHeaders.set('Authorization', auth);
   }
 
+  const doFetch = opts.fetchImpl ?? fetch;
   let upstream: Response;
   try {
-    upstream = await fetch(upstreamUrl, {
+    upstream = await doFetch(upstreamUrl, {
       method: 'GET',
       headers: upstreamHeaders,
     });

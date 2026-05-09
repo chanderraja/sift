@@ -274,3 +274,21 @@ describe('handleSonarRequest — error mapping', () => {
     expect(res.headers.get('Cache-Control')).toBe('no-store');
   });
 });
+
+describe('handleSonarRequest — injectable fetchImpl', () => {
+  it('uses opts.fetchImpl when provided and never touches global fetch', async () => {
+    // Globally stub fetch to a rejector so any leak-through is loud.
+    const globalFetch = vi.fn().mockRejectedValue(new Error('global fetch should not be called'));
+    vi.stubGlobal('fetch', globalFetch);
+
+    const customFetch = vi.fn().mockResolvedValue(new Response('{"ok":true}', { status: 200 }));
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
+    const res = await handleSonarRequest(req, { fetchImpl: customFetch });
+
+    expect(globalFetch).not.toHaveBeenCalled();
+    expect(customFetch).toHaveBeenCalledOnce();
+    expect(res.status).toBe(200);
+
+    vi.unstubAllGlobals();
+  });
+});
