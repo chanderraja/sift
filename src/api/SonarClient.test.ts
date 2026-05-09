@@ -3,19 +3,90 @@
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
+import type { Result } from '../types/sonar';
 import { server } from '../../tests/msw';
 import { SonarClient } from './SonarClient';
 
 const makeClient = (token = 'squ_test'): SonarClient =>
   new SonarClient({ region: 'eu', getToken: () => token });
 
-// One-off MSW overlay for an error status. Body defaults to empty so the
-// tests focus on the status→Result mapping.
+// MSW one-off overlay for an error status. Body defaults to empty so
+// tests focus on the status→Result mapping, not on shape.
 const stubGet = (path: string, init: ResponseInit, body: BodyInit | null = null): void => {
   server.use(http.get(path, () => new HttpResponse(body, init)));
 };
 
+// MSW one-off overlay that records the request URL the client built.
+// Lets the encoding tests inspect the wire query without each describe
+// block redeclaring the same boilerplate.
+const captureUrl = (path: string, response: Record<string, unknown>): { read: () => string } => {
+  let url = '';
+  server.use(
+    http.get(path, ({ request }) => {
+      url = request.url;
+      return HttpResponse.json(response);
+    }),
+  );
+  return { read: () => url };
+};
+
+const emptyPage = (key: 'components' | 'issues' | 'hotspots'): Record<string, unknown> => ({
+  paging: { pageIndex: 1, pageSize: 50, total: 0 },
+  [key]: [],
+});
+
+const PATHS = {
+  organizations: '/api/sonar/v1/organizations/search',
+  projects: '/api/sonar/v1/projects/search',
+  branches: '/api/sonar/v1/project_branches/list',
+  issues: '/api/sonar/v1/issues/search',
+  hotspots: '/api/sonar/v1/hotspots/search',
+  qualityGate: '/api/sonar/v1/qualitygates/project_status',
+  measures: '/api/sonar/v1/measures/component',
+} as const;
+
+const projectKey = 'acme_widget-service' as never;
+
+// Routing table for the parametric error-mapping tests. Every public
+// method goes through the same `get` helper in SonarClient, so the
+// status→Result mapping is identical for all of them — drive the table
+// once, not seven times.
+type MethodCall = (c: SonarClient) => Promise<Result<unknown>>;
+const METHODS: readonly (readonly [string, string, MethodCall])[] = [
+  ['listOrganizations', PATHS.organizations, (c) => c.listOrganizations()],
+  ['listProjects', PATHS.projects, (c) => c.listProjects('acme')],
+  ['listBranches', PATHS.branches, (c) => c.listBranches(projectKey)],
+  ['searchIssues', PATHS.issues, (c) => c.searchIssues({})],
+  ['searchHotspots', PATHS.hotspots, (c) => c.searchHotspots({ projectKey })],
+  ['getQualityGate', PATHS.qualityGate, (c) => c.getQualityGate(projectKey, 'master')],
+  ['getMeasures', PATHS.measures, (c) => c.getMeasures(projectKey, 'master', ['ncloc'])],
+];
+
+describe.each(METHODS)('SonarClient.%s — shared status/network mapping', (_name, path, call) => {
+  it.each([
+    [401, 'unauthorized'],
+    [403, 'forbidden'],
+    [404, 'not_found'],
+    [429, 'rate_limited'],
+    [500, 'server_error'],
+  ] as const)('maps %d → %s', async (status, expectedKind) => {
+    stubGet(path, { status });
+    const result = await call(makeClient());
+    expect(result.kind).toBe(expectedKind);
+  });
+
+  it('returns network_error when fetch throws', async () => {
+    server.use(http.get(path, () => HttpResponse.error()));
+    const result = await call(makeClient());
+    expect(result.kind).toBe('network_error');
+  });
+});
+
+// === Per-method specifics ===
+
 describe('SonarClient.listOrganizations', () => {
+  const PATH = PATHS.organizations;
+
   it('returns ok with the parsed organizations on 200', async () => {
     const result = await makeClient().listOrganizations();
     expect(result.kind).toBe('ok');
@@ -29,7 +100,7 @@ describe('SonarClient.listOrganizations', () => {
   it('sends Authorization: Bearer <token>', async () => {
     let received: string | null = null;
     server.use(
-      http.get('/api/sonar/v1/organizations/search', ({ request }) => {
+      http.get(PATH, ({ request }) => {
         received = request.headers.get('Authorization');
         return HttpResponse.json({
           paging: { pageIndex: 1, pageSize: 10, total: 0 },
@@ -41,75 +112,54 @@ describe('SonarClient.listOrganizations', () => {
     expect(received).toBe('Bearer squ_token_xyz');
   });
 
-  it('returns unauthorized on 401', async () => {
+  it('extracts the upstream message on 403', async () => {
     server.use(
-      http.get('/api/sonar/v1/organizations/search', () => new HttpResponse(null, { status: 401 })),
-    );
-    const result = await makeClient().listOrganizations();
-    expect(result.kind).toBe('unauthorized');
-  });
-
-  it('returns forbidden with the upstream message on 403', async () => {
-    server.use(
-      http.get('/api/sonar/v1/organizations/search', () =>
+      http.get(PATH, () =>
         HttpResponse.json({ errors: [{ msg: 'Insufficient privileges' }] }, { status: 403 }),
       ),
     );
     const result = await makeClient().listOrganizations();
-    expect(result.kind).toBe('forbidden');
     if (result.kind === 'forbidden') {
       expect(result.message).toBe('Insufficient privileges');
+    } else {
+      expect.fail(`expected forbidden, got ${result.kind}`);
     }
   });
 
-  it('returns rate_limited (with Retry-After when present) on 429', async () => {
+  it('exposes Retry-After seconds on 429', async () => {
     server.use(
       http.get(
-        '/api/sonar/v1/organizations/search',
+        PATH,
         () => new HttpResponse(null, { status: 429, headers: { 'Retry-After': '17' } }),
       ),
     );
     const result = await makeClient().listOrganizations();
-    expect(result.kind).toBe('rate_limited');
     if (result.kind === 'rate_limited') {
       expect(result.retryAfterSeconds).toBe(17);
+    } else {
+      expect.fail(`expected rate_limited, got ${result.kind}`);
     }
   });
 
-  it('returns server_error preserving status on 5xx', async () => {
-    server.use(
-      http.get('/api/sonar/v1/organizations/search', () => new HttpResponse(null, { status: 503 })),
-    );
+  it('preserves the upstream status on server_error', async () => {
+    stubGet(PATH, { status: 503 });
     const result = await makeClient().listOrganizations();
-    expect(result.kind).toBe('server_error');
     if (result.kind === 'server_error') {
       expect(result.status).toBe(503);
+    } else {
+      expect.fail(`expected server_error, got ${result.kind}`);
     }
-  });
-
-  it('returns network_error when fetch throws', async () => {
-    server.use(
-      http.get('/api/sonar/v1/organizations/search', () => {
-        return HttpResponse.error();
-      }),
-    );
-    const result = await makeClient().listOrganizations();
-    expect(result.kind).toBe('network_error');
   });
 
   it('returns server_error when the response body is malformed', async () => {
-    server.use(
-      http.get('/api/sonar/v1/organizations/search', () =>
-        HttpResponse.json({ paging: 'not-an-object' }),
-      ),
-    );
+    server.use(http.get(PATH, () => HttpResponse.json({ paging: 'not-an-object' })));
     const result = await makeClient().listOrganizations();
     expect(result.kind).toBe('server_error');
   });
 });
 
 describe('SonarClient.listProjects', () => {
-  const PATH = '/api/sonar/v1/projects/search';
+  const PATH = PATHS.projects;
 
   it('returns ok with the parsed projects on 200', async () => {
     const result = await makeClient().listProjects('acme');
@@ -123,79 +173,33 @@ describe('SonarClient.listProjects', () => {
   });
 
   it('encodes the organization key as a query param', async () => {
-    let receivedUrl = '';
-    server.use(
-      http.get(PATH, ({ request }) => {
-        receivedUrl = request.url;
-        return HttpResponse.json({
-          paging: { pageIndex: 1, pageSize: 20, total: 0 },
-          components: [],
-        });
-      }),
-    );
+    const cap = captureUrl(PATH, emptyPage('components'));
     await makeClient().listProjects('acme');
-    expect(new URL(receivedUrl).searchParams.get('organization')).toBe('acme');
+    expect(new URL(cap.read()).searchParams.get('organization')).toBe('acme');
   });
 
   it('encodes pagination opts (p, ps) when provided', async () => {
-    let receivedUrl = '';
-    server.use(
-      http.get(PATH, ({ request }) => {
-        receivedUrl = request.url;
-        return HttpResponse.json({
-          paging: { pageIndex: 2, pageSize: 100, total: 215 },
-          components: [],
-        });
-      }),
-    );
+    const cap = captureUrl(PATH, emptyPage('components'));
     await makeClient().listProjects('acme', { p: 2, ps: 100 });
-    const params = new URL(receivedUrl).searchParams;
+    const params = new URL(cap.read()).searchParams;
     expect(params.get('p')).toBe('2');
     expect(params.get('ps')).toBe('100');
   });
 
   it('omits p and ps when opts is undefined', async () => {
-    let receivedUrl = '';
-    server.use(
-      http.get(PATH, ({ request }) => {
-        receivedUrl = request.url;
-        return HttpResponse.json({
-          paging: { pageIndex: 1, pageSize: 100, total: 0 },
-          components: [],
-        });
-      }),
-    );
+    const cap = captureUrl(PATH, emptyPage('components'));
     await makeClient().listProjects('acme');
-    const params = new URL(receivedUrl).searchParams;
+    const params = new URL(cap.read()).searchParams;
     expect(params.get('p')).toBeNull();
     expect(params.get('ps')).toBeNull();
-  });
-
-  it.each([
-    [401, 'unauthorized'],
-    [403, 'forbidden'],
-    [404, 'not_found'],
-    [429, 'rate_limited'],
-    [500, 'server_error'],
-    [503, 'server_error'],
-  ] as const)('maps %d → %s', async (status, expectedKind) => {
-    stubGet(PATH, { status });
-    const result = await makeClient().listProjects('acme');
-    expect(result.kind).toBe(expectedKind);
-  });
-
-  it('returns network_error when fetch throws', async () => {
-    server.use(http.get(PATH, () => HttpResponse.error()));
-    const result = await makeClient().listProjects('acme');
-    expect(result.kind).toBe('network_error');
   });
 });
 
 describe('SonarClient.listBranches', () => {
-  const PATH = '/api/sonar/v1/project_branches/list';
+  const PATH = PATHS.branches;
 
   it('returns ok with the parsed branches on 200', async () => {
-    const result = await makeClient().listBranches('acme_widget-service');
+    const result = await makeClient().listBranches(projectKey);
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
       expect(result.value).toHaveLength(1);
@@ -205,55 +209,14 @@ describe('SonarClient.listBranches', () => {
   });
 
   it('encodes the project key as a query param', async () => {
-    let receivedUrl = '';
-    server.use(
-      http.get(PATH, ({ request }) => {
-        receivedUrl = request.url;
-        return HttpResponse.json({ branches: [] });
-      }),
-    );
-    await makeClient().listBranches('acme_widget-service');
-    expect(new URL(receivedUrl).searchParams.get('project')).toBe('acme_widget-service');
-  });
-
-  it.each([
-    [401, 'unauthorized'],
-    [403, 'forbidden'],
-    [404, 'not_found'],
-    [429, 'rate_limited'],
-    [500, 'server_error'],
-  ] as const)('maps %d → %s', async (status, expectedKind) => {
-    stubGet(PATH, { status });
-    const result = await makeClient().listBranches('acme_widget-service');
-    expect(result.kind).toBe(expectedKind);
-  });
-
-  it('returns network_error when fetch throws', async () => {
-    server.use(http.get(PATH, () => HttpResponse.error()));
-    const result = await makeClient().listBranches('acme_widget-service');
-    expect(result.kind).toBe('network_error');
+    const cap = captureUrl(PATH, { branches: [] });
+    await makeClient().listBranches(projectKey);
+    expect(new URL(cap.read()).searchParams.get('project')).toBe(projectKey);
   });
 });
 
 describe('SonarClient.searchIssues', () => {
-  const PATH = '/api/sonar/v1/issues/search';
-
-  // Helper: capture the URL the client built.
-  const captureUrl = (
-    response: Record<string, unknown> = {
-      paging: { pageIndex: 1, pageSize: 50, total: 0 },
-      issues: [],
-    },
-  ): { read: () => string } => {
-    let url = '';
-    server.use(
-      http.get(PATH, ({ request }) => {
-        url = request.url;
-        return HttpResponse.json(response);
-      }),
-    );
-    return { read: () => url };
-  };
+  const PATH = PATHS.issues;
 
   it('returns ok with the parsed issues on 200', async () => {
     const result = await makeClient().searchIssues({});
@@ -265,25 +228,25 @@ describe('SonarClient.searchIssues', () => {
   });
 
   it('encodes severities as a comma-joined query param', async () => {
-    const cap = captureUrl();
+    const cap = captureUrl(PATH, emptyPage('issues'));
     await makeClient().searchIssues({ severities: ['BLOCKER', 'CRITICAL'] });
     expect(new URL(cap.read()).searchParams.get('severities')).toBe('BLOCKER,CRITICAL');
   });
 
   it('encodes types as a comma-joined query param', async () => {
-    const cap = captureUrl();
+    const cap = captureUrl(PATH, emptyPage('issues'));
     await makeClient().searchIssues({ types: ['BUG', 'VULNERABILITY'] });
     expect(new URL(cap.read()).searchParams.get('types')).toBe('BUG,VULNERABILITY');
   });
 
   it('encodes statuses as a comma-joined query param', async () => {
-    const cap = captureUrl();
+    const cap = captureUrl(PATH, emptyPage('issues'));
     await makeClient().searchIssues({ statuses: ['OPEN', 'CONFIRMED'] });
     expect(new URL(cap.read()).searchParams.get('statuses')).toBe('OPEN,CONFIRMED');
   });
 
   it('encodes componentKeys, branch, tags, rules, assignees', async () => {
-    const cap = captureUrl();
+    const cap = captureUrl(PATH, emptyPage('issues'));
     await makeClient().searchIssues({
       componentKeys: ['acme_a' as never, 'acme_b' as never],
       branch: 'main',
@@ -300,23 +263,22 @@ describe('SonarClient.searchIssues', () => {
   });
 
   it('drops null entries from resolutions', async () => {
-    const cap = captureUrl();
+    const cap = captureUrl(PATH, emptyPage('issues'));
     await makeClient().searchIssues({ resolutions: [null, 'FIXED', 'WONTFIX'] });
     expect(new URL(cap.read()).searchParams.get('resolutions')).toBe('FIXED,WONTFIX');
   });
 
   it('omits filters that are empty arrays or simply not provided', async () => {
-    const cap = captureUrl();
+    const cap = captureUrl(PATH, emptyPage('issues'));
     await makeClient().searchIssues({ severities: [] });
     const params = new URL(cap.read()).searchParams;
     expect(params.get('severities')).toBeNull();
-    // Filters not present on the input object are similarly absent on the wire.
     expect(params.get('types')).toBeNull();
     expect(params.get('tags')).toBeNull();
   });
 
   it('encodes pagination opts (p, ps)', async () => {
-    const cap = captureUrl();
+    const cap = captureUrl(PATH, emptyPage('issues'));
     await makeClient().searchIssues({}, { p: 2, ps: 100 });
     const params = new URL(cap.read()).searchParams;
     expect(params.get('p')).toBe('2');
@@ -324,7 +286,7 @@ describe('SonarClient.searchIssues', () => {
   });
 
   it('encodes createdAfter/createdBefore and hasComments', async () => {
-    const cap = captureUrl();
+    const cap = captureUrl(PATH, emptyPage('issues'));
     await makeClient().searchIssues({
       createdAfter: '2026-01-01',
       createdBefore: '2026-12-31',
@@ -346,9 +308,10 @@ describe('SonarClient.searchIssues', () => {
       ),
     );
     const result = await makeClient().searchIssues({});
-    expect(result.kind).toBe('over_cap');
     if (result.kind === 'over_cap') {
       expect(result.total).toBe(12_345);
+    } else {
+      expect.fail(`expected over_cap, got ${result.kind}`);
     }
   });
 
@@ -364,29 +327,10 @@ describe('SonarClient.searchIssues', () => {
     const result = await makeClient().searchIssues({});
     expect(result.kind).toBe('ok');
   });
-
-  it.each([
-    [401, 'unauthorized'],
-    [403, 'forbidden'],
-    [404, 'not_found'],
-    [429, 'rate_limited'],
-    [500, 'server_error'],
-  ] as const)('maps %d → %s', async (status, expectedKind) => {
-    stubGet(PATH, { status });
-    const result = await makeClient().searchIssues({});
-    expect(result.kind).toBe(expectedKind);
-  });
-
-  it('returns network_error when fetch throws', async () => {
-    server.use(http.get(PATH, () => HttpResponse.error()));
-    const result = await makeClient().searchIssues({});
-    expect(result.kind).toBe('network_error');
-  });
 });
 
 describe('SonarClient.searchHotspots', () => {
-  const PATH = '/api/sonar/v1/hotspots/search';
-  const projectKey = 'acme_widget-service' as never;
+  const PATH = PATHS.hotspots;
 
   it('returns ok with the parsed hotspots on 200', async () => {
     const result = await makeClient().searchHotspots({ projectKey });
@@ -398,70 +342,34 @@ describe('SonarClient.searchHotspots', () => {
   });
 
   it('encodes projectKey, branch, status, resolution', async () => {
-    let receivedUrl = '';
-    server.use(
-      http.get(PATH, ({ request }) => {
-        receivedUrl = request.url;
-        return HttpResponse.json({
-          paging: { pageIndex: 1, pageSize: 50, total: 0 },
-          hotspots: [],
-        });
-      }),
-    );
+    const cap = captureUrl(PATH, emptyPage('hotspots'));
     await makeClient().searchHotspots({
       projectKey,
       branch: 'main',
       status: 'TO_REVIEW',
       resolution: 'SAFE',
     });
-    const params = new URL(receivedUrl).searchParams;
-    expect(params.get('projectKey')).toBe('acme_widget-service');
+    const params = new URL(cap.read()).searchParams;
+    expect(params.get('projectKey')).toBe(projectKey);
     expect(params.get('branch')).toBe('main');
     expect(params.get('status')).toBe('TO_REVIEW');
     expect(params.get('resolution')).toBe('SAFE');
   });
 
   it('encodes pagination opts', async () => {
-    let receivedUrl = '';
-    server.use(
-      http.get(PATH, ({ request }) => {
-        receivedUrl = request.url;
-        return HttpResponse.json({
-          paging: { pageIndex: 3, pageSize: 200, total: 0 },
-          hotspots: [],
-        });
-      }),
-    );
+    const cap = captureUrl(PATH, emptyPage('hotspots'));
     await makeClient().searchHotspots({ projectKey }, { p: 3, ps: 200 });
-    const params = new URL(receivedUrl).searchParams;
+    const params = new URL(cap.read()).searchParams;
     expect(params.get('p')).toBe('3');
     expect(params.get('ps')).toBe('200');
-  });
-
-  it.each([
-    [401, 'unauthorized'],
-    [403, 'forbidden'],
-    [404, 'not_found'],
-    [429, 'rate_limited'],
-    [500, 'server_error'],
-  ] as const)('maps %d → %s', async (status, expectedKind) => {
-    stubGet(PATH, { status });
-    const result = await makeClient().searchHotspots({ projectKey });
-    expect(result.kind).toBe(expectedKind);
-  });
-
-  it('returns network_error when fetch throws', async () => {
-    server.use(http.get(PATH, () => HttpResponse.error()));
-    const result = await makeClient().searchHotspots({ projectKey });
-    expect(result.kind).toBe('network_error');
   });
 });
 
 describe('SonarClient.getQualityGate', () => {
-  const PATH = '/api/sonar/v1/qualitygates/project_status';
+  const PATH = PATHS.qualityGate;
 
   it('returns ok with the parsed quality gate on 200', async () => {
-    const result = await makeClient().getQualityGate('acme_widget-service', 'master');
+    const result = await makeClient().getQualityGate(projectKey, 'master');
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
       expect(result.value.projectStatus.status).toBe('OK');
@@ -470,43 +378,19 @@ describe('SonarClient.getQualityGate', () => {
   });
 
   it('encodes projectKey and branch as query params', async () => {
-    let receivedUrl = '';
-    server.use(
-      http.get(PATH, ({ request }) => {
-        receivedUrl = request.url;
-        return HttpResponse.json({ projectStatus: { status: 'OK', conditions: [] } });
-      }),
-    );
-    await makeClient().getQualityGate('acme_widget-service', 'feature/abc');
-    const params = new URL(receivedUrl).searchParams;
-    expect(params.get('projectKey')).toBe('acme_widget-service');
+    const cap = captureUrl(PATH, { projectStatus: { status: 'OK', conditions: [] } });
+    await makeClient().getQualityGate(projectKey, 'feature/abc');
+    const params = new URL(cap.read()).searchParams;
+    expect(params.get('projectKey')).toBe(projectKey);
     expect(params.get('branch')).toBe('feature/abc');
-  });
-
-  it.each([
-    [401, 'unauthorized'],
-    [403, 'forbidden'],
-    [404, 'not_found'],
-    [429, 'rate_limited'],
-    [500, 'server_error'],
-  ] as const)('maps %d → %s', async (status, expectedKind) => {
-    stubGet(PATH, { status });
-    const result = await makeClient().getQualityGate('acme_widget-service', 'master');
-    expect(result.kind).toBe(expectedKind);
-  });
-
-  it('returns network_error when fetch throws', async () => {
-    server.use(http.get(PATH, () => HttpResponse.error()));
-    const result = await makeClient().getQualityGate('acme_widget-service', 'master');
-    expect(result.kind).toBe('network_error');
   });
 });
 
 describe('SonarClient.getMeasures', () => {
-  const PATH = '/api/sonar/v1/measures/component';
+  const PATH = PATHS.measures;
 
   it('returns ok with the parsed measures on 200', async () => {
-    const result = await makeClient().getMeasures('acme_widget-service', 'master', ['complexity']);
+    const result = await makeClient().getMeasures(projectKey, 'master', ['complexity']);
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
       expect(result.value.length).toBeGreaterThan(0);
@@ -515,39 +399,15 @@ describe('SonarClient.getMeasures', () => {
   });
 
   it('encodes component, branch, and comma-joined metricKeys', async () => {
-    let receivedUrl = '';
-    server.use(
-      http.get(PATH, ({ request }) => {
-        receivedUrl = request.url;
-        return HttpResponse.json({ component: { measures: [] } });
-      }),
-    );
-    await makeClient().getMeasures('acme_widget-service', 'master', [
+    const cap = captureUrl(PATH, { component: { measures: [] } });
+    await makeClient().getMeasures(projectKey, 'master', [
       'coverage',
       'duplicated_lines_density',
       'ncloc',
     ]);
-    const params = new URL(receivedUrl).searchParams;
-    expect(params.get('component')).toBe('acme_widget-service');
+    const params = new URL(cap.read()).searchParams;
+    expect(params.get('component')).toBe(projectKey);
     expect(params.get('branch')).toBe('master');
     expect(params.get('metricKeys')).toBe('coverage,duplicated_lines_density,ncloc');
-  });
-
-  it.each([
-    [401, 'unauthorized'],
-    [403, 'forbidden'],
-    [404, 'not_found'],
-    [429, 'rate_limited'],
-    [500, 'server_error'],
-  ] as const)('maps %d → %s', async (status, expectedKind) => {
-    stubGet(PATH, { status });
-    const result = await makeClient().getMeasures('acme_widget-service', 'master', ['ncloc']);
-    expect(result.kind).toBe(expectedKind);
-  });
-
-  it('returns network_error when fetch throws', async () => {
-    server.use(http.get(PATH, () => HttpResponse.error()));
-    const result = await makeClient().getMeasures('acme_widget-service', 'master', ['ncloc']);
-    expect(result.kind).toBe('network_error');
   });
 });
