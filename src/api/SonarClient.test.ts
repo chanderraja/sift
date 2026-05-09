@@ -456,3 +456,48 @@ describe('SonarClient.searchHotspots', () => {
     expect(result.kind).toBe('network_error');
   });
 });
+
+describe('SonarClient.getQualityGate', () => {
+  const PATH = '/api/sonar/v1/qualitygates/project_status';
+
+  it('returns ok with the parsed quality gate on 200', async () => {
+    const result = await makeClient().getQualityGate('acme_widget-service', 'master');
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(result.value.projectStatus.status).toBe('OK');
+      expect(result.value.projectStatus.conditions.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('encodes projectKey and branch as query params', async () => {
+    let receivedUrl = '';
+    server.use(
+      http.get(PATH, ({ request }) => {
+        receivedUrl = request.url;
+        return HttpResponse.json({ projectStatus: { status: 'OK', conditions: [] } });
+      }),
+    );
+    await makeClient().getQualityGate('acme_widget-service', 'feature/abc');
+    const params = new URL(receivedUrl).searchParams;
+    expect(params.get('projectKey')).toBe('acme_widget-service');
+    expect(params.get('branch')).toBe('feature/abc');
+  });
+
+  it.each([
+    [401, 'unauthorized'],
+    [403, 'forbidden'],
+    [404, 'not_found'],
+    [429, 'rate_limited'],
+    [500, 'server_error'],
+  ] as const)('maps %d → %s', async (status, expectedKind) => {
+    stubGet(PATH, { status });
+    const result = await makeClient().getQualityGate('acme_widget-service', 'master');
+    expect(result.kind).toBe(expectedKind);
+  });
+
+  it('returns network_error when fetch throws', async () => {
+    server.use(http.get(PATH, () => HttpResponse.error()));
+    const result = await makeClient().getQualityGate('acme_widget-service', 'master');
+    expect(result.kind).toBe('network_error');
+  });
+});

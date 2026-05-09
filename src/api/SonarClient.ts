@@ -12,6 +12,7 @@ import {
   parseIssuesSearchResponse,
   parseOrganizationsSearchResponse,
   parseProjectsSearchResponse,
+  parseQualityGate,
 } from '../lib/validators';
 import type {
   Branch,
@@ -23,6 +24,7 @@ import type {
   Page,
   PageOpts,
   Project,
+  QualityGate,
   Result,
 } from '../types/sonar';
 
@@ -99,6 +101,14 @@ export class SonarClient {
     return this.get(
       `${PROXY_BASE}/hotspots/search?${params.toString()}`,
       parseHotspotsSearchResponse,
+    );
+  }
+
+  async getQualityGate(projectKey: string, branch: string): Promise<Result<QualityGate>> {
+    const params = new URLSearchParams({ projectKey, branch });
+    return this.get(
+      `${PROXY_BASE}/qualitygates/project_status?${params.toString()}`,
+      parseQualityGate,
     );
   }
 
