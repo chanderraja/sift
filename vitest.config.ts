@@ -20,6 +20,11 @@ export default defineConfig({
           name: 'node',
           environment: 'node',
           include: ['tests/unit/**/*.test.ts', 'src/lib/**/*.test.ts', 'proxy/**/*.test.ts'],
+          // SonarClient calls relative URLs (`/api/sonar/v1/...`); fetch in
+          // node env can't resolve those without a base. Route api/ tests
+          // through jsdom which gives them a window.location to resolve
+          // against.
+          exclude: ['src/api/**/*.test.ts'],
         },
       },
       {
