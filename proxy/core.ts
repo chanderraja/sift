@@ -97,8 +97,38 @@ export async function handleSonarRequest(req: Request, opts: ProxyOptions = {}):
       ? `https://${host}/api/${rest}${querySuffix}`
       : `https://api.${host}/${rest}${querySuffix}`;
 
-  const upstream = await fetch(upstreamUrl, { method: 'GET' });
-  return upstream;
+  // Inbound-header allowlist: only Authorization is forwarded. Cookies,
+  // X-Forwarded-* and any other client-supplied header is dropped on the
+  // floor — the proxy is stateless and identity flows via Bearer only
+  // (ADR-006).
+  const upstreamHeaders = new Headers();
+  const auth = req.headers.get('authorization');
+  if (auth !== null) {
+    upstreamHeaders.set('Authorization', auth);
+  }
+
+  const upstream = await fetch(upstreamUrl, {
+    method: 'GET',
+    headers: upstreamHeaders,
+  });
+
+  // Outbound-header processing: copy upstream headers, drop Set-Cookie
+  // (defends against any upstream session quirk), add CORS, expose
+  // x-sift-upstream for diagnostics, force Cache-Control: no-store
+  // (ADR-008).
+  const responseHeaders = new Headers(upstream.headers);
+  responseHeaders.delete('set-cookie');
+  for (const [k, v] of Object.entries(corsHeaders(allowedOrigin))) {
+    responseHeaders.set(k, v);
+  }
+  responseHeaders.set('Cache-Control', 'no-store');
+  responseHeaders.set('x-sift-upstream', upstreamUrl);
+
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: responseHeaders,
+  });
 }
 
 function corsHeaders(allowedOrigin: string): Record<string, string> {

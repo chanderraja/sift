@@ -153,3 +153,86 @@ describe('handleSonarRequest — region selection', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('handleSonarRequest — header forwarding and response post-processing', () => {
+  beforeEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const upstreamHeadersFor = (mock: ReturnType<typeof vi.fn>): Headers => {
+    const init = mock.mock.calls[0]?.[1] as RequestInit | undefined;
+    return new Headers(init?.headers);
+  };
+
+  it('forwards the Authorization header to upstream', async () => {
+    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search', {
+      headers: { Authorization: 'Bearer squ_abc123' },
+    });
+    await handleSonarRequest(req);
+    expect(upstreamHeadersFor(fetchMock).get('Authorization')).toBe('Bearer squ_abc123');
+  });
+
+  it('drops every other request header (no Cookie, no custom headers)', async () => {
+    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search', {
+      headers: {
+        Authorization: 'Bearer squ_abc123',
+        Cookie: 'session=leak',
+        'X-Forwarded-For': '1.2.3.4',
+        'X-Custom-Header': 'snoop',
+      },
+    });
+    await handleSonarRequest(req);
+    const sent = upstreamHeadersFor(fetchMock);
+    expect(sent.get('Authorization')).toBe('Bearer squ_abc123');
+    expect(sent.get('Cookie')).toBeNull();
+    expect(sent.get('X-Forwarded-For')).toBeNull();
+    expect(sent.get('X-Custom-Header')).toBeNull();
+  });
+
+  it('strips Set-Cookie from the upstream response', async () => {
+    stubFetch(
+      new Response('{}', {
+        status: 200,
+        headers: { 'Set-Cookie': 'JSESSIONID=abc; Path=/' },
+      }),
+    );
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
+    const res = await handleSonarRequest(req);
+    expect(res.headers.get('Set-Cookie')).toBeNull();
+  });
+
+  it('adds CORS, x-sift-upstream, and Cache-Control: no-store on a forwarded response', async () => {
+    stubFetch(new Response('{}', { status: 200 }));
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search?region=us');
+    const res = await handleSonarRequest(req);
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    expect(res.headers.get('Cache-Control')).toBe('no-store');
+    expect(res.headers.get('x-sift-upstream')).toBe('https://sonarqube.us/api/issues/search');
+    // The CORS expose-headers list must include x-sift-upstream so the SPA
+    // can read it (browsers hide non-safelisted headers without it).
+    expect((res.headers.get('Access-Control-Expose-Headers') ?? '').toLowerCase()).toContain(
+      'x-sift-upstream',
+    );
+  });
+
+  it('honors a custom allowedOrigin on forwarded responses', async () => {
+    stubFetch(new Response('{}', { status: 200 }));
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
+    const res = await handleSonarRequest(req, { allowedOrigin: 'https://sift.example.com' });
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://sift.example.com');
+  });
+
+  it('passes the response body through unchanged', async () => {
+    const payload = '{"total":42,"issues":[]}';
+    stubFetch(new Response(payload, { status: 200 }));
+    const req = new Request('https://sift.example.com/api/sonar/v1/issues/search');
+    const res = await handleSonarRequest(req);
+    expect(await res.text()).toBe(payload);
+  });
+});
