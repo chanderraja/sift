@@ -50,12 +50,12 @@ export default tseslint.config(
       ],
     },
   },
-  // SPDX header required in src/, proxy/, and tests/ — per SPEC §12.1.
+  // SPDX header required in src/, proxy/, api/, and tests/ — per SPEC §12.1.
   // .d.ts files are excluded because TypeScript triple-slash directives
   // confuse eslint-plugin-license-header's AST traversal; they are not
   // hand-authored source files in any meaningful sense.
   {
-    files: ['src/**/*.{ts,tsx}', 'proxy/**/*.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}', 'proxy/**/*.{ts,tsx}', 'api/**/*.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
     ignores: ['**/*.d.ts'],
     plugins: { 'license-header': licenseHeader },
     rules: {
@@ -66,7 +66,7 @@ export default tseslint.config(
   // The logger doesn't exist yet (Phase 4), so this rule is wired up but its
   // \`no-restricted-syntax\` enforcement starts mattering once code lands.
   {
-    files: ['src/**/*.{ts,tsx}', 'proxy/**/*.ts'],
+    files: ['src/**/*.{ts,tsx}', 'proxy/**/*.ts', 'api/**/*.ts'],
     ignores: ['src/lib/logger.ts'],
     rules: {
       'no-console': 'error',

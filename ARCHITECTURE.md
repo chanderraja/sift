@@ -452,6 +452,13 @@ interface ProxyOptions {
   // Origin allowed via CORS. Use '*' for free-for-all (default for the canonical
   // open instance) or a specific origin for hardened deploys.
   allowedOrigin?: string;
+
+  // Outbound fetch implementation. Defaults to globalThis.fetch. Adapters pass
+  // a wrapped fetch when a platform requires explicit cache-disable options on
+  // outbound requests (e.g. Cloudflare's `cf: { cacheTtl: 0, cacheEverything:
+  // false }` per ADR-008(c)). Keeping fetch overridable also makes core
+  // unit-testable without stubbing globals.
+  fetchImpl?: (input: string, init: RequestInit) => Promise<Response>;
 }
 
 async function handleSonarRequest(
@@ -756,6 +763,7 @@ Edge case: a branch named `release/2024.q4` may have a stale entry. Behavior on 
 | 0.1 | 2026-05-06 | initial | Created from SPEC.md v0.2; ADRs 001–006 captured |
 | 0.2 | 2026-05-06 | design-feedback | ADR-007 added (closes Q-1, over-cap handling); design-mock review lifted decisions on cold-start guide, export modal previews, and over-cap UX into SPEC.md §7.1, §7.4, §9 |
 | 0.3 | 2026-05-08 | design-feedback | ADR-008 added (closes Q-2, no proxy caching); IMPLEMENTATION.md Phase 3 staleTime defaults codified |
+| 0.4 | 2026-05-08 | phase-2 | ProxyOptions extended with optional `fetchImpl` so the Cloudflare adapter can satisfy ADR-008(c)'s "explicit, not implicit" cache-disable requirement (`cf: { cacheTtl: 0, cacheEverything: false }`) without coupling `proxy/core.ts` to platform specifics. Default behavior (`globalThis.fetch`) is unchanged for callers that omit it |
 
 When this document is updated, append a row here. Major restructures should also bump the version number visible at the top.
 
