@@ -23,8 +23,9 @@ export default defineConfig({
           // SonarClient calls relative URLs (`/api/sonar/v1/...`); fetch in
           // node env can't resolve those without a base. Route api/ tests
           // through jsdom which gives them a window.location to resolve
-          // against.
-          exclude: ['src/api/**/*.test.ts'],
+          // against. `.tsx` files (e.g. queries.smoke.test.tsx that mounts
+          // hooks) likewise need a DOM and live only in jsdom.
+          exclude: ['src/api/**/*.test.ts', 'src/api/**/*.test.tsx'],
         },
       },
       {
