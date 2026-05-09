@@ -8,10 +8,25 @@
 import type { ParseResult } from '../lib/validators';
 import {
   parseBranchesListResponse,
+  parseIssuesSearchResponse,
   parseOrganizationsSearchResponse,
   parseProjectsSearchResponse,
 } from '../lib/validators';
-import type { Branch, Organization, Page, PageOpts, Project, Result } from '../types/sonar';
+import type {
+  Branch,
+  Issue,
+  IssueFilters,
+  Organization,
+  Page,
+  PageOpts,
+  Project,
+  Result,
+} from '../types/sonar';
+
+// SonarCloud `/api/issues/search` enforces a hard 10,000 ceiling on
+// `paging.total`. Per ADR-007, detection is the client's responsibility
+// and surfaces a separate `over_cap` Result variant for the UI.
+const ISSUES_SEARCH_CAP = 10_000;
 
 export interface SonarClientOptions {
   region: 'eu' | 'us';
@@ -54,6 +69,21 @@ export class SonarClient {
       `${PROXY_BASE}/project_branches/list?${params.toString()}`,
       parseBranchesListResponse,
     );
+  }
+
+  async searchIssues(filters: IssueFilters, opts?: PageOpts): Promise<Result<Page<Issue>>> {
+    const params = encodeIssueFilters(filters);
+    if (opts?.p !== undefined) params.set('p', String(opts.p));
+    if (opts?.ps !== undefined) params.set('ps', String(opts.ps));
+    const result = await this.get(
+      `${PROXY_BASE}/issues/search?${params.toString()}`,
+      parseIssuesSearchResponse,
+    );
+    if (result.kind !== 'ok') return result;
+    if (result.value.total > ISSUES_SEARCH_CAP) {
+      return { kind: 'over_cap', total: result.value.total };
+    }
+    return result;
   }
 
   // Internal: GET a same-origin proxy URL with Bearer auth and map the
@@ -106,6 +136,44 @@ export class SonarClient {
     return { kind: 'ok', value: parsed.value };
   }
 }
+
+// Translate IssueFilters → a SonarCloud V1 query string. Empty arrays /
+// undefined fields are dropped so the resulting URL stays clean. Most
+// filters are comma-joined per V1 convention; `resolutions` filters out
+// the `null` entry (which represents "unresolved" in the type but has no
+// V1 query-param representation).
+//
+// `filePathPrefix` has no direct V1 server param and is reserved for
+// client-side post-filtering of results — encoded into nothing here.
+const encodeIssueFilters = (filters: IssueFilters): URLSearchParams => {
+  const params = new URLSearchParams();
+  if (filters.componentKeys && filters.componentKeys.length > 0) {
+    params.set('componentKeys', filters.componentKeys.join(','));
+  }
+  if (filters.branch !== undefined) params.set('branch', filters.branch);
+  if (filters.severities && filters.severities.length > 0) {
+    params.set('severities', filters.severities.join(','));
+  }
+  if (filters.types && filters.types.length > 0) {
+    params.set('types', filters.types.join(','));
+  }
+  if (filters.statuses && filters.statuses.length > 0) {
+    params.set('statuses', filters.statuses.join(','));
+  }
+  if (filters.resolutions && filters.resolutions.length > 0) {
+    const nonNull = filters.resolutions.filter((r): r is Exclude<typeof r, null> => r !== null);
+    if (nonNull.length > 0) params.set('resolutions', nonNull.join(','));
+  }
+  if (filters.tags && filters.tags.length > 0) params.set('tags', filters.tags.join(','));
+  if (filters.rules && filters.rules.length > 0) params.set('rules', filters.rules.join(','));
+  if (filters.assignees && filters.assignees.length > 0) {
+    params.set('assignees', filters.assignees.join(','));
+  }
+  if (filters.createdAfter !== undefined) params.set('createdAfter', filters.createdAfter);
+  if (filters.createdBefore !== undefined) params.set('createdBefore', filters.createdBefore);
+  if (filters.hasComments !== undefined) params.set('hasComments', String(filters.hasComments));
+  return params;
+};
 
 const parseRetryAfter = (header: string | null): number | null => {
   if (header === null) return null;
