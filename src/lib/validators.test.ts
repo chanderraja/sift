@@ -8,11 +8,21 @@
 //      an issue at the expected path.
 //   3. parses a fixture with an unknown extra field → returns ok and the
 //      extra field passes through (.passthrough() invariant).
-
-import { readFileSync } from 'node:fs';
+//
+// Fixtures are imported as JSON modules rather than read off disk via fs:
+// keeps the file free of any `fs` import (which Vercel's tsc was rejecting
+// when prefixed `node:fs`) and free of the `node:`-vs-non-`node:` SonarCloud
+// preference. tests/msw.ts uses the same pattern.
 
 import { describe, expect, it } from 'vitest';
 
+import hotspotsSearch from '../../tests/fixtures/hotspots-search.json';
+import issuesSearch from '../../tests/fixtures/issues-search.json';
+import measuresComponent from '../../tests/fixtures/measures-component.json';
+import organizationsSearch from '../../tests/fixtures/organizations-search.json';
+import projectBranchesList from '../../tests/fixtures/project-branches-list.json';
+import projectsSearch from '../../tests/fixtures/projects-search.json';
+import qualitygatesProjectStatus from '../../tests/fixtures/qualitygates-project-status.json';
 import {
   parseBranchesListResponse,
   parseHotspotsSearchResponse,
@@ -23,10 +33,17 @@ import {
   parseQualityGate,
 } from './validators';
 
-const loadFixture = (name: string): unknown => {
-  const path = new URL(`../../tests/fixtures/${name}.json`, import.meta.url);
-  return JSON.parse(readFileSync(path, 'utf8')) as unknown;
+const FIXTURES: Record<string, unknown> = {
+  'hotspots-search': hotspotsSearch,
+  'issues-search': issuesSearch,
+  'measures-component': measuresComponent,
+  'organizations-search': organizationsSearch,
+  'project-branches-list': projectBranchesList,
+  'projects-search': projectsSearch,
+  'qualitygates-project-status': qualitygatesProjectStatus,
 };
+
+const loadFixture = (name: keyof typeof FIXTURES): unknown => FIXTURES[name];
 
 /** Deep clone via structuredClone — fixtures are pure JSON so it suffices. */
 const clone = <T>(value: T): T => structuredClone(value);
