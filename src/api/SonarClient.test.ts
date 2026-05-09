@@ -190,3 +190,47 @@ describe('SonarClient.listProjects', () => {
     expect(result.kind).toBe('network_error');
   });
 });
+
+describe('SonarClient.listBranches', () => {
+  const PATH = '/api/sonar/v1/project_branches/list';
+
+  it('returns ok with the parsed branches on 200', async () => {
+    const result = await makeClient().listBranches('acme_widget-service');
+    expect(result.kind).toBe('ok');
+    if (result.kind === 'ok') {
+      expect(result.value).toHaveLength(1);
+      expect(result.value[0]?.name).toBe('master');
+      expect(result.value[0]?.isMain).toBe(true);
+    }
+  });
+
+  it('encodes the project key as a query param', async () => {
+    let receivedUrl = '';
+    server.use(
+      http.get(PATH, ({ request }) => {
+        receivedUrl = request.url;
+        return HttpResponse.json({ branches: [] });
+      }),
+    );
+    await makeClient().listBranches('acme_widget-service');
+    expect(new URL(receivedUrl).searchParams.get('project')).toBe('acme_widget-service');
+  });
+
+  it.each([
+    [401, 'unauthorized'],
+    [403, 'forbidden'],
+    [404, 'not_found'],
+    [429, 'rate_limited'],
+    [500, 'server_error'],
+  ] as const)('maps %d → %s', async (status, expectedKind) => {
+    stubGet(PATH, { status });
+    const result = await makeClient().listBranches('acme_widget-service');
+    expect(result.kind).toBe(expectedKind);
+  });
+
+  it('returns network_error when fetch throws', async () => {
+    server.use(http.get(PATH, () => HttpResponse.error()));
+    const result = await makeClient().listBranches('acme_widget-service');
+    expect(result.kind).toBe('network_error');
+  });
+});

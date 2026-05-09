@@ -6,8 +6,12 @@
 // `Result<T>`; the client never throws.
 
 import type { ParseResult } from '../lib/validators';
-import { parseOrganizationsSearchResponse, parseProjectsSearchResponse } from '../lib/validators';
-import type { Organization, Page, PageOpts, Project, Result } from '../types/sonar';
+import {
+  parseBranchesListResponse,
+  parseOrganizationsSearchResponse,
+  parseProjectsSearchResponse,
+} from '../lib/validators';
+import type { Branch, Organization, Page, PageOpts, Project, Result } from '../types/sonar';
 
 export interface SonarClientOptions {
   region: 'eu' | 'us';
@@ -41,6 +45,14 @@ export class SonarClient {
     return this.get(
       `${PROXY_BASE}/projects/search?${params.toString()}`,
       parseProjectsSearchResponse,
+    );
+  }
+
+  async listBranches(projectKey: string): Promise<Result<Branch[]>> {
+    const params = new URLSearchParams({ project: projectKey });
+    return this.get(
+      `${PROXY_BASE}/project_branches/list?${params.toString()}`,
+      parseBranchesListResponse,
     );
   }
 
