@@ -18,8 +18,7 @@ describe('Header — scaffold', () => {
     'header-org-slot',
     'header-project-slot',
     'header-branch-slot',
-    'header-settings-slot',
-    'header-export-slot',
+    'header-actions-slot',
   ])('exposes a slot for %s', (testid) => {
     render(<Header />);
     expect(screen.getByTestId(testid)).toBeInTheDocument();

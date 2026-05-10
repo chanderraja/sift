@@ -9,6 +9,7 @@
 // the Phase 6 layout doesn't drift from the documented order.
 
 import { ConnectionStatus } from './ConnectionStatus';
+import { HeaderActions } from './HeaderActions';
 import { RegionSelector } from './RegionSelector';
 import { TokenField } from './TokenField';
 
@@ -33,9 +34,11 @@ export function Header(): React.JSX.Element {
       <div data-testid="header-project-slot" />
       <div data-testid="header-branch-slot" />
 
-      <div className="ml-auto flex items-center gap-1 self-center">
-        <div data-testid="header-settings-slot" />
-        <div data-testid="header-export-slot" />
+      <div
+        data-testid="header-actions-slot"
+        className="ml-auto flex items-center gap-1 self-center"
+      >
+        <HeaderActions />
       </div>
     </header>
   );
