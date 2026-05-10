@@ -6,6 +6,7 @@ import { Suspense, lazy, useEffect } from 'react';
 import { EmptyState } from './components/primitives/EmptyState';
 import { Toaster } from './components/primitives/Toast';
 import { Header } from './features/header/Header';
+import { useEnsureSelectionLive } from './features/header/useEnsureSelectionLive';
 import { useValidateAuthEffect } from './features/header/useValidateAuthEffect';
 import { startHashSync } from './stores/hashSyncIntegration';
 import { useAuthStore, useFiltersStore, useSelectionStore } from './app/stores';
@@ -70,6 +71,11 @@ export default function App(): React.JSX.Element {
   // user pastes a token or switches region. Hydrates silently on cold
   // start when the token was restored from storage.
   useValidateAuthEffect();
+
+  // ADR-009: when a persisted selection key (org / project / branch)
+  // is missing from the freshly-loaded list, clear that level + cascade
+  // and fire a toast. Filters survive intact.
+  useEnsureSelectionLive();
 
   // Hash ⇄ store round-trip per Phase 4's hashSyncIntegration. One-shot
   // hydration at mount; subsequent store changes write the hash. The
