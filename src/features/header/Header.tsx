@@ -10,6 +10,7 @@
 
 import { ConnectionStatus } from './ConnectionStatus';
 import { HeaderActions } from './HeaderActions';
+import { OrgPicker } from './OrgPicker';
 import { RegionSelector } from './RegionSelector';
 import { TokenField } from './TokenField';
 
@@ -30,7 +31,9 @@ export function Header(): React.JSX.Element {
           <ConnectionStatus />
         </div>
       </div>
-      <div data-testid="header-org-slot" />
+      <div data-testid="header-org-slot" className="self-center">
+        <OrgPicker />
+      </div>
       <div data-testid="header-project-slot" />
       <div data-testid="header-branch-slot" />
 
