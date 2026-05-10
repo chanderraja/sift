@@ -685,10 +685,14 @@ Build in dependency order: leaf primitives first.
 - Rule description lookups should be cached aggressively (rules don't change between requests).
 - Filter-count badges are computed client-side from the current page; they won't be exact for the unpaginated set without a separate facet API call. Decision: client-side is acceptable for v1; document the limitation.
 
+**Resolved decisions** (closed by maintainer 2026-05-10 in PR #27):
+
+- Pagination size default: **100**, with a selector for 50 / 100 / 200 / 500. Aligns with SonarCloud V1's default `ps=100`. Persists via `prefsStore.defaultPageSize`.
+- File path as clickable link to SonarCloud's UI: **no** for v1. Sift's pitch is offline triage; an external `<a>` to sonarcloud.io feels off-brand and silently rots when SonarCloud changes URL paths. Phase 11 polish can add an opt-in via Settings if useful.
+
 **When to ask the maintainer.**
 
-- Pagination size default (suggestion: 100, with selector for 50/100/200/500).
-- Whether to show the file path as a clickable link to SonarCloud's UI.
+- (None outstanding — see "Resolved decisions" above.)
 
 ---
 

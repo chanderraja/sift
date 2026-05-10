@@ -18,7 +18,7 @@ Visual references for design phases live in `docs/mocks/` (1440×900 PNGs of all
 
 ## Current phase
 
-**Phase 7 — Org, Project, and Branch Pickers.** See `IMPLEMENTATION.md` §"Phase 7". Phases 1–6 are merged on `master`.
+**Phase 8 — Issues Tab.** See `IMPLEMENTATION.md` §"Phase 8". Phases 1–7 are merged on `master`.
 
 When this phase is complete (all acceptance criteria met, CI green on `master`, maintainer has merged the phase's PR), update this line to the next phase. Do not advance phases without maintainer sign-off on the current one.
 
