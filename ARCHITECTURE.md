@@ -409,7 +409,11 @@ interface SelectionStore {
 interface FiltersStore {
   tab: 'issues' | 'hotspots' | 'quality-gate';
   issuesFilters: IssueFilters;
-  hotspotsFilters: HotspotFilters;
+  // `null` until a project is selected — `HotspotFilters.projectKey` is
+  // required, so the store needs a way to represent "no valid filter
+  // set yet". UI consumers gate the SonarClient.searchHotspots call on
+  // a non-null value, so the client still sees the documented shape.
+  hotspotsFilters: HotspotFilters | null;
   sort: { column: string; direction: 'asc' | 'desc' }[];
   page: number;
   pageSize: number;
@@ -764,6 +768,7 @@ Edge case: a branch named `release/2024.q4` may have a stale entry. Behavior on 
 | 0.2 | 2026-05-06 | design-feedback | ADR-007 added (closes Q-1, over-cap handling); design-mock review lifted decisions on cold-start guide, export modal previews, and over-cap UX into SPEC.md §7.1, §7.4, §9 |
 | 0.3 | 2026-05-08 | design-feedback | ADR-008 added (closes Q-2, no proxy caching); IMPLEMENTATION.md Phase 3 staleTime defaults codified |
 | 0.4 | 2026-05-08 | phase-2 | ProxyOptions extended with optional `fetchImpl` so the Cloudflare adapter can satisfy ADR-008(c)'s "explicit, not implicit" cache-disable requirement (`cf: { cacheTtl: 0, cacheEverything: false }`) without coupling `proxy/core.ts` to platform specifics. Default behavior (`globalThis.fetch`) is unchanged for callers that omit it |
+| 0.5 | 2026-05-09 | phase-4 | `FiltersStore.hotspotsFilters` typed as `HotspotFilters \| null` rather than `HotspotFilters`. The store has to represent the period before a project is selected, and `HotspotFilters.projectKey` is required — `null` is the cleanest "deliberately empty" marker under `exactOptionalPropertyTypes: true`. UI consumers gate the SonarClient call on a non-null value, so `searchHotspots` still receives the documented shape |
 
 When this document is updated, append a row here. Major restructures should also bump the version number visible at the top.
 
