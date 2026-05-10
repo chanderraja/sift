@@ -50,6 +50,12 @@ export const useFiltersStore = createFiltersStore();
 export const usePrefsStore = createPrefsStore({ storage: prefsStorage });
 export const useUiStore = createUiStore();
 
+// Hydrate filtersStore.pageSize from the persisted preference so the
+// user's last-chosen page size carries across sessions (Phase 8 resolved
+// decision, PR #27). filtersStore alone does not own the persistence —
+// see prefsStore.setDefaultPageSize.
+useFiltersStore.setState({ pageSize: usePrefsStore.getState().defaultPageSize });
+
 /**
  * Singleton SonarClient bound to the live auth store. Pickers and
  * tabs import this rather than constructing their own — TanStack Query
