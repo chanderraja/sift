@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 
 import { KeyRound } from 'lucide-react';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 
 import { EmptyState } from './components/primitives/EmptyState';
 import { Toaster } from './components/primitives/Toast';
 import { Header } from './features/header/Header';
 import { useValidateAuthEffect } from './features/header/useValidateAuthEffect';
-import { useAuthStore } from './app/stores';
+import { startHashSync } from './stores/hashSyncIntegration';
+import { useAuthStore, useFiltersStore, useSelectionStore } from './app/stores';
 
 // Dev-only kitchen-sink route. Dynamically imported and gated behind
 // import.meta.env.DEV so the module is tree-shaken out of the
@@ -69,6 +70,17 @@ export default function App(): React.JSX.Element {
   // user pastes a token or switches region. Hydrates silently on cold
   // start when the token was restored from storage.
   useValidateAuthEffect();
+
+  // Hash ⇄ store round-trip per Phase 4's hashSyncIntegration. One-shot
+  // hydration at mount; subsequent store changes write the hash. The
+  // cleanup detaches the subscription on unmount.
+  useEffect(() => {
+    return startHashSync({
+      selection: useSelectionStore,
+      filters: useFiltersStore,
+      location: window.location,
+    });
+  }, []);
 
   if (KitchenSink !== null && isKitchenSinkPath()) {
     return (
