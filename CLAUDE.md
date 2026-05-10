@@ -18,7 +18,7 @@ Visual references for design phases live in `docs/mocks/` (1440×900 PNGs of all
 
 ## Current phase
 
-**Phase 5 — UI Primitives.** See `IMPLEMENTATION.md` §"Phase 5". Phases 1–4 are merged on `master`.
+**Phase 6 — Header, Auth, and Region.** See `IMPLEMENTATION.md` §"Phase 6". Phases 1–5 are merged on `master`.
 
 When this phase is complete (all acceptance criteria met, CI green on `master`, maintainer has merged the phase's PR), update this line to the next phase. Do not advance phases without maintainer sign-off on the current one.
 
