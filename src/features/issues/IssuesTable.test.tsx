@@ -96,6 +96,64 @@ describe('IssuesTable', () => {
     ).toHaveAttribute('aria-sort', 'descending');
   });
 
+  it('clicking a row expands a panel with rule, message, and file:line', async () => {
+    render(
+      <IssuesTable
+        items={[
+          ISSUE({
+            rule: 'typescript:S1234' as RuleKey,
+            message: 'Use a const enum here.',
+            component: 'acme_widget:src/foo.ts',
+            line: 42,
+          }),
+        ]}
+      />,
+    );
+    // The panel is hidden until the row is clicked.
+    expect(screen.queryByText('Use a const enum here.')).toBeInTheDocument();
+    // Click the row to expand. The drawer mounts additional copies of
+    // the rule + file path. We assert via a panel test-id below.
+    expect(screen.queryByTestId('issue-expand-panel')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByText('Use a const enum here.'));
+    const panel = screen.getByTestId('issue-expand-panel');
+    expect(panel).toBeInTheDocument();
+    expect(panel.textContent).toContain('typescript:S1234');
+    expect(panel.textContent).toContain('src/foo.ts');
+    expect(panel.textContent).toContain('42');
+  });
+
+  it('clicking an expanded row collapses it', async () => {
+    render(<IssuesTable items={[ISSUE({ message: 'Same' })]} />);
+    // The first row cell (Severity badge) is a stable click target that
+    // is not duplicated inside the expand panel.
+    const clickRow = async (): Promise<void> => {
+      const rows = screen.getAllByRole('row');
+      // rows[0] is the header; rows[1] is the body row.
+      const target = rows[1];
+      if (!target) throw new Error('body row not found');
+      await userEvent.click(target);
+    };
+    await clickRow();
+    expect(screen.getByTestId('issue-expand-panel')).toBeInTheDocument();
+    await clickRow();
+    expect(screen.queryByTestId('issue-expand-panel')).not.toBeInTheDocument();
+  });
+
+  it('clicking a different row swaps the expanded panel to it', async () => {
+    render(
+      <IssuesTable
+        items={[
+          ISSUE({ key: 'A' as IssueKey, message: 'First' }),
+          ISSUE({ key: 'B' as IssueKey, message: 'Second' }),
+        ]}
+      />,
+    );
+    await userEvent.click(screen.getByText('First'));
+    expect(screen.getByTestId('issue-expand-panel').textContent).toContain('First');
+    await userEvent.click(screen.getByText('Second'));
+    expect(screen.getByTestId('issue-expand-panel').textContent).toContain('Second');
+  });
+
   it('handles missing optional fields without crashing', () => {
     // exactOptionalPropertyTypes forbids `line: undefined` — omit the
     // optional keys entirely instead.

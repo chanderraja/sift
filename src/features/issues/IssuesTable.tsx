@@ -17,7 +17,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+
+import { IssueExpandPanel } from './IssueExpandPanel';
 
 import { SeverityBadge, StatusBadge, TypeBadge } from '../../components/primitives/Badge';
 import {
@@ -151,6 +153,7 @@ export function IssuesTable({ items }: IssuesTableProps): React.JSX.Element {
   const sort = useFiltersStore((s) => s.sort);
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const setSort = useFiltersStore.getState().setSort;
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   // Map filtersStore.sort → TanStack SortingState. The two shapes
   // mirror each other so the conversion is a pair of light maps.
@@ -201,15 +204,28 @@ export function IssuesTable({ items }: IssuesTableProps): React.JSX.Element {
         ))}
       </TableHeader>
       <TableBody>
-        {table.getRowModel().rows.map((row) => (
-          <TableRow key={row.id}>
-            {row.getVisibleCells().map((cell) => (
-              <TableCell key={cell.id}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
+        {table.getRowModel().rows.map((row) => {
+          const issue = row.original;
+          const isExpanded = expandedKey === issue.key;
+          return (
+            <TableRow
+              key={row.id}
+              expanded={isExpanded}
+              expandedContent={<IssueExpandPanel issue={issue} />}
+              expandedColSpan={columns.length}
+              className="cursor-pointer"
+              onClick={() => {
+                setExpandedKey(isExpanded ? null : issue.key);
+              }}
+            >
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </TableRow>
+          );
+        })}
       </TableBody>
     </TableRoot>
   );
