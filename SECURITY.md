@@ -78,7 +78,9 @@ The user can choose how the token is held in the browser:
 - `cookie` — non-HttpOnly cookie (the SPA must read it). Surface clearly larger; recommended only for users who understand the trade-off.
 - `memory` — kept only in JS memory; lost on reload.
 
-The choice lives in the Settings drawer. Switching modes migrates and re-encrypts as needed; "Forget everything" clears all four locations regardless of current mode.
+The choice lives in the Settings drawer. Switching modes migrates the persisted token to the new backend; "Forget everything" clears all four locations regardless of current mode.
+
+Self-hosters can change the cold-start default at build time via the `VITE_DEFAULT_STORAGE_MODE` env var (one of `local` / `session` / `cookie` / `memory`). A persisted user choice always wins over the deploy-time default — the env var only affects first-time visitors.
 
 ## Reporting issues you are not sure about
 
