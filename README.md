@@ -39,6 +39,15 @@ pnpm build        # production bundle
 
 The canonical instance runs on Vercel. The proxy adapter for Cloudflare Workers is documented separately. Detailed self-host instructions land alongside the v1.0 release.
 
+### Build-time configuration (env vars)
+
+Self-hosters can override the cold-start defaults at build time without forking the code. Set these in your hosting platform's environment-variable settings (e.g. `vercel env add VITE_DEFAULT_STORAGE_MODE production`). A persisted user choice always wins over these defaults; they only affect first-time visitors.
+
+| Variable                    | Values                                    | Default | Effect                                                                                                                                                                                               |
+| --------------------------- | ----------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_DEFAULT_STORAGE_MODE` | `local` / `session` / `cookie` / `memory` | `local` | Where the SPA holds the SonarCloud token by default. Pick `session` for shared-machine deployments where tokens shouldn't survive tab close. See [`SECURITY.md`](./SECURITY.md#token-storage-modes). |
+| `VITE_DEFAULT_REGION`       | `eu` / `us`                               | `eu`    | SonarCloud region pre-selected for new users. Pick `us` for organisations on `sonarqube.us`.                                                                                                         |
+
 ## Contributing
 
 See [`CONTRIBUTING.md`](./CONTRIBUTING.md). In short: trunk-based, Conventional Commits, TDD, small PRs.

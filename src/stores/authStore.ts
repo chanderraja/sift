@@ -66,22 +66,56 @@ export interface AuthStoreDeps {
    * close over the current token so `validate()` always sends the latest.
    */
   client: ListOrgs | (() => ListOrgs);
+  /**
+   * Cold-start defaults a self-hoster can override at deploy time. A
+   * persisted user choice always wins; these only apply on a first visit
+   * (or after `clear()` wipes the prefs). Wiring at composition time
+   * reads these from `import.meta.env.VITE_DEFAULT_*` — see
+   * `readDefaultsFromEnv` below.
+   */
+  defaults?: {
+    storageMode?: StorageMode;
+    region?: Region;
+  };
 }
 
-const isRegion = (v: string | null): v is Region => v === 'eu' || v === 'us';
-const isStorageMode = (v: string | null): v is StorageMode =>
+const isRegion = (v: string | null | undefined): v is Region => v === 'eu' || v === 'us';
+const isStorageMode = (v: string | null | undefined): v is StorageMode =>
   v === 'local' || v === 'session' || v === 'cookie' || v === 'memory';
 
+/**
+ * Read deploy-time defaults from `import.meta.env` (Vite). A self-hosting
+ * fork sets `VITE_DEFAULT_STORAGE_MODE` and/or `VITE_DEFAULT_REGION` at
+ * build time; this helper validates the values and returns a defaults
+ * object suitable for passing to `createAuthStore`. Unset or unrecognised
+ * values are simply omitted, falling through to the project-wide
+ * defaults (`'local'` / `'eu'`).
+ */
+export function readDefaultsFromEnv(): NonNullable<AuthStoreDeps['defaults']> {
+  const env = import.meta.env;
+  const defaults: NonNullable<AuthStoreDeps['defaults']> = {};
+  const sm = env.VITE_DEFAULT_STORAGE_MODE;
+  if (isStorageMode(sm)) defaults.storageMode = sm;
+  const r = env.VITE_DEFAULT_REGION;
+  if (isRegion(r)) defaults.region = r;
+  return defaults;
+}
+
 export function createAuthStore(deps: AuthStoreDeps) {
+  // Resolution order for cold-start defaults:
+  //   1. persisted user choice (always wins once a user has touched it)
+  //   2. deploy-time default from deps.defaults (self-hoster's knob)
+  //   3. project-wide default constant
+  const fallbackMode = deps.defaults?.storageMode ?? DEFAULT_STORAGE_MODE;
+  const fallbackRegion = deps.defaults?.region ?? DEFAULT_REGION;
+
   // Hydrate from storage at construction time. The storeMode value drives
   // *where* we read the token from, so its lookup runs first.
   const persistedMode = deps.prefsStorage.get(PREF_KEYS.storageMode);
-  const initialMode: StorageMode = isStorageMode(persistedMode)
-    ? persistedMode
-    : DEFAULT_STORAGE_MODE;
+  const initialMode: StorageMode = isStorageMode(persistedMode) ? persistedMode : fallbackMode;
 
   const persistedRegion = deps.prefsStorage.get(PREF_KEYS.region);
-  const initialRegion: Region = isRegion(persistedRegion) ? persistedRegion : DEFAULT_REGION;
+  const initialRegion: Region = isRegion(persistedRegion) ? persistedRegion : fallbackRegion;
 
   const initialToken = deps.makeTokenStorage(initialMode).get(TOKEN_KEY) ?? '';
 

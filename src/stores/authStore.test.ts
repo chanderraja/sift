@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Storage, StorageMode } from '../lib/storage';
-import { PREF_KEYS, TOKEN_KEY, createAuthStore } from './authStore';
+import { PREF_KEYS, TOKEN_KEY, createAuthStore, readDefaultsFromEnv } from './authStore';
 
 const makeMemoryStorage = (): Storage => {
   const map = new Map<string, string>();
@@ -60,6 +60,42 @@ describe('authStore — initial state hydration', () => {
       client: okClient,
     });
     expect(store.getState().region).toBe('eu');
+    expect(store.getState().storageMode).toBe('local');
+  });
+
+  it('uses deps.defaults when prefsStorage is empty', () => {
+    const store = createAuthStore({
+      prefsStorage: makeMemoryStorage(),
+      makeTokenStorage: () => makeMemoryStorage(),
+      client: okClient,
+      defaults: { storageMode: 'session', region: 'us' },
+    });
+    expect(store.getState().storageMode).toBe('session');
+    expect(store.getState().region).toBe('us');
+  });
+
+  it('persisted user choice wins over deps.defaults', () => {
+    const prefs = makeMemoryStorage();
+    prefs.set(PREF_KEYS.storageMode, 'memory');
+    prefs.set(PREF_KEYS.region, 'eu');
+    const store = createAuthStore({
+      prefsStorage: prefs,
+      makeTokenStorage: () => makeMemoryStorage(),
+      client: okClient,
+      defaults: { storageMode: 'session', region: 'us' },
+    });
+    expect(store.getState().storageMode).toBe('memory');
+    expect(store.getState().region).toBe('eu');
+  });
+
+  it('partial deps.defaults still falls through to project default for the missing field', () => {
+    const store = createAuthStore({
+      prefsStorage: makeMemoryStorage(),
+      makeTokenStorage: () => makeMemoryStorage(),
+      client: okClient,
+      defaults: { region: 'us' },
+    });
+    expect(store.getState().region).toBe('us');
     expect(store.getState().storageMode).toBe('local');
   });
 
@@ -256,6 +292,38 @@ describe('authStore.validate', () => {
     store.getState().setToken('squ_second');
     await store.getState().validate();
     expect(lastToken).toBe('squ_second');
+  });
+});
+
+describe('readDefaultsFromEnv', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('returns an empty object when neither env var is set', () => {
+    expect(readDefaultsFromEnv()).toEqual({});
+  });
+
+  it('reads VITE_DEFAULT_STORAGE_MODE when valid', () => {
+    vi.stubEnv('VITE_DEFAULT_STORAGE_MODE', 'session');
+    expect(readDefaultsFromEnv()).toEqual({ storageMode: 'session' });
+  });
+
+  it('reads VITE_DEFAULT_REGION when valid', () => {
+    vi.stubEnv('VITE_DEFAULT_REGION', 'us');
+    expect(readDefaultsFromEnv()).toEqual({ region: 'us' });
+  });
+
+  it('reads both when both valid', () => {
+    vi.stubEnv('VITE_DEFAULT_STORAGE_MODE', 'cookie');
+    vi.stubEnv('VITE_DEFAULT_REGION', 'us');
+    expect(readDefaultsFromEnv()).toEqual({ storageMode: 'cookie', region: 'us' });
+  });
+
+  it('rejects garbage values without throwing', () => {
+    vi.stubEnv('VITE_DEFAULT_STORAGE_MODE', 'mars');
+    vi.stubEnv('VITE_DEFAULT_REGION', 'apac');
+    expect(readDefaultsFromEnv()).toEqual({});
   });
 });
 
