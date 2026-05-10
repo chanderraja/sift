@@ -1,0 +1,77 @@
+/* SPDX-License-Identifier: MIT */
+
+/*
+ * Design tokens — `SPEC.md` §16.3.
+ *
+ * The CSS variables below are the single source of truth for color.
+ * Tailwind's `tailwind.config.ts` maps utility classes (e.g. `bg-base`,
+ * `text-primary`, `border-subtle`) onto these variables, so no
+ * component should hard-code a hex value.
+ *
+ * Theme switching: the `data-theme` attribute on the document root
+ * picks which set is active. Dark is the documented default; light
+ * inverts the bg/text scale and keeps accent + severity unchanged.
+ *
+ * Severity colors deliberately stay saturated — they're the only place
+ * the design lets saturated color appear (SPEC §16.2 principle 2).
+ */
+
+:root,
+[data-theme='dark'] {
+  --bg-base: #0a0b0d;
+  --bg-surface: #111317;
+  --bg-surface-hover: #16191f;
+  --bg-elevated: #1a1d23;
+
+  --border-subtle: #1f2229;
+  --border-default: #2a2e36;
+
+  --text-primary: #e6e8ec;
+  --text-secondary: #9ba1aa;
+  --text-tertiary: #5f6670;
+
+  --accent: #7dd3fc;
+  --accent-muted: #0e7490;
+
+  --severity-blocker: #f43f5e;
+  --severity-critical: #fb923c;
+  --severity-major: #facc15;
+  --severity-minor: #a3e635;
+  --severity-info: #60a5fa;
+
+  --qg-pass: #10b981;
+  --qg-fail: #f43f5e;
+  --qg-warn: #facc15;
+
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  --bg-base: #fafafb;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f3f4f6;
+  --bg-elevated: #ffffff;
+
+  --border-subtle: #e5e7eb;
+  --border-default: #d1d5db;
+
+  --text-primary: #0a0b0d;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
+
+  /* Accent + severity carry over with slightly higher contrast. */
+  --accent: #0284c7;
+  --accent-muted: #7dd3fc;
+
+  --severity-blocker: #e11d48;
+  --severity-critical: #ea580c;
+  --severity-major: #ca8a04;
+  --severity-minor: #65a30d;
+  --severity-info: #2563eb;
+
+  --qg-pass: #059669;
+  --qg-fail: #e11d48;
+  --qg-warn: #ca8a04;
+
+  color-scheme: light;
+}
