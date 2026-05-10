@@ -46,7 +46,10 @@ export type SortDirection = 'asc' | 'desc' | null;
 
 export interface TableHeaderCellProps extends ThHTMLAttributes<HTMLTableCellElement> {
   sortDirection?: SortDirection;
-  onSort?: () => void;
+  // Widen to accept handlers that take a synthetic / native event
+  // (e.g. TanStack Table's `getToggleSortingHandler`). The Table
+  // primitive itself never invokes with an argument.
+  onSort?: (event?: unknown) => void;
 }
 
 const headerCellBase = 'h-8 px-2 text-left font-medium uppercase tracking-wide';
