@@ -32,6 +32,7 @@ export default defineConfig({
             'src/components/**/*.test.tsx',
             'src/stores/**/*.test.tsx',
             'src/features/**/*.test.tsx',
+            'src/dev/**/*.test.tsx',
           ],
         },
       },
