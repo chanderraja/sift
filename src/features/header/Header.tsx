@@ -8,21 +8,25 @@
 // project / branch pickers are Phase 7 — placeholder slots for now so
 // the Phase 6 layout doesn't drift from the documented order.
 
+import { TokenField } from './TokenField';
+
 export function Header(): React.JSX.Element {
   return (
     <header
       data-testid="app-header"
-      className="flex h-12 items-center gap-3 border-b border-border-subtle bg-bg-surface px-4"
+      className="flex h-14 items-start gap-3 border-b border-border-subtle bg-bg-surface px-4 py-2"
     >
-      <div className="text-sm font-semibold text-text-primary">Sift</div>
+      <div className="self-center text-sm font-semibold text-text-primary">Sift</div>
 
       <div data-testid="header-region-slot" />
-      <div data-testid="header-token-slot" />
+      <div data-testid="header-token-slot" className="self-start">
+        <TokenField />
+      </div>
       <div data-testid="header-org-slot" />
       <div data-testid="header-project-slot" />
       <div data-testid="header-branch-slot" />
 
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex items-center gap-1 self-center">
         <div data-testid="header-settings-slot" />
         <div data-testid="header-export-slot" />
       </div>
