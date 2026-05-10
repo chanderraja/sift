@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './styles/tokens.css';
+
+/*
+ * Typography per SPEC §16.4. The sans / mono *family* choice is
+ * intentionally a system stack for now — `pick one and commit` lands
+ * with Phase 11 polish along with the font-loading strategy. Tabular
+ * numerals ride the body so numeric columns line up everywhere.
+ */
 html,
 body,
 #root {
@@ -10,9 +18,34 @@ body,
   height: 100%;
 }
 
+html {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+}
+
 body {
   font-family:
     system-ui,
     -apple-system,
+    'Segoe UI',
     sans-serif;
+  font-feature-settings: 'tnum' 1;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Consolas, monospace;
+}
+
+/*
+ * Default focus indicator: 2px accent ring on every focusable element
+ * (SPEC §16.8). Components may override but must not remove it.
+ */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

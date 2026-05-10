@@ -472,7 +472,7 @@ Build in dependency order: leaf primitives first.
 10. Tooltip (Radix).
 11. Modal (Radix `Dialog`).
 12. Drawer (Radix `Dialog` with side variant).
-13. Toast (Radix `Toast` or `sonner`).
+13. Toast (`sonner`).
 14. Skeleton.
 15. Empty state.
 16. Filter group (collapsible).
@@ -496,10 +496,14 @@ Build in dependency order: leaf primitives first.
 - Don't ship the kitchen-sink route in production: gate it behind `import.meta.env.DEV`.
 - Use `react-aria` patterns where Radix doesn't cover (none expected, but note it).
 
+**Resolved decisions** (closed by maintainer 2026-05-10):
+
+- Toast library: `sonner` (lighter than `@radix-ui/react-toast`, sufficient for our UX needs).
+- Icon set: `lucide-react` used throughout. No mixed icon families.
+
 **When to ask the maintainer.**
 
-- Choice of Toast library (`@radix-ui/react-toast` vs `sonner`). Recommendation: `sonner` (lighter, sufficient).
-- Whether to use a single icon set throughout (recommendation: `lucide-react`).
+- (None outstanding — see "Resolved decisions" above.)
 
 ---
 
