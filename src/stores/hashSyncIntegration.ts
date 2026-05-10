@@ -18,6 +18,9 @@
 //   status   ← filtersStore.issuesFilters.statuses
 //   sort     ← filtersStore.sort (e.g. "severity:desc,file:asc")
 //   page     ← filtersStore.page (omitted when 1)
+//   ps       ← filtersStore.pageSize (omitted when 100, the default)
+//   since    ← filtersStore.issuesFilters.createdAfter (ISO YYYY-MM-DD)
+//   until    ← filtersStore.issuesFilters.createdBefore (ISO YYYY-MM-DD)
 //
 // Direction of flow:
 //
@@ -91,8 +94,11 @@ const buildHashState = (
   if (f.severities && f.severities.length > 0) out.sev = f.severities.join(',');
   if (f.types && f.types.length > 0) out.type = f.types.join(',');
   if (f.statuses && f.statuses.length > 0) out.status = f.statuses.join(',');
+  if (f.createdAfter !== undefined) out.since = f.createdAfter;
+  if (f.createdBefore !== undefined) out.until = f.createdBefore;
   if (filters.sort.length > 0) out.sort = serializeSortDirectives(filters.sort);
   if (filters.page !== 1) out.page = String(filters.page);
+  if (filters.pageSize !== 100) out.ps = String(filters.pageSize);
   return out;
 };
 
@@ -133,6 +139,8 @@ const applyHashToStores = (deps: HashSyncDeps): void => {
   if (state.status !== undefined) {
     issuesPatch.statuses = filterEnum(STATUS_VALUES, state.status);
   }
+  if (state.since !== undefined) issuesPatch.createdAfter = state.since;
+  if (state.until !== undefined) issuesPatch.createdBefore = state.until;
   if (Object.keys(issuesPatch).length > 0) {
     deps.filters.setState((s) => ({
       issuesFilters: { ...s.issuesFilters, ...issuesPatch },
@@ -147,6 +155,11 @@ const applyHashToStores = (deps: HashSyncDeps): void => {
   if (state.page !== undefined) {
     const n = Number(state.page);
     if (Number.isFinite(n) && n > 0) deps.filters.setState({ page: n });
+  }
+
+  if (state.ps !== undefined) {
+    const n = Number(state.ps);
+    if (Number.isFinite(n) && n > 0) deps.filters.setState({ pageSize: n });
   }
 };
 

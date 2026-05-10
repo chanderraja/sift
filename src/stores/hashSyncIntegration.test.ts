@@ -76,6 +76,25 @@ describe('startHashSync — hydration from hash on start', () => {
     cleanup();
   });
 
+  it('hydrates page size when present', () => {
+    const { filters, cleanup } = setup('v=1&ps=200');
+    expect(filters.getState().pageSize).toBe(200);
+    cleanup();
+  });
+
+  it('rejects a non-positive page size from the hash', () => {
+    const { filters, cleanup } = setup('v=1&ps=-1');
+    // Falls back to whichever default the store was constructed with.
+    expect(filters.getState().pageSize).toBe(100);
+    cleanup();
+  });
+
+  it('hydrates createdAfter when present', () => {
+    const { filters, cleanup } = setup('v=1&since=2026-01-01');
+    expect(filters.getState().issuesFilters.createdAfter).toBe('2026-01-01');
+    cleanup();
+  });
+
   it('treats a missing/unversioned hash as empty (defaults preserved)', () => {
     const { selection, filters, cleanup } = setup('this-is-not-a-sift-hash');
     expect(selection.getState().organizationKey).toBeNull();
@@ -112,6 +131,27 @@ describe('startHashSync — write hash on store change', () => {
     filters.getState().setSort([{ column: 'severity', direction: 'desc' }]);
     expect(location.hash).toContain('page=5');
     expect(location.hash).toContain('sort=severity%3Adesc');
+    cleanup();
+  });
+
+  it('omits page size when it equals the default 100', () => {
+    const { filters, location, cleanup } = setup();
+    filters.getState().setPageSize(100);
+    expect(location.hash).not.toContain('ps=');
+    cleanup();
+  });
+
+  it('writes a non-default page size', () => {
+    const { filters, location, cleanup } = setup();
+    filters.getState().setPageSize(500);
+    expect(location.hash).toContain('ps=500');
+    cleanup();
+  });
+
+  it('writes createdAfter into the hash', () => {
+    const { filters, location, cleanup } = setup();
+    filters.getState().patchIssues({ createdAfter: '2026-02-01' });
+    expect(location.hash).toContain('since=2026-02-01');
     cleanup();
   });
 
