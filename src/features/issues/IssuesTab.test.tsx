@@ -100,6 +100,40 @@ describe('IssuesTab — data states', () => {
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
 
+  it('renders the forbidden error state when the proxy returns 403', async () => {
+    server.use(
+      http.get('/api/sonar/v1/issues/search', () =>
+        HttpResponse.json({ errors: [{ msg: 'Browse permission required.' }] }, { status: 403 }),
+      ),
+    );
+    render(wrap(<IssuesTab />));
+    expect(await screen.findByText('Access denied')).toBeInTheDocument();
+  });
+
+  it('renders the rate-limited error state when upstream returns 429', async () => {
+    server.use(
+      http.get('/api/sonar/v1/issues/search', () =>
+        HttpResponse.json({}, { status: 429, headers: { 'Retry-After': '15' } }),
+      ),
+    );
+    render(wrap(<IssuesTab />));
+    expect(await screen.findByText(/15s/)).toBeInTheDocument();
+  });
+
+  it('renders the server_error state when upstream returns 5xx', async () => {
+    server.use(
+      http.get('/api/sonar/v1/issues/search', () => HttpResponse.json({}, { status: 502 })),
+    );
+    render(wrap(<IssuesTab />));
+    expect(await screen.findByText(/502/)).toBeInTheDocument();
+  });
+
+  it('renders the network_error state when the fetch throws', async () => {
+    server.use(http.get('/api/sonar/v1/issues/search', () => HttpResponse.error()));
+    render(wrap(<IssuesTab />));
+    expect(await screen.findByText(/Network error/)).toBeInTheDocument();
+  });
+
   it('skips the query and shows a placeholder when no project is selected', () => {
     useSelectionStore.getState().reset();
     render(wrap(<IssuesTab />));

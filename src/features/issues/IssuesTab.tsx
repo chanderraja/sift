@@ -12,6 +12,7 @@ import { Skeleton } from '../../components/primitives/Skeleton';
 import { sonarClient, useFiltersStore, useSelectionStore } from '../../app/stores';
 import type { Issue, IssueFilters, ProjectKey } from '../../types/sonar';
 
+import { IssuesErrorState } from './IssuesErrorState';
 import { IssuesFilterSidebar } from './IssuesFilterSidebar';
 import { IssuesPagination } from './IssuesPagination';
 import { IssuesTable } from './IssuesTable';
@@ -55,16 +56,18 @@ export function IssuesTab(): React.JSX.Element {
       <section data-testid="issues-results" className="flex min-w-0 flex-col gap-3">
         {!enabled ? null : query.isPending ? (
           <IssuesLoading />
-        ) : query.data?.kind === 'over_cap' ? (
+        ) : query.data === undefined ? null : query.data.kind === 'over_cap' ? (
           <OverCapBanner total={query.data.total} />
-        ) : query.data?.kind === 'ok' ? (
+        ) : query.data.kind === 'ok' ? (
           <IssuesContent
             items={query.data.value.items}
             total={query.data.value.total}
             page={page}
             pageSize={pageSize}
           />
-        ) : null}
+        ) : (
+          <IssuesErrorState variant={query.data} />
+        )}
       </section>
     </div>
   );
