@@ -8,6 +8,7 @@
 // project / branch pickers are Phase 7 — placeholder slots for now so
 // the Phase 6 layout doesn't drift from the documented order.
 
+import { RegionSelector } from './RegionSelector';
 import { TokenField } from './TokenField';
 
 export function Header(): React.JSX.Element {
@@ -18,7 +19,9 @@ export function Header(): React.JSX.Element {
     >
       <div className="self-center text-sm font-semibold text-text-primary">Sift</div>
 
-      <div data-testid="header-region-slot" />
+      <div data-testid="header-region-slot" className="self-center">
+        <RegionSelector />
+      </div>
       <div data-testid="header-token-slot" className="self-start">
         <TokenField />
       </div>
