@@ -6,7 +6,8 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import App from './App';
-import { useAuthStore } from './app/stores';
+import { useAuthStore, useSelectionStore } from './app/stores';
+import type { ProjectKey } from './types/sonar';
 
 const wrap = (children: ReactNode): React.JSX.Element => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -16,11 +17,12 @@ const wrap = (children: ReactNode): React.JSX.Element => {
 const reset = (): void => {
   useAuthStore.getState().clear();
   useAuthStore.setState({ token: '', region: 'eu', validation: 'idle' });
+  useSelectionStore.getState().reset();
 };
 
 afterEach(reset);
 
-describe('App content area', () => {
+describe('App tab area', () => {
   it('shows the paste-a-token empty state on cold start', () => {
     reset();
     render(wrap(<App />));
@@ -34,11 +36,22 @@ describe('App content area', () => {
     expect(screen.getByText('Token rejected')).toBeInTheDocument();
   });
 
-  it('shows the connected empty state when validation is valid', () => {
+  it('shows the pick-a-project prompt when valid but no project selected', () => {
     reset();
     useAuthStore.setState({ token: 'squ_ok', validation: 'valid' });
     render(wrap(<App />));
-    expect(screen.getByText('Token connected')).toBeInTheDocument();
+    expect(screen.getByText('Pick a project and branch')).toBeInTheDocument();
+  });
+
+  it('renders the IssuesTab when selection is complete', () => {
+    reset();
+    useAuthStore.setState({ token: 'squ_ok', validation: 'valid' });
+    useSelectionStore.setState({
+      projectKey: 'acme_widget' as ProjectKey,
+      branchName: 'main',
+    });
+    render(wrap(<App />));
+    expect(screen.getByTestId('issues-tab')).toBeInTheDocument();
   });
 
   it('renders the header in every state', () => {
