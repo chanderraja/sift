@@ -83,6 +83,23 @@ describe('IssuesTab — data states', () => {
     expect(await screen.findByText(/No issues match/i)).toBeInTheDocument();
   });
 
+  it('shows the over-cap banner when paging.total exceeds 10,000', async () => {
+    server.use(
+      http.get('/api/sonar/v1/issues/search', () =>
+        HttpResponse.json({
+          total: 14_237,
+          paging: { pageIndex: 1, pageSize: 100, total: 14_237 },
+          issues: [],
+        }),
+      ),
+    );
+    render(wrap(<IssuesTab />));
+    expect(await screen.findByTestId('issues-over-cap-banner')).toBeInTheDocument();
+    expect(screen.getByText(/14,237/)).toBeInTheDocument();
+    // The normal results table does not render in over-cap state.
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
+
   it('skips the query and shows a placeholder when no project is selected', () => {
     useSelectionStore.getState().reset();
     render(wrap(<IssuesTab />));

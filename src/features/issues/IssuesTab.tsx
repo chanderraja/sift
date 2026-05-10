@@ -15,6 +15,7 @@ import type { Issue, IssueFilters, ProjectKey } from '../../types/sonar';
 import { IssuesFilterSidebar } from './IssuesFilterSidebar';
 import { IssuesPagination } from './IssuesPagination';
 import { IssuesTable } from './IssuesTable';
+import { OverCapBanner } from './OverCapBanner';
 import { ResultCountBadge } from './ResultCountBadge';
 
 const buildFilters = (
@@ -54,6 +55,8 @@ export function IssuesTab(): React.JSX.Element {
       <section data-testid="issues-results" className="flex min-w-0 flex-col gap-3">
         {!enabled ? null : query.isPending ? (
           <IssuesLoading />
+        ) : query.data?.kind === 'over_cap' ? (
+          <OverCapBanner total={query.data.total} />
         ) : query.data?.kind === 'ok' ? (
           <IssuesContent
             items={query.data.value.items}
