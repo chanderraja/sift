@@ -45,6 +45,10 @@ describe.each(MODES)('createStorage(%s)', (mode) => {
   it('overwrites an existing value with set', () => {
     const s = createStorage(mode);
     s.set('region', 'eu');
+    // Asserting the intermediate value proves the first set landed
+    // before the overwrite — the test would otherwise pass even if
+    // the first set silently no-op'd.
+    expect(s.get('region')).toBe('eu');
     s.set('region', 'us');
     expect(s.get('region')).toBe('us');
   });
