@@ -561,10 +561,14 @@ Build in dependency order: leaf primitives first.
 - Clear validation status to `idle` when token is emptied, not `invalid`.
 - Don't show the "Forget" affordance in the header; that lives in the Settings drawer.
 
+**Resolved decisions** (closed by maintainer 2026-05-10 in PR #25):
+
+- Auto-focus the token field on cold start: **yes**. Implemented in `TokenField` — fires only on first mount when the field is empty so a reload-with-restored-token doesn't steal focus.
+- Paste-from-clipboard button: **yes**. Clipboard-icon ghost button next to the input; routes through `cleanToken` like keyboard input, with a friendly hint if the API is unavailable or the user denies the permission prompt.
+
 **When to ask the maintainer.**
 
-- Whether to auto-focus the token field on cold start (recommended: yes).
-- Whether to support paste-from-clipboard via a dedicated paste button (Safari sometimes treats `<input type="password">` paste oddly).
+- (None outstanding — see "Resolved decisions" above.)
 
 ---
 

@@ -2,7 +2,7 @@
 
 > A one-page browser dashboard for SonarCloud findings — issues, security hotspots, and quality-gate status — with Markdown / CSV export designed for LLM-assisted remediation planning.
 
-**Status:** Pre-implementation (Phase 0 — foundation). The README will gain a screenshot, a live demo link, and a feature tour as the v1.0 release lands.
+**Status:** In progress — Phases 1–5 merged on `master`; Phase 6 (header / auth / region) in PR review. See [`IMPLEMENTATION.md`](./IMPLEMENTATION.md) for the full 12-phase plan and the per-phase status. The README will gain a screenshot, a live demo link, and a feature tour as the v1.0 release lands.
 
 ## Why
 
