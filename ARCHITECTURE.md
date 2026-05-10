@@ -738,25 +738,29 @@ The proxy core is vendor-neutral: it imports nothing from any platform's SDK, ac
 
 **Consequences.** Proxy code stays minimal and the trust model is preserved. The Phase 3 `staleTime` defaults are codified by this ADR (closing the open question in Phase 3's "When to ask the maintainer" list). For users iterating on filters, the SPA-side cache absorbs the common case via TanStack Query's deduplication and stale-while-revalidate. Proxy caching may be revisited in v1.x only with a new ADR that updates the threat model first.
 
+### ADR-009 — Graceful fallback when a persisted selection key is missing
+
+**Status:** Accepted • **Date:** 2026-05-10 • **Closes:** Q-4
+
+**Context.** Q-4 asked what to do when the URL hash references an org / project / branch the user can no longer see — access revoked, project archived, branch deleted, region mismatch. Without a deliberate behavior the app would either render the picker as if the value were valid (then 404 downstream), crash on an undefined option, or silently drop the selection without telling the user.
+
+**Decision.** Graceful fallback with cascade. When a persisted key is absent from the freshly-loaded SonarClient response for that level, the header clears that level + cascades downward, and fires a single toast naming what was dropped. Branch fall-back goes to the project's `isMain: true` branch. Filters are intentionally preserved — a user who configured a detailed filter set deserves to keep that work even if the project vanished.
+
+**Consequences.** `selectionStore` never holds a "stale" key — every value is either `null` or guaranteed to exist in the latest option list. Validation lives in a dedicated hook (`useEnsureSelectionLive`) that runs after each query resolves. The toast becomes load-bearing UX and must be tested. Filter survival is by design; revisiting it is a separate ADR.
+
 ---
 
 ## 8. Open Architectural Questions
 
 Decisions that are *not yet* made and must be resolved before the affected implementation phase begins.
 
-> **Recently resolved:** Q-1 (over-cap handling) — see ADR-007. Q-2 (proxy caching) — see ADR-008.
+> **Recently resolved:** Q-1 (over-cap handling) — see ADR-007. Q-2 (proxy caching) — see ADR-008. Q-4 (missing-selection behavior) — see ADR-009.
 
 ### Q-3: Bundle splitting threshold
 
 The 250KB gzipped main-bundle budget is an aspiration. If features push over that, split candidates: Markdown templates, the QG measures grid, the column chooser. Need a triggered review when bundle hits 200KB.
 
 **Resolution required by:** Phase 11 (Polish).
-
-### Q-4: Whether to support tabs other than `main` for branches that were re-created
-
-Edge case: a branch named `release/2024.q4` may have a stale entry. Behavior on selection of a deleted branch is undefined.
-
-**Resolution required by:** Phase 7 (Pickers).
 
 ---
 
