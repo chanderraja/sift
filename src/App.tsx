@@ -3,6 +3,7 @@
 import { Suspense, lazy } from 'react';
 
 import { Toaster } from './components/primitives/Toast';
+import { Header } from './features/header/Header';
 
 // Dev-only kitchen-sink route. Dynamically imported and gated behind
 // import.meta.env.DEV so the module is tree-shaken out of the
@@ -29,8 +30,7 @@ export default function App(): React.JSX.Element {
 
   return (
     <div className="flex min-h-full flex-col bg-bg-base text-text-primary">
-      {/* Header lands in Phase 6's `feat(header): scaffold` commit. */}
-      <header data-testid="app-header" className="border-b border-border-subtle bg-bg-surface" />
+      <Header />
       {/* Tab content area. Empty state + tabs land in subsequent Phase 6+ commits. */}
       <main data-testid="app-content" className="flex-1" />
       {/* Overlay mount points — Modal / Drawer / Toast portals attach here. */}
