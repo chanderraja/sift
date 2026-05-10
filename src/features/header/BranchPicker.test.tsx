@@ -1,46 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { HttpResponse, http } from 'msw';
-import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { server } from '../../../tests/msw';
-import { useAuthStore, useSelectionStore } from '../../app/stores';
+import { useSelectionStore } from '../../app/stores';
 import type { ProjectKey } from '../../types/sonar';
 
 import { BranchPicker } from './BranchPicker';
+import { resetStores, stubBranches, wrap } from './test-helpers';
 
-const wrap = (children: ReactNode): React.JSX.Element => {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
-};
-
-const reset = (): void => {
-  useAuthStore.setState({ token: 'squ_test', region: 'eu', validation: 'valid' });
-  useSelectionStore.getState().reset();
-};
-
-beforeEach(reset);
-afterEach(reset);
-
-const stubBranches = (
-  branches: { name: string; isMain?: boolean; type?: 'LONG' | 'SHORT' | 'PULL_REQUEST' }[],
-): void => {
-  server.use(
-    http.get('/api/sonar/v1/project_branches/list', () =>
-      HttpResponse.json({
-        branches: branches.map((b) => ({
-          name: b.name,
-          isMain: b.isMain ?? false,
-          type: b.type ?? 'LONG',
-        })),
-      }),
-    ),
-  );
-};
+beforeEach(resetStores);
+afterEach(resetStores);
 
 describe('BranchPicker', () => {
   it('renders a skeleton while no project is selected', () => {
