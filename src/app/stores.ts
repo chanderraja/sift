@@ -51,8 +51,16 @@ export const usePrefsStore = createPrefsStore({ storage: prefsStorage });
 export const useUiStore = createUiStore();
 
 /**
- * Build a SonarClient bound to the current auth state. Each call returns
- * a fresh instance whose getToken closes over the live store, so the
- * client always sees the latest token even after a SetToken in mid-flight.
+ * Singleton SonarClient bound to the live auth store. Pickers and
+ * tabs import this rather than constructing their own — TanStack Query
+ * keys off the queryKey, not the client identity, but a stable client
+ * keeps the query functions referentially stable too.
+ */
+export const sonarClient = buildClient();
+
+/**
+ * Build a fresh SonarClient bound to the current auth state. Use the
+ * `sonarClient` singleton above for production paths; this factory is
+ * here for tests and any caller that wants a one-off instance.
  */
 export const makeAppSonarClient = (): SonarClient => buildClient();

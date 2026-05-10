@@ -8,8 +8,11 @@
 // project / branch pickers are Phase 7 — placeholder slots for now so
 // the Phase 6 layout doesn't drift from the documented order.
 
+import { BranchPicker } from './BranchPicker';
 import { ConnectionStatus } from './ConnectionStatus';
 import { HeaderActions } from './HeaderActions';
+import { OrgPicker } from './OrgPicker';
+import { ProjectPicker } from './ProjectPicker';
 import { RegionSelector } from './RegionSelector';
 import { TokenField } from './TokenField';
 
@@ -30,9 +33,15 @@ export function Header(): React.JSX.Element {
           <ConnectionStatus />
         </div>
       </div>
-      <div data-testid="header-org-slot" />
-      <div data-testid="header-project-slot" />
-      <div data-testid="header-branch-slot" />
+      <div data-testid="header-org-slot" className="self-center">
+        <OrgPicker />
+      </div>
+      <div data-testid="header-project-slot" className="self-center">
+        <ProjectPicker />
+      </div>
+      <div data-testid="header-branch-slot" className="self-center">
+        <BranchPicker />
+      </div>
 
       <div
         data-testid="header-actions-slot"
