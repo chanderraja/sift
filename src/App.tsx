@@ -4,6 +4,7 @@ import { Suspense, lazy } from 'react';
 
 import { Toaster } from './components/primitives/Toast';
 import { Header } from './features/header/Header';
+import { useValidateAuthEffect } from './features/header/useValidateAuthEffect';
 
 // Dev-only kitchen-sink route. Dynamically imported and gated behind
 // import.meta.env.DEV so the module is tree-shaken out of the
@@ -20,6 +21,11 @@ const isKitchenSinkPath = (): boolean =>
  * toast mount-point.
  */
 export default function App(): React.JSX.Element {
+  // Drives the idle→pending→valid|invalid transition every time the
+  // user pastes a token or switches region. Hydrates silently on cold
+  // start when the token was restored from storage.
+  useValidateAuthEffect();
+
   if (KitchenSink !== null && isKitchenSinkPath()) {
     return (
       <Suspense fallback={<main className="p-8 text-xs text-text-tertiary">Loading…</main>}>
