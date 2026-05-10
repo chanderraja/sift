@@ -24,8 +24,15 @@ export default defineConfig({
           // node env can't resolve those without a base. Route api/ tests
           // through jsdom which gives them a window.location to resolve
           // against. `.tsx` files (e.g. queries.smoke.test.tsx that mounts
-          // hooks) likewise need a DOM and live only in jsdom.
-          exclude: ['src/api/**/*.test.ts', 'src/api/**/*.test.tsx'],
+          // hooks, primitive tests under components/) likewise need a DOM
+          // and live only in jsdom.
+          exclude: [
+            'src/api/**/*.test.ts',
+            'src/api/**/*.test.tsx',
+            'src/components/**/*.test.tsx',
+            'src/stores/**/*.test.tsx',
+            'src/features/**/*.test.tsx',
+          ],
         },
       },
       {
