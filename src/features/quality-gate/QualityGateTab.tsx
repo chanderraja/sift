@@ -9,6 +9,7 @@ import { Skeleton } from '../../components/primitives/Skeleton';
 import { sonarClient, useSelectionStore } from '../../app/stores';
 import { IssuesErrorState } from '../issues/IssuesErrorState';
 
+import { QualityGateConditions } from './QualityGateConditions';
 import { QualityGateStatusPill } from './QualityGateStatusPill';
 
 export function QualityGateTab(): React.JSX.Element {
@@ -30,7 +31,11 @@ export function QualityGateTab(): React.JSX.Element {
           <IssuesErrorState variant={query.data} />
         )}
       </section>
-      <section data-testid="qg-conditions-slot" aria-label="Quality gate conditions" />
+      <section data-testid="qg-conditions-slot" aria-label="Quality gate conditions">
+        {query.data?.kind === 'ok' ? (
+          <QualityGateConditions conditions={query.data.value.projectStatus.conditions} />
+        ) : null}
+      </section>
       <section data-testid="qg-measures-slot" aria-label="Quality gate measures" />
     </div>
   );
