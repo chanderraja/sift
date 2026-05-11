@@ -29,13 +29,14 @@ describe('HeaderActions', () => {
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
   });
 
-  it('clicking export opens the modal', async () => {
+  it('clicking export sets exportOpen to true', async () => {
     reset();
     render(<HeaderActions />);
     expect(useUiStore.getState().exportOpen).toBe(false);
     await userEvent.click(screen.getByRole('button', { name: 'Open export' }));
     expect(useUiStore.getState().exportOpen).toBe(true);
-    expect(screen.getByRole('heading', { name: 'Export findings' })).toBeInTheDocument();
+    // The actual ExportModal is mounted in App.tsx, not here; HeaderActions
+    // only owns the button and the uiStore flag.
   });
 
   it('Escape closes the open drawer', async () => {
