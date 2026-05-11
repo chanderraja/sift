@@ -1,3 +1,7 @@
 {
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
+  "routes": [
+    { "src": "/api/sonar/(.*)", "dest": "/api/sonar/[...path]" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
 }
