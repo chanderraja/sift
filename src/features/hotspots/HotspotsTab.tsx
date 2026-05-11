@@ -6,6 +6,8 @@
 // filters are narrower than Issues, so the sidebar lands in the next
 // commit; this commit owns the data fetch + table.
 
+import { useEffect } from 'react';
+
 import { useHotspots } from '../../api/queries';
 import { EmptyState } from '../../components/primitives/EmptyState';
 import { Skeleton } from '../../components/primitives/Skeleton';
@@ -15,6 +17,7 @@ import { IssuesPagination } from '../issues/IssuesPagination';
 import { ResultCountBadge } from '../issues/ResultCountBadge';
 import type { Hotspot, HotspotFilters, ProjectKey } from '../../types/sonar';
 
+import { HotspotsFilterSidebar } from './HotspotsFilterSidebar';
 import { HotspotsTable } from './HotspotsTable';
 
 const buildFilters = (
@@ -36,6 +39,16 @@ export function HotspotsTab(): React.JSX.Element {
   const page = useFiltersStore((s) => s.page);
   const pageSize = useFiltersStore((s) => s.pageSize);
 
+  // Seed filtersStore.hotspotsFilters with the live projectKey so the
+  // sidebar's status/resolution patches land — patchHotspots silently
+  // drops the patch when hotspotsFilters is null and the patch itself
+  // doesn't carry projectKey.
+  useEffect(() => {
+    if (projectKey === null) return;
+    if (hotspotsFilters !== null && hotspotsFilters.projectKey === projectKey) return;
+    useFiltersStore.getState().patchHotspots({ projectKey });
+  }, [projectKey, hotspotsFilters]);
+
   const enabled = projectKey !== null && branchName !== null;
   const filters: HotspotFilters | null = enabled
     ? buildFilters(hotspotsFilters, projectKey, branchName)
@@ -52,7 +65,9 @@ export function HotspotsTab(): React.JSX.Element {
         data-testid="hotspots-filter-sidebar"
         aria-label="Hotspot filters"
         className="border-r border-border-subtle pr-4"
-      />
+      >
+        <HotspotsFilterSidebar />
+      </aside>
       <section data-testid="hotspots-results" className="flex min-w-0 flex-col gap-3">
         {!enabled ? null : query.isPending ? (
           <HotspotsLoading />
