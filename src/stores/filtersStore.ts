@@ -38,6 +38,7 @@ export interface FiltersActions {
   patchHotspots(patch: Partial<HotspotFilters>): void;
   setSort(sort: readonly SortDirective[]): void;
   setPage(p: number): void;
+  setPageSize(n: number): void;
   reset(): void;
 }
 
@@ -90,6 +91,12 @@ export function createFiltersStore() {
 
     setPage(page) {
       set({ page });
+    },
+
+    setPageSize(pageSize) {
+      // Page-N of the old size is meaningless against the new size, so
+      // drop the user back to page 1 — same rationale as patchIssues.
+      set({ pageSize, page: 1 });
     },
 
     reset() {

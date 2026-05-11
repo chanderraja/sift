@@ -113,6 +113,21 @@ describe('filtersStore.setPage', () => {
   });
 });
 
+describe('filtersStore.setPageSize', () => {
+  it('updates the page size', () => {
+    const store = createFiltersStore();
+    store.getState().setPageSize(200);
+    expect(store.getState().pageSize).toBe(200);
+  });
+
+  it('resets page to 1 so the user does not land on an empty page-N', () => {
+    const store = createFiltersStore();
+    store.setState({ page: 5 });
+    store.getState().setPageSize(50);
+    expect(store.getState().page).toBe(1);
+  });
+});
+
 describe('filtersStore.reset', () => {
   it('restores the initial state', () => {
     const store = createFiltersStore();

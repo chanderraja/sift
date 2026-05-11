@@ -8,6 +8,7 @@ import { Toaster } from './components/primitives/Toast';
 import { Header } from './features/header/Header';
 import { useEnsureSelectionLive } from './features/header/useEnsureSelectionLive';
 import { useValidateAuthEffect } from './features/header/useValidateAuthEffect';
+import { IssuesTab } from './features/issues/IssuesTab';
 import { startHashSync } from './stores/hashSyncIntegration';
 import { useAuthStore, useFiltersStore, useSelectionStore } from './app/stores';
 
@@ -20,22 +21,28 @@ const isKitchenSinkPath = (): boolean =>
   typeof window !== 'undefined' && window.location.pathname === '/__kitchen-sink';
 
 /**
- * Empty state shown in the tab area until a token is pasted and
- * validated. Tabs themselves land in Phase 8+; until then, this is
- * the only thing the body shows.
+ * Decide what to render in the tab area based on auth + selection.
+ *
+ * Cold start / token rejected → narrative empty state.
+ * Token connected, no project picked → pick-a-project prompt.
+ * Selection complete → IssuesTab (Phase 9 will add Hotspots / QG).
  */
-function NoTokenContent(): React.JSX.Element {
+function TabContent(): React.JSX.Element {
   const validation = useAuthStore((s) => s.validation);
   const token = useAuthStore((s) => s.token);
+  const projectKey = useSelectionStore((s) => s.projectKey);
+  const branchName = useSelectionStore((s) => s.branchName);
+
+  if (validation === 'valid' && projectKey !== null && branchName !== null) {
+    return <IssuesTab />;
+  }
 
   if (validation === 'valid') {
-    // The token has been accepted by the proxy; the populated tabs
-    // land in Phases 7 (pickers) and 8+ (issues / hotspots / QG).
     return (
       <EmptyState
-        heading="Token connected"
-        body="Pickers and tabs arrive in Phase 7+ — for now, the auth flow is
-          live end-to-end. Watch DevTools for store and query state."
+        heading="Pick a project and branch"
+        body="Use the pickers in the header to select an organization, project,
+          and branch. The Issues tab will render results below."
       />
     );
   }
@@ -100,7 +107,7 @@ export default function App(): React.JSX.Element {
     <div className="flex min-h-full flex-col bg-bg-base text-text-primary">
       <Header />
       <main data-testid="app-content" className="flex-1 p-6">
-        <NoTokenContent />
+        <TabContent />
       </main>
       {/* Overlay mount points — Modal / Drawer / Toast portals attach here. */}
       <Toaster />
