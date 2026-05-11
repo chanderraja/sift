@@ -1,19 +1,23 @@
 // SPDX-License-Identifier: MIT
 
+import { useQueryClient } from '@tanstack/react-query';
 import { KeyRound } from 'lucide-react';
 import { Suspense, lazy, useEffect } from 'react';
 
+import { issuesQuery } from './api/queries';
 import { EmptyState } from './components/primitives/EmptyState';
 import { Toaster } from './components/primitives/Toast';
 import { Header } from './features/header/Header';
 import { useEnsureSelectionLive } from './features/header/useEnsureSelectionLive';
 import { useValidateAuthEffect } from './features/header/useValidateAuthEffect';
+import { ExportModal } from './features/export-modal/ExportModal';
 import { HotspotsTab } from './features/hotspots/HotspotsTab';
 import { IssuesTab } from './features/issues/IssuesTab';
 import { QualityGateTab } from './features/quality-gate/QualityGateTab';
 import { startHashSync } from './stores/hashSyncIntegration';
-import { useAuthStore, useFiltersStore, useSelectionStore } from './app/stores';
+import { useAuthStore, useFiltersStore, useSelectionStore, sonarClient } from './app/stores';
 import { TabBar } from './app/TabBar';
+import type { Issue, IssueFilters, Page, Result } from './types/sonar';
 
 // Dev-only kitchen-sink route. Dynamically imported and gated behind
 // import.meta.env.DEV so the module is tree-shaken out of the
@@ -87,6 +91,31 @@ function TabContent(): React.JSX.Element {
 }
 
 /**
+ * Reads the currently cached issues page for the active filter set so
+ * the ExportModal can generate content without re-fetching.
+ */
+function useVisibleIssues(): Issue[] {
+  const qc = useQueryClient();
+  const projectKey = useSelectionStore((s) => s.projectKey);
+  const branchName = useSelectionStore((s) => s.branchName);
+  const issuesFilters = useFiltersStore((s) => s.issuesFilters);
+  const page = useFiltersStore((s) => s.page);
+  const pageSize = useFiltersStore((s) => s.pageSize);
+
+  if (projectKey === null || branchName === null) return [];
+
+  const filters: IssueFilters = {
+    ...issuesFilters,
+    componentKeys: [projectKey],
+    branch: branchName,
+  };
+  const cached = qc.getQueryData<Result<Page<Issue>>>(
+    issuesQuery(sonarClient, filters, { p: page, ps: pageSize }).queryKey,
+  );
+  return cached?.kind === 'ok' ? cached.value.items : [];
+}
+
+/**
  * Top-level page composition: header at top, tab area below, overlay
  * slots layered on top.
  */
@@ -112,6 +141,8 @@ export default function App(): React.JSX.Element {
     });
   }, []);
 
+  const visibleIssues = useVisibleIssues();
+
   if (KitchenSink !== null && isKitchenSinkPath()) {
     return (
       <Suspense fallback={<main className="p-8 text-xs text-text-tertiary">Loading…</main>}>
@@ -127,6 +158,7 @@ export default function App(): React.JSX.Element {
         <TabContent />
       </main>
       {/* Overlay mount points — Modal / Drawer / Toast portals attach here. */}
+      <ExportModal issues={visibleIssues} />
       <Toaster />
     </div>
   );

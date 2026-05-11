@@ -27,7 +27,7 @@ const DEFAULT_FIELDS: CsvField[] = [
   { header: 'updateDate', value: (i) => i.updateDate },
 ];
 
-export function issuesToCsv(issues: Issue[], fields: CsvField[] = DEFAULT_FIELDS): string {
+export function issuesToCsv(issues: readonly Issue[], fields: CsvField[] = DEFAULT_FIELDS): string {
   const headers = fields.map((f) => f.header);
 
   if (issues.length === 0) {
