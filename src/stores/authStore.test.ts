@@ -21,7 +21,7 @@ const makeMemoryStorage = (): Storage => {
   };
 };
 
-const okClient = { listOrganizations: vi.fn().mockResolvedValue({ kind: 'ok', value: [] }) };
+const okClient = { validateToken: vi.fn().mockResolvedValue({ kind: 'ok', value: true }) };
 
 describe('authStore — initial state hydration', () => {
   it('uses defaults when storage is empty', () => {
@@ -224,7 +224,7 @@ describe('authStore.setStorageMode', () => {
 
 describe('authStore.validate', () => {
   it('sets invalid immediately when token is empty', async () => {
-    const client = { listOrganizations: vi.fn() };
+    const client = { validateToken: vi.fn() };
     const store = createAuthStore({
       prefsStorage: makeMemoryStorage(),
       makeTokenStorage: () => makeMemoryStorage(),
@@ -232,18 +232,18 @@ describe('authStore.validate', () => {
     });
     await store.getState().validate();
     expect(store.getState().validation).toBe('invalid');
-    expect(client.listOrganizations).not.toHaveBeenCalled();
+    expect(client.validateToken).not.toHaveBeenCalled();
   });
 
-  it('transitions idle → pending → valid on Result.ok', async () => {
+  it('transitions idle → pending → valid on Result.ok true', async () => {
     let release: () => void = () => undefined;
     const pending = new Promise<void>((resolve) => {
       release = resolve;
     });
     const client = {
-      listOrganizations: vi.fn().mockImplementation(async () => {
+      validateToken: vi.fn().mockImplementation(async () => {
         await pending;
-        return { kind: 'ok', value: [] };
+        return { kind: 'ok', value: true };
       }),
     };
     const store = createAuthStore({
@@ -259,10 +259,22 @@ describe('authStore.validate', () => {
     expect(store.getState().validation).toBe('valid');
   });
 
+  it('sets invalid when validateToken resolves to ok false (revoked token)', async () => {
+    const client = { validateToken: vi.fn().mockResolvedValue({ kind: 'ok', value: false }) };
+    const store = createAuthStore({
+      prefsStorage: makeMemoryStorage(),
+      makeTokenStorage: () => makeMemoryStorage(),
+      client,
+    });
+    store.getState().setToken('squ_revoked');
+    await store.getState().validate();
+    expect(store.getState().validation).toBe('invalid');
+  });
+
   it.each([['unauthorized'], ['forbidden'], ['rate_limited'], ['server_error'], ['network_error']])(
-    'sets invalid when listOrganizations resolves to %s',
+    'sets invalid when validateToken resolves to %s',
     async (kind) => {
-      const client = { listOrganizations: vi.fn().mockResolvedValue({ kind }) };
+      const client = { validateToken: vi.fn().mockResolvedValue({ kind }) };
       const store = createAuthStore({
         prefsStorage: makeMemoryStorage(),
         makeTokenStorage: () => makeMemoryStorage(),
@@ -280,9 +292,9 @@ describe('authStore.validate', () => {
       prefsStorage: makeMemoryStorage(),
       makeTokenStorage: () => makeMemoryStorage(),
       client: () => ({
-        listOrganizations: () => {
+        validateToken: () => {
           lastToken = store.getState().token;
-          return Promise.resolve({ kind: 'ok', value: [] });
+          return Promise.resolve({ kind: 'ok', value: true });
         },
       }),
     });

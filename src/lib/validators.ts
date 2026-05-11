@@ -340,3 +340,11 @@ export function parseMeasuresComponentResponse(raw: unknown): ParseResult<Measur
   if (!result.success) return fail(result.error);
   return ok(result.data.component.measures as Measure[]);
 }
+
+const AuthValidateResponseSchema = z.object({ valid: z.boolean() });
+
+export function parseAuthValidateResponse(raw: unknown): ParseResult<boolean> {
+  const result = AuthValidateResponseSchema.safeParse(raw);
+  if (!result.success) return fail(result.error);
+  return ok(result.data.valid);
+}

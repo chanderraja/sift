@@ -54,7 +54,7 @@ export const TOKEN_KEY = 'sift.token';
 const DEFAULT_REGION: Region = 'eu';
 const DEFAULT_STORAGE_MODE: StorageMode = 'local';
 
-type ListOrgs = Pick<SonarClient, 'listOrganizations'>;
+type ValidateClient = Pick<SonarClient, 'validateToken'>;
 
 export interface AuthStoreDeps {
   /** Persists region + storageMode. Always a fixed (local) backend. */
@@ -65,7 +65,7 @@ export interface AuthStoreDeps {
    * SonarClient (or a getter that returns one). A function lets the caller
    * close over the current token so `validate()` always sends the latest.
    */
-  client: ListOrgs | (() => ListOrgs);
+  client: ValidateClient | (() => ValidateClient);
   /**
    * Cold-start defaults a self-hoster can override at deploy time. A
    * persisted user choice always wins; these only apply on a first visit
@@ -119,7 +119,7 @@ export function createAuthStore(deps: AuthStoreDeps) {
 
   const initialToken = deps.makeTokenStorage(initialMode).get(TOKEN_KEY) ?? '';
 
-  const resolveClient = (): ListOrgs =>
+  const resolveClient = (): ValidateClient =>
     typeof deps.client === 'function' ? deps.client() : deps.client;
 
   return create<AuthStore>((set, get) => ({
@@ -172,8 +172,8 @@ export function createAuthStore(deps: AuthStoreDeps) {
         return;
       }
       set({ validation: 'pending' });
-      const result = await resolveClient().listOrganizations();
-      set({ validation: result.kind === 'ok' ? 'valid' : 'invalid' });
+      const result = await resolveClient().validateToken();
+      set({ validation: result.kind === 'ok' && result.value ? 'valid' : 'invalid' });
     },
 
     clear() {

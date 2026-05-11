@@ -36,6 +36,7 @@ const emptyPage = (key: 'components' | 'issues' | 'hotspots'): Record<string, un
 });
 
 const PATHS = {
+  authValidate: '/api/sonar/v1/authentication/validate',
   organizations: '/api/sonar/v1/organizations/search',
   projects: '/api/sonar/v1/projects/search',
   branches: '/api/sonar/v1/project_branches/list',
@@ -53,6 +54,7 @@ const projectKey = 'acme_widget-service' as never;
 // once, not seven times.
 type MethodCall = (c: SonarClient) => Promise<Result<unknown>>;
 const METHODS: readonly (readonly [string, string, MethodCall])[] = [
+  ['validateToken', PATHS.authValidate, (c) => c.validateToken()],
   ['listOrganizations', PATHS.organizations, (c) => c.listOrganizations()],
   ['listProjects', PATHS.projects, (c) => c.listProjects('acme')],
   ['listBranches', PATHS.branches, (c) => c.listBranches(projectKey)],
@@ -83,6 +85,28 @@ describe.each(METHODS)('SonarClient.%s — shared status/network mapping', (_nam
 });
 
 // === Per-method specifics ===
+
+describe('SonarClient.validateToken', () => {
+  const PATH = PATHS.authValidate;
+
+  it('returns ok true when SonarCloud reports valid', async () => {
+    server.use(http.get(PATH, () => HttpResponse.json({ valid: true })));
+    const result = await makeClient().validateToken();
+    expect(result).toEqual({ kind: 'ok', value: true });
+  });
+
+  it('returns ok false when SonarCloud reports invalid (revoked token)', async () => {
+    server.use(http.get(PATH, () => HttpResponse.json({ valid: false })));
+    const result = await makeClient().validateToken();
+    expect(result).toEqual({ kind: 'ok', value: false });
+  });
+
+  it('returns server_error when the response body is malformed', async () => {
+    server.use(http.get(PATH, () => HttpResponse.json({ something: 'else' })));
+    const result = await makeClient().validateToken();
+    expect(result.kind).toBe('server_error');
+  });
+});
 
 describe('SonarClient.listOrganizations', () => {
   const PATH = PATHS.organizations;

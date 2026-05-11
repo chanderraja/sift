@@ -7,6 +7,7 @@
 
 import type { ParseResult } from '../lib/validators';
 import {
+  parseAuthValidateResponse,
   parseBranchesListResponse,
   parseHotspotsSearchResponse,
   parseIssuesSearchResponse,
@@ -49,6 +50,10 @@ export class SonarClient {
   constructor(opts: SonarClientOptions) {
     this.region = opts.region;
     this.getToken = opts.getToken;
+  }
+
+  async validateToken(): Promise<Result<boolean>> {
+    return this.get(`${PROXY_BASE}/authentication/validate`, parseAuthValidateResponse);
   }
 
   async listOrganizations(): Promise<Result<Organization[]>> {
