@@ -22,6 +22,13 @@ Visual references for design phases live in `docs/mocks/` (1440×900 PNGs of all
 
 When this phase is complete (all acceptance criteria met, CI green on `master`, maintainer has merged the phase's PR), update this line to the next phase. Do not advance phases without maintainer sign-off on the current one.
 
+## Claude behavior rules
+
+- **Don't assume. Surface confusion.** If requirements are ambiguous or a tradeoff exists, stop and state it explicitly. Ask rather than guess. A wrong assumption implemented is harder to undo than a question asked.
+- **Minimum code that solves the problem.** Write only what is required by the current task. Nothing speculative, no "while I'm here" additions, no future-proofing.
+- **Touch only what you must.** Edits are scoped to the task. Do not clean up surrounding code, rename unrelated symbols, or restructure files you didn't need to touch.
+- **Define success criteria before starting. Verify before declaring done.** State explicitly what "done" looks like, then confirm each criterion is met before closing the task.
+
 ## Working principles — non-negotiable
 
 These are codified in `IMPLEMENTATION.md` "Working Principles." Summary:
