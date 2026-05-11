@@ -13,6 +13,8 @@ export interface ResultCountBadgeProps {
   pageSize: number;
   /** True when the upstream total exceeds the 10,000 SonarCloud cap. */
   capped?: boolean;
+  /** Singular/plural noun pair — defaults to issue / issues. */
+  nouns?: { singular: string; plural: string };
 }
 
 export function ResultCountBadge({
@@ -20,19 +22,20 @@ export function ResultCountBadge({
   page,
   pageSize,
   capped = false,
+  nouns = { singular: 'issue', plural: 'issues' },
 }: ResultCountBadgeProps): React.JSX.Element {
   if (total === 0) {
-    return <div className="text-xs text-text-secondary">0 issues</div>;
+    return <div className="text-xs text-text-secondary">0 {nouns.plural}</div>;
   }
   if (total === 1) {
-    return <div className="text-xs text-text-secondary">1 issue</div>;
+    return <div className="text-xs text-text-secondary">1 {nouns.singular}</div>;
   }
   const start = (page - 1) * pageSize + 1;
   const end = Math.min(page * pageSize, total);
   const totalLabel = capped ? `${fmt(total)}+` : fmt(total);
   return (
     <div className="text-xs text-text-secondary">
-      {fmt(start)}–{fmt(end)} of {totalLabel} issues
+      {fmt(start)}–{fmt(end)} of {totalLabel} {nouns.plural}
     </div>
   );
 }

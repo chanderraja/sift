@@ -8,9 +8,12 @@ import { Toaster } from './components/primitives/Toast';
 import { Header } from './features/header/Header';
 import { useEnsureSelectionLive } from './features/header/useEnsureSelectionLive';
 import { useValidateAuthEffect } from './features/header/useValidateAuthEffect';
+import { HotspotsTab } from './features/hotspots/HotspotsTab';
 import { IssuesTab } from './features/issues/IssuesTab';
+import { QualityGateTab } from './features/quality-gate/QualityGateTab';
 import { startHashSync } from './stores/hashSyncIntegration';
 import { useAuthStore, useFiltersStore, useSelectionStore } from './app/stores';
+import { TabBar } from './app/TabBar';
 
 // Dev-only kitchen-sink route. Dynamically imported and gated behind
 // import.meta.env.DEV so the module is tree-shaken out of the
@@ -25,16 +28,30 @@ const isKitchenSinkPath = (): boolean =>
  *
  * Cold start / token rejected → narrative empty state.
  * Token connected, no project picked → pick-a-project prompt.
- * Selection complete → IssuesTab (Phase 9 will add Hotspots / QG).
+ * Selection complete → the active tab (Issues / Hotspots / Quality Gate).
  */
 function TabContent(): React.JSX.Element {
   const validation = useAuthStore((s) => s.validation);
   const token = useAuthStore((s) => s.token);
   const projectKey = useSelectionStore((s) => s.projectKey);
   const branchName = useSelectionStore((s) => s.branchName);
+  const tab = useFiltersStore((s) => s.tab);
 
   if (validation === 'valid' && projectKey !== null && branchName !== null) {
-    return <IssuesTab />;
+    return (
+      <>
+        <TabBar />
+        <div className="mt-4 flex-1">
+          {tab === 'issues' ? (
+            <IssuesTab />
+          ) : tab === 'hotspots' ? (
+            <HotspotsTab />
+          ) : (
+            <QualityGateTab />
+          )}
+        </div>
+      </>
+    );
   }
 
   if (validation === 'valid') {
