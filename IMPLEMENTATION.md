@@ -741,9 +741,13 @@ QG:
 - Ratings (`new_security_rating` etc.) come back as `"1.0"` etc.; convert to A–E letters.
 - The QG view fits on one screen; resist the urge to add charts here. They belong in v1.2 trend view.
 
+**Resolved decisions** (closed by maintainer 2026-05-10 in PR #28):
+
+- QG default measure set: `coverage`, `duplication`, `ncloc`, `technical_debt`, `complexity`, `security_rating`, `reliability_rating`, `maintainability_rating`. The suggested set was accepted as-is. Adding / reordering is a Phase 11 polish concern, not a Phase 9 one.
+
 **When to ask the maintainer.**
 
-- Which measures to include by default in the QG view (suggestion: coverage, duplication, ncloc, technical_debt, complexity, security_rating, reliability_rating, maintainability_rating).
+- (None outstanding — see "Resolved decisions" above.)
 
 ---
 
