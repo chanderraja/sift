@@ -84,8 +84,23 @@ export function markdownGroupedByRule(issues: readonly Issue[], ctx: MarkdownCon
 
 export function markdownLlmRemediation(issues: readonly Issue[], ctx: MarkdownContext): string {
   const instruction = [
-    'You are a code-quality assistant. Below is a structured list of findings exported from SonarCloud.',
-    'For each finding, provide a concise remediation plan: explain the root cause, suggest a fix, and note any related findings that may share a common root cause.',
+    'You are a senior engineer reviewing static-analysis findings for a',
+    'colleague. Below is a structured list of issues exported from',
+    'SonarCloud — rule, severity, file, line, and message for each.',
+    '',
+    'For each finding, propose a concrete remediation:',
+    '- The minimum change needed to address the issue, not a rewrite.',
+    '- A short code snippet showing the fix when the change is',
+    '  straightforward.',
+    "- If the fix requires context you don't have (project conventions,",
+    '  framework version, broader refactoring), flag that rather than',
+    '  guess.',
+    '',
+    'Group findings that share a root cause and propose a single fix for',
+    'the group when appropriate. Order your response from highest impact',
+    'to lowest. If any findings look like likely false positives or',
+    'low-priority noise, say so briefly and skip detailed remediation for',
+    'those.',
     '',
   ].join('\n');
 
