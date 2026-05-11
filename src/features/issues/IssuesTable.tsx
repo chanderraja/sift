@@ -1,38 +1,19 @@
 // SPDX-License-Identifier: MIT
 
-// IssuesTable — TanStack Table rendering of an Issue page. Column set
-// per ARCHITECTURE.md §Issues tab; sortable headers wire into
-// filtersStore.sort so URL hash + cross-tab persistence flows for
-// free. Row interaction (click-to-expand) lands in a subsequent
-// Phase 8 commit.
-//
-// The table is presentational: data fetching, pagination, and
-// filtering live above in IssuesTab. We hand a pre-paged `items` in
-// and the table renders columns + sort affordances.
+// IssuesTable — Issue-specific binding of the generic FindingsTable
+// primitive. Owns the column set (per ARCHITECTURE.md §Issues tab),
+// the Issue.key row identity, and the IssueExpandPanel renderer.
+// Sortable headers round-trip through filtersStore.sort so URL hash
+// and cross-tab persistence flow for free.
 
-import type { ColumnDef, SortingState } from '@tanstack/react-table';
-import {
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { useMemo, useState } from 'react';
-
-import { IssueExpandPanel } from './IssueExpandPanel';
+import type { ColumnDef } from '@tanstack/react-table';
 
 import { SeverityBadge, StatusBadge, TypeBadge } from '../../components/primitives/Badge';
-import {
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableHeaderCell,
-  TableRoot,
-  TableRow,
-  type SortDirection,
-} from '../../components/primitives/Table';
+import { FindingsTable } from '../../components/primitives/FindingsTable';
 import { useFiltersStore } from '../../app/stores';
 import type { Issue } from '../../types/sonar';
+
+import { IssueExpandPanel } from './IssueExpandPanel';
 
 /**
  * Strip the `projectKey:` prefix from `component` so the path column
@@ -139,12 +120,6 @@ const columns: ColumnDef<Issue>[] = [
   },
 ];
 
-const directionToHeader = (id: string, state: SortingState): SortDirection => {
-  const entry = state.find((s) => s.id === id);
-  if (!entry) return null;
-  return entry.desc ? 'desc' : 'asc';
-};
-
 export interface IssuesTableProps {
   items: readonly Issue[];
 }
@@ -153,80 +128,15 @@ export function IssuesTable({ items }: IssuesTableProps): React.JSX.Element {
   const sort = useFiltersStore((s) => s.sort);
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const setSort = useFiltersStore.getState().setSort;
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
-
-  // Map filtersStore.sort → TanStack SortingState. The two shapes
-  // mirror each other so the conversion is a pair of light maps.
-  const sorting: SortingState = useMemo(
-    () => sort.map((s) => ({ id: s.column, desc: s.direction === 'desc' })),
-    [sort],
-  );
-
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions by design; downstream consumers re-read each render.
-  const table = useReactTable<Issue>({
-    data: items as Issue[],
-    columns,
-    state: { sorting },
-    onSortingChange: (updater) => {
-      const next = typeof updater === 'function' ? updater(sorting) : updater;
-      setSort(
-        next.map((entry) => ({
-          column: entry.id,
-          direction: entry.desc ? 'desc' : 'asc',
-        })),
-      );
-    },
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    manualPagination: true,
-  });
 
   return (
-    <TableRoot>
-      <TableHeader>
-        {table.getHeaderGroups().map((group) => (
-          <TableRow key={group.id}>
-            {group.headers.map((header) => {
-              const direction = directionToHeader(header.column.id, sorting);
-              const canSort = header.column.getCanSort();
-              const tanstackHandler = header.isPlaceholder
-                ? undefined
-                : header.column.getToggleSortingHandler();
-              const onSortProps =
-                canSort && tanstackHandler !== undefined ? { onSort: tanstackHandler } : {};
-              return (
-                <TableHeaderCell key={header.id} sortDirection={direction} {...onSortProps}>
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHeaderCell>
-              );
-            })}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody>
-        {table.getRowModel().rows.map((row) => {
-          const issue = row.original;
-          const isExpanded = expandedKey === issue.key;
-          return (
-            <TableRow
-              key={row.id}
-              expanded={isExpanded}
-              expandedContent={<IssueExpandPanel issue={issue} />}
-              expandedColSpan={columns.length}
-              className="cursor-pointer"
-              onClick={() => {
-                setExpandedKey(isExpanded ? null : issue.key);
-              }}
-            >
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
-              ))}
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </TableRoot>
+    <FindingsTable<Issue>
+      items={items}
+      columns={columns}
+      getRowKey={(issue) => issue.key}
+      renderExpandPanel={(issue) => <IssueExpandPanel issue={issue} />}
+      sort={sort}
+      onSortChange={setSort}
+    />
   );
 }
