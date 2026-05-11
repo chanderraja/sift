@@ -130,7 +130,7 @@ export class SonarClient {
     );
   }
 
-  // Internal: GET a same-origin proxy URL with Bearer auth and map the
+  // Internal: GET a same-origin proxy URL with Basic auth (ADR-010) and map the
   // response (status + body) into the discriminated `Result<T>`. Every
   // public method funnels through here so error mapping is in one place.
   protected async get<T>(
@@ -140,7 +140,7 @@ export class SonarClient {
     let resp: Response;
     try {
       resp = await fetch(path, {
-        headers: { Authorization: `Bearer ${this.getToken()}` },
+        headers: { Authorization: `Basic ${btoa(`${this.getToken()}:`)}` },
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'unknown network error';

@@ -97,7 +97,7 @@ describe('SonarClient.listOrganizations', () => {
     }
   });
 
-  it('sends Authorization: Bearer <token>', async () => {
+  it('sends Authorization: Basic base64(token:) — ADR-010', async () => {
     let received: string | null = null;
     server.use(
       http.get(PATH, ({ request }) => {
@@ -109,7 +109,7 @@ describe('SonarClient.listOrganizations', () => {
       }),
     );
     await makeClient('squ_token_xyz').listOrganizations();
-    expect(received).toBe('Bearer squ_token_xyz');
+    expect(received).toBe(`Basic ${btoa('squ_token_xyz:')}`);
   });
 
   it('extracts the upstream message on 403', async () => {

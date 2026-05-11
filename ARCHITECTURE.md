@@ -738,6 +738,19 @@ The proxy core is vendor-neutral: it imports nothing from any platform's SDK, ac
 
 **Consequences.** Proxy code stays minimal and the trust model is preserved. The Phase 3 `staleTime` defaults are codified by this ADR (closing the open question in Phase 3's "When to ask the maintainer" list). For users iterating on filters, the SPA-side cache absorbs the common case via TanStack Query's deduplication and stale-while-revalidate. Proxy caching may be revisited in v1.x only with a new ADR that updates the threat model first.
 
+### ADR-010 — Switch to HTTP Basic auth (amends ADR-006)
+
+**Status:** Accepted • **Date:** 2026-05-11
+
+**Context.** ADR-006 adopted `Authorization: Bearer <token>` based on SonarSource documentation stating Bearer as the recommended scheme. Live testing with a real legacy hex token (40-char SHA1 format) against `sonarcloud.io/api/authentication/validate` showed `{"valid":false}` with Bearer but `{"valid":true}` with `curl -u "TOKEN:"` (HTTP Basic auth). The SonarCloud API does accept Bearer for newer `squ_…` / `sqp_…` token formats, but the legacy hex format only works with Basic. Because Sift must accept whatever token a user holds, locking to Bearer silently breaks legacy-token users on first auth.
+
+**Decision.** Replace `Authorization: Bearer <token>` with `Authorization: Basic base64(token:)` (token as the username, empty password — the standard SonarCloud/SonarQube token-as-credential pattern). The change is one line in `SonarClient.get()`. The proxy already forwards the Authorization header verbatim, so no proxy changes are needed.
+
+**Consequences.**
+- Legacy hex tokens, `squ_…`, and `sqp_…` tokens all work under Basic auth (SonarCloud accepts Basic for all token types).
+- `btoa()` is used for the base64 encoding; it is available in all supported browsers and in the V8-based Vercel edge runtime.
+- Tests that assert the Authorization header value must be updated to expect `Basic …` instead of `Bearer …`.
+
 ### ADR-009 — Graceful fallback when a persisted selection key is missing
 
 **Status:** Accepted • **Date:** 2026-05-10 • **Closes:** Q-4
@@ -773,6 +786,7 @@ The 250KB gzipped main-bundle budget is an aspiration. If features push over tha
 | 0.3 | 2026-05-08 | design-feedback | ADR-008 added (closes Q-2, no proxy caching); IMPLEMENTATION.md Phase 3 staleTime defaults codified |
 | 0.4 | 2026-05-08 | phase-2 | ProxyOptions extended with optional `fetchImpl` so the Cloudflare adapter can satisfy ADR-008(c)'s "explicit, not implicit" cache-disable requirement (`cf: { cacheTtl: 0, cacheEverything: false }`) without coupling `proxy/core.ts` to platform specifics. Default behavior (`globalThis.fetch`) is unchanged for callers that omit it |
 | 0.5 | 2026-05-09 | phase-4 | `FiltersStore.hotspotsFilters` typed as `HotspotFilters \| null` rather than `HotspotFilters`. The store has to represent the period before a project is selected, and `HotspotFilters.projectKey` is required — `null` is the cleanest "deliberately empty" marker under `exactOptionalPropertyTypes: true`. UI consumers gate the SonarClient call on a non-null value, so `searchHotspots` still receives the documented shape |
+| 0.6 | 2026-05-11 | live-testing | ADR-010 added (amends ADR-006): switch auth from Bearer to Basic. Live test showed legacy hex tokens return `{"valid":false}` with Bearer but `{"valid":true}` with Basic; Basic works for all SonarCloud token formats |
 
 When this document is updated, append a row here. Major restructures should also bump the version number visible at the top.
 
