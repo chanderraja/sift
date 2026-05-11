@@ -31,3 +31,5 @@ test-results/
 # These contain real org/project data and may contain partial PII.
 # Only the redacted copies under tests/fixtures/*.json are committed.
 tests/fixtures/raw/
+.vercel
+.env*.local

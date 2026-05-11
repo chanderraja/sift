@@ -18,7 +18,7 @@ Visual references for design phases live in `docs/mocks/` (1440×900 PNGs of all
 
 ## Current phase
 
-**Phase 9 — Hotspots and Quality Gate Tabs.** See `IMPLEMENTATION.md` §"Phase 9". Phases 1–8 are merged on `master`.
+**Phase 11 — Settings, Theme, Polish.** See `IMPLEMENTATION.md` §"Phase 11". Phases 1–10 are merged on `master`. App is live at https://sift-red.vercel.app.
 
 When this phase is complete (all acceptance criteria met, CI green on `master`, maintainer has merged the phase's PR), update this line to the next phase. Do not advance phases without maintainer sign-off on the current one.
 

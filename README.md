@@ -2,7 +2,7 @@
 
 > A one-page browser dashboard for SonarCloud findings — issues, security hotspots, and quality-gate status — with Markdown / CSV export designed for LLM-assisted remediation planning.
 
-**Status:** In progress — Phases 1–8 merged on `master`; Phase 9 (Hotspots + Quality Gate tabs) in progress. See [`IMPLEMENTATION.md`](./IMPLEMENTATION.md) for the full 12-phase plan and the per-phase status. The README will gain a screenshot, a live demo link, and a feature tour as the v1.0 release lands.
+**Status:** Phases 1–10 merged on `master`. **Live at [sift-red.vercel.app](https://sift-red.vercel.app).** See [`IMPLEMENTATION.md`](./IMPLEMENTATION.md) for the full 12-phase plan. Phase 11 (Settings, Theme, Polish) is next.
 
 ## Why
 
