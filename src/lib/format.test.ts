@@ -4,6 +4,26 @@ import { describe, expect, it } from 'vitest';
 
 import { formatDuration, formatNcloc, formatPercentage, formatRating } from './format';
 
+// Every formatter falls back to an em-dash on invalid input. Asserting
+// that contract once across all formatters keeps the suite from
+// repeating itself in four near-identical blocks.
+const FORMATTERS = {
+  formatRating,
+  formatPercentage,
+  formatNcloc,
+  formatDuration,
+} as const;
+
+const INVALID_INPUTS: readonly (string | null)[] = [null, '', 'NaN'];
+
+describe('formatters — em-dash fallback on invalid input', () => {
+  for (const [name, fn] of Object.entries(FORMATTERS)) {
+    it.each(INVALID_INPUTS)(`${name}(%j) → "—"`, (input) => {
+      expect(fn(input)).toBe('—');
+    });
+  }
+});
+
 describe('formatRating', () => {
   it.each([
     ['1.0', 'A'],
@@ -16,12 +36,10 @@ describe('formatRating', () => {
     expect(formatRating(input)).toBe(expected);
   });
 
-  it('returns an em-dash for empty / invalid input', () => {
-    expect(formatRating(null)).toBe('—');
-    expect(formatRating('')).toBe('—');
-    expect(formatRating('not-a-number')).toBe('—');
+  it('returns an em-dash for ratings outside the 1..5 band', () => {
     expect(formatRating('0')).toBe('—');
     expect(formatRating('6')).toBe('—');
+    expect(formatRating('not-a-number')).toBe('—');
   });
 });
 
@@ -38,12 +56,6 @@ describe('formatPercentage', () => {
 
   it('clamps to one decimal place on long values', () => {
     expect(formatPercentage('73.487')).toBe('73.5%');
-  });
-
-  it('returns an em-dash for empty / invalid input', () => {
-    expect(formatPercentage(null)).toBe('—');
-    expect(formatPercentage('')).toBe('—');
-    expect(formatPercentage('NaN')).toBe('—');
   });
 });
 
@@ -62,12 +74,6 @@ describe('formatNcloc', () => {
   it('renders millions with M suffix at one decimal', () => {
     expect(formatNcloc('1234567')).toBe('1.2M');
     expect(formatNcloc('12000000')).toBe('12M');
-  });
-
-  it('returns an em-dash for invalid input', () => {
-    expect(formatNcloc(null)).toBe('—');
-    expect(formatNcloc('')).toBe('—');
-    expect(formatNcloc('NaN')).toBe('—');
   });
 });
 
@@ -92,11 +98,5 @@ describe('formatDuration', () => {
     expect(formatDuration('480')).toBe('1d'); // 8h * 60min
     expect(formatDuration('600')).toBe('1d 2h');
     expect(formatDuration('540')).toBe('1d 1h');
-  });
-
-  it('returns an em-dash for invalid input', () => {
-    expect(formatDuration(null)).toBe('—');
-    expect(formatDuration('')).toBe('—');
-    expect(formatDuration('NaN')).toBe('—');
   });
 });
