@@ -11,7 +11,7 @@
 // the explicit signal that no cache layer (CDN, browser, intermediary)
 // should retain anything.
 
-import { handleSonarRequest } from '../core';
+import { handleSonarRequest } from '../core.js';
 
 export const config = { runtime: 'edge' as const };
 

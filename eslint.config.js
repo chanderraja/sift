@@ -11,7 +11,7 @@ const SPDX_HEADER = ['// SPDX-License-Identifier: MIT'];
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'coverage', 'playwright-report', 'test-results', 'node_modules'],
+    ignores: ['dist', 'coverage', 'playwright-report', 'test-results', 'node_modules', '.vercel'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,

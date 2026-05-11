@@ -89,7 +89,7 @@ export async function handleSonarRequest(req: Request, opts: ProxyOptions = {}):
       },
     });
   }
-  const region: Region = regionParam ?? 'eu';
+  const region: Region = regionParam === 'us' ? 'us' : 'eu';
   const host = REGION_HOSTS[region];
 
   // Strip the region param from the forwarded query — it's a proxy-routing
