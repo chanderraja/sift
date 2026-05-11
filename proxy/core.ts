@@ -145,6 +145,12 @@ export async function handleSonarRequest(req: Request, opts: ProxyOptions = {}):
   // (ADR-008).
   const responseHeaders = new Headers(upstream.headers);
   responseHeaders.delete('set-cookie');
+  // Strip hop-by-hop / encoding headers that the edge runtime has already
+  // consumed. If the runtime decompressed the upstream body, forwarding
+  // Content-Encoding: gzip with a plain body would cause the browser to
+  // attempt a double-decompression and fail to parse the JSON.
+  responseHeaders.delete('content-encoding');
+  responseHeaders.delete('transfer-encoding');
   for (const [k, v] of Object.entries(corsHeaders(allowedOrigin))) {
     responseHeaders.set(k, v);
   }

@@ -5,6 +5,7 @@
 // ("Errors as values, not exceptions"), every public method returns
 // `Result<T>`; the client never throws.
 
+import { logger } from '../lib/logger';
 import type { ParseResult } from '../lib/validators';
 import {
   parseAuthValidateResponse,
@@ -180,6 +181,11 @@ export class SonarClient {
       // Bytes did not match the schema. Treat as an upstream-shape error
       // rather than a network error so the UI can show "we got something
       // unexpected from SonarCloud" instead of "network failed."
+      logger.warn('[SonarClient] schema validation failed', {
+        path,
+        status,
+        issues: parsed.error.issues,
+      });
       return { kind: 'server_error', status };
     }
     return { kind: 'ok', value: parsed.value };

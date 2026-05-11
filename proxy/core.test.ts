@@ -181,6 +181,28 @@ describe('handleSonarRequest — header forwarding and response post-processing'
     expect(res.headers.get('Set-Cookie')).toBeNull();
   });
 
+  it('strips Content-Encoding from the upstream response', async () => {
+    stubFetch(
+      new Response('{}', {
+        status: 200,
+        headers: { 'Content-Encoding': 'gzip' },
+      }),
+    );
+    const res = await handleSonarRequest(req(SPA_V1));
+    expect(res.headers.get('Content-Encoding')).toBeNull();
+  });
+
+  it('strips Transfer-Encoding from the upstream response', async () => {
+    stubFetch(
+      new Response('{}', {
+        status: 200,
+        headers: { 'Transfer-Encoding': 'chunked' },
+      }),
+    );
+    const res = await handleSonarRequest(req(SPA_V1));
+    expect(res.headers.get('Transfer-Encoding')).toBeNull();
+  });
+
   it('adds CORS, x-sift-upstream, and Cache-Control: no-store on a forwarded response', async () => {
     stubFetch();
     const res = await handleSonarRequest(req(`${SPA_V1}?region=us`));
