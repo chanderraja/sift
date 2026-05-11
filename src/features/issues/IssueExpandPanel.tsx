@@ -6,12 +6,8 @@
 // once `SonarClient.getRule()` exists (see ARCHITECTURE.md §3); this
 // component is the mount point.
 
+import { fileFromComponent } from '../../lib/component';
 import type { Issue } from '../../types/sonar';
-
-const fileFromComponent = (component: string): string => {
-  const colon = component.indexOf(':');
-  return colon === -1 ? component : component.slice(colon + 1);
-};
 
 export interface IssueExpandPanelProps {
   issue: Issue;
