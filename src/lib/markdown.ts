@@ -28,7 +28,7 @@ function headerBlock(ctx: MarkdownContext): string {
   ].join('\n');
 }
 
-export function markdownTriage(issues: Issue[], ctx: MarkdownContext): string {
+export function markdownTriage(issues: readonly Issue[], ctx: MarkdownContext): string {
   const lines = issues.map(
     (issue, idx) =>
       `${idx + 1}. ${issue.severity} · \`${filePath(issue.component)}:${issue.line ?? '?'}\` · ${issue.rule}\n   ${issue.message}`,
@@ -37,7 +37,7 @@ export function markdownTriage(issues: Issue[], ctx: MarkdownContext): string {
   return [headerBlock(ctx), '# Triage List', '', ...lines, ''].join('\n');
 }
 
-export function markdownGroupedByFile(issues: Issue[], ctx: MarkdownContext): string {
+export function markdownGroupedByFile(issues: readonly Issue[], ctx: MarkdownContext): string {
   const byFile = new Map<string, Issue[]>();
   for (const issue of issues) {
     const path = filePath(issue.component);
@@ -60,7 +60,7 @@ export function markdownGroupedByFile(issues: Issue[], ctx: MarkdownContext): st
   return [headerBlock(ctx), '# Findings by File', '', ...sections].join('\n');
 }
 
-export function markdownGroupedByRule(issues: Issue[], ctx: MarkdownContext): string {
+export function markdownGroupedByRule(issues: readonly Issue[], ctx: MarkdownContext): string {
   const byRule = new Map<string, Issue[]>();
   for (const issue of issues) {
     const group = byRule.get(issue.rule) ?? [];
@@ -82,7 +82,7 @@ export function markdownGroupedByRule(issues: Issue[], ctx: MarkdownContext): st
   return [headerBlock(ctx), '# Findings by Rule', '', ...sections].join('\n');
 }
 
-export function markdownLlmRemediation(issues: Issue[], ctx: MarkdownContext): string {
+export function markdownLlmRemediation(issues: readonly Issue[], ctx: MarkdownContext): string {
   const instruction = [
     'You are a code-quality assistant. Below is a structured list of findings exported from SonarCloud.',
     'For each finding, provide a concise remediation plan: explain the root cause, suggest a fix, and note any related findings that may share a common root cause.',
