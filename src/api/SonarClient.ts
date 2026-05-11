@@ -209,9 +209,15 @@ const encodeIssueFilters = (filters: IssueFilters): URLSearchParams => {
   if (filters.severities && filters.severities.length > 0) {
     params.set('severities', filters.severities.join(','));
   }
-  if (filters.types && filters.types.length > 0) {
-    params.set('types', filters.types.join(','));
-  }
+  // Default to standard issue types when the caller hasn't specified any.
+  // SonarCloud's /api/issues/search returns SECURITY_HOTSPOT entries when
+  // `types` is omitted, but those belong to the Hotspots tab and their
+  // shape (status: TO_REVIEW, etc.) differs from the IssueSchema.
+  const typesToSend =
+    filters.types && filters.types.length > 0
+      ? filters.types
+      : (['BUG', 'CODE_SMELL', 'VULNERABILITY'] as const);
+  params.set('types', typesToSend.join(','));
   if (filters.statuses && filters.statuses.length > 0) {
     params.set('statuses', filters.statuses.join(','));
   }

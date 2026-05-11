@@ -297,8 +297,19 @@ describe('SonarClient.searchIssues', () => {
     await makeClient().searchIssues({ severities: [] });
     const params = new URL(cap.read()).searchParams;
     expect(params.get('severities')).toBeNull();
-    expect(params.get('types')).toBeNull();
     expect(params.get('tags')).toBeNull();
+  });
+
+  it('sends BUG,CODE_SMELL,VULNERABILITY by default when no types filter is given', async () => {
+    const cap = captureUrl(PATH, emptyPage('issues'));
+    await makeClient().searchIssues({});
+    expect(new URL(cap.read()).searchParams.get('types')).toBe('BUG,CODE_SMELL,VULNERABILITY');
+  });
+
+  it('uses caller types and does not inject defaults when types filter is provided', async () => {
+    const cap = captureUrl(PATH, emptyPage('issues'));
+    await makeClient().searchIssues({ types: ['BUG'] });
+    expect(new URL(cap.read()).searchParams.get('types')).toBe('BUG');
   });
 
   it('encodes pagination opts (p, ps)', async () => {
