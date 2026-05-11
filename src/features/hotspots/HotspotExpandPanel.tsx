@@ -5,12 +5,8 @@
 // file:line. The lazy-loaded rule description lands when
 // SonarClient.getRule() is wired (same follow-up as the Issue panel).
 
+import { fileFromComponent } from '../../lib/component';
 import type { Hotspot } from '../../types/sonar';
-
-const fileFromComponent = (component: string): string => {
-  const colon = component.indexOf(':');
-  return colon === -1 ? component : component.slice(colon + 1);
-};
 
 export interface HotspotExpandPanelProps {
   hotspot: Hotspot;

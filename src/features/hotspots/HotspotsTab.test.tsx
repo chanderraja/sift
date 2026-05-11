@@ -1,21 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { server } from '../../../tests/msw';
-import { useAuthStore, useFiltersStore, useSelectionStore } from '../../app/stores';
-import type { ProjectKey } from '../../types/sonar';
+import { resetSession, seedSession, wrap } from '../test-helpers/sessionWrap';
 
 import { HotspotsTab } from './HotspotsTab';
-
-const wrap = (children: ReactNode): React.JSX.Element => {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
-};
 
 const HOTSPOT = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   key: 'AYz1',
@@ -32,24 +24,10 @@ const HOTSPOT = (overrides: Record<string, unknown> = {}): Record<string, unknow
   ...overrides,
 });
 
-const seedSession = (): void => {
-  useAuthStore.setState({ token: 'squ_ok', validation: 'valid', region: 'eu' });
-  useSelectionStore.setState({
-    organizationKey: null,
-    projectKey: 'acme_widget-service' as ProjectKey,
-    branchName: 'main',
-  });
-  useFiltersStore.getState().reset();
-};
-
-const reset = (): void => {
-  useAuthStore.getState().clear();
-  useSelectionStore.getState().reset();
-  useFiltersStore.getState().reset();
-};
-
-beforeEach(seedSession);
-afterEach(reset);
+beforeEach(() => {
+  seedSession();
+});
+afterEach(resetSession);
 
 describe('HotspotsTab', () => {
   it('renders the two-column scaffold', () => {

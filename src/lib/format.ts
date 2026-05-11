@@ -76,6 +76,23 @@ export function formatNcloc(raw: string | null): string {
 const MIN_PER_HOUR = 60;
 const MIN_PER_DAY = 8 * MIN_PER_HOUR;
 
+/**
+ * Lightweight "Xd ago" / "Xmo ago" / "Xy ago" relative formatter used
+ * by Issues + Hotspots tables. Full Intl.RelativeTimeFormat lands with
+ * a TimeAgo primitive in Phase 11 polish; this is the v1 placeholder.
+ */
+export function formatRelativeDate(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return iso;
+  const days = Math.floor((Date.now() - then) / 86_400_000);
+  if (days < 1) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 30) return `${String(days)}d ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${String(months)}mo ago`;
+  return `${String(Math.floor(months / 12))}y ago`;
+}
+
 export function formatDuration(raw: string | null): string {
   return fromNum(raw, (n) => {
     if (n < MIN_PER_HOUR) return `${String(Math.round(n))}min`;

@@ -1,40 +1,19 @@
 // SPDX-License-Identifier: MIT
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { server } from '../../../tests/msw';
-import { useAuthStore, useFiltersStore, useSelectionStore } from '../../app/stores';
-import type { ProjectKey } from '../../types/sonar';
+import { useSelectionStore } from '../../app/stores';
+import { resetSession, seedSession, wrap } from '../test-helpers/sessionWrap';
 
 import { QualityGateTab } from './QualityGateTab';
 
-const wrap = (children: ReactNode): React.JSX.Element => {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
-};
-
-const seedSession = (): void => {
-  useAuthStore.setState({ token: 'squ_ok', validation: 'valid', region: 'eu' });
-  useSelectionStore.setState({
-    organizationKey: null,
-    projectKey: 'acme_widget-service' as ProjectKey,
-    branchName: 'main',
-  });
-  useFiltersStore.getState().reset();
-};
-
-const reset = (): void => {
-  useAuthStore.getState().clear();
-  useSelectionStore.getState().reset();
-  useFiltersStore.getState().reset();
-};
-
-beforeEach(seedSession);
-afterEach(reset);
+beforeEach(() => {
+  seedSession();
+});
+afterEach(resetSession);
 
 describe('QualityGateTab', () => {
   it('renders the three section slots', async () => {

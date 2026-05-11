@@ -10,28 +10,12 @@ import type { ColumnDef } from '@tanstack/react-table';
 
 import { Badge } from '../../components/primitives/Badge';
 import { FindingsTable } from '../../components/primitives/FindingsTable';
+import { fileFromComponent } from '../../lib/component';
+import { formatRelativeDate } from '../../lib/format';
 import { useFiltersStore } from '../../app/stores';
 import type { Hotspot } from '../../types/sonar';
 
 import { HotspotExpandPanel } from './HotspotExpandPanel';
-
-const fileFromComponent = (component: string): string => {
-  const colon = component.indexOf(':');
-  return colon === -1 ? component : component.slice(colon + 1);
-};
-
-const formatRelative = (iso: string): string => {
-  const now = Date.now();
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return iso;
-  const days = Math.floor((now - then) / 86_400_000);
-  if (days < 1) return 'today';
-  if (days === 1) return 'yesterday';
-  if (days < 30) return `${String(days)}d ago`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${String(months)}mo ago`;
-  return `${String(Math.floor(months / 12))}y ago`;
-};
 
 const PROBABILITY_TONE = {
   HIGH: 'severity-blocker',
@@ -92,7 +76,7 @@ const columns: ColumnDef<Hotspot>[] = [
     header: 'Created',
     cell: ({ row }) => (
       <span className="tabular-nums text-text-secondary">
-        {formatRelative(row.original.creationDate)}
+        {formatRelativeDate(row.original.creationDate)}
       </span>
     ),
     enableSorting: true,
