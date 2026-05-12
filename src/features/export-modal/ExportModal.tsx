@@ -3,7 +3,10 @@
 import { useState, useId } from 'react';
 
 import { useFiltersStore, useSelectionStore, useUiStore } from '../../app/stores';
+import { Button } from '../../components/primitives/Button';
+import { Input } from '../../components/primitives/Input';
 import { Modal } from '../../components/primitives/Modal';
+import { Radio, RadioGroup } from '../../components/primitives/RadioGroup';
 import { issuesToCsv } from '../../lib/csv';
 import {
   markdownTriage,
@@ -124,60 +127,46 @@ export function ExportModal({ issues }: ExportModalProps): React.JSX.Element | n
     >
       <div className="flex flex-col gap-4">
         {/* Format toggle */}
-        <fieldset className="flex gap-3">
-          <legend className="mb-1 text-sm font-medium text-text-muted">Format</legend>
-          {(['markdown', 'csv'] as Format[]).map((f) => (
-            <label key={f} className="flex items-center gap-1.5 cursor-pointer">
-              <input
-                type="radio"
-                name="format"
-                value={f}
-                checked={format === f}
-                onChange={() => {
-                  setFormat(f);
-                }}
-                aria-label={f === 'markdown' ? 'Markdown' : 'CSV'}
-              />
-              <span className="text-sm capitalize">{f === 'markdown' ? 'Markdown' : 'CSV'}</span>
-            </label>
-          ))}
+        <fieldset>
+          <legend className="mb-1 text-xs font-medium text-text-secondary">Format</legend>
+          <RadioGroup
+            value={format}
+            onValueChange={(v) => {
+              setFormat(v as Format);
+            }}
+            className="flex flex-row gap-4"
+          >
+            <Radio value="markdown">Markdown</Radio>
+            <Radio value="csv">CSV</Radio>
+          </RadioGroup>
         </fieldset>
 
         {/* Template selector — Markdown only */}
         {format === 'markdown' && (
-          <fieldset className="flex flex-col gap-2">
-            <legend className="mb-1 text-sm font-medium text-text-muted">Template</legend>
-            {MD_TEMPLATES.map((t) => {
-              const inputId = `template-${t.id}`;
-              return (
-                <div key={t.id} className="flex items-start gap-2">
-                  <input
-                    id={inputId}
-                    type="radio"
-                    name="template"
-                    value={t.id}
-                    checked={template === t.id}
-                    onChange={() => {
-                      setTemplate(t.id);
-                    }}
-                    className="mt-0.5"
-                  />
-                  <label htmlFor={inputId} className="cursor-pointer">
-                    <span className="text-sm font-medium">{t.label}</span>
-                    <span className="ml-2 text-xs text-text-muted">{t.description}</span>
-                  </label>
-                </div>
-              );
-            })}
+          <fieldset>
+            <legend className="mb-1 text-xs font-medium text-text-secondary">Template</legend>
+            <RadioGroup
+              value={template}
+              onValueChange={(v) => {
+                setTemplate(v as MdTemplate);
+              }}
+            >
+              {MD_TEMPLATES.map((t) => (
+                <Radio key={t.id} value={t.id}>
+                  <span className="font-medium">{t.label}</span>
+                  <span className="ml-2 text-text-tertiary">{t.description}</span>
+                </Radio>
+              ))}
+            </RadioGroup>
           </fieldset>
         )}
 
         {/* Limit */}
         <div className="flex items-center gap-3">
-          <label htmlFor={limitId} className="text-sm font-medium text-text-muted">
+          <label htmlFor={limitId} className="text-xs font-medium text-text-secondary">
             Limit
           </label>
-          <input
+          <Input
             id={limitId}
             type="number"
             min={1}
@@ -190,39 +179,28 @@ export function ExportModal({ issues }: ExportModalProps): React.JSX.Element | n
               const v = Math.min(LIMIT_MAX, Math.max(1, Number(e.target.value)));
               setLimit(v);
             }}
-            className="w-24 rounded border border-border bg-bg-base px-2 py-1 text-sm"
+            className="w-24"
             aria-label="Limit"
           />
-          <span className="text-xs text-text-muted">max {LIMIT_MAX}</span>
+          <span className="text-xs text-text-tertiary">max {LIMIT_MAX}</span>
         </div>
 
         {/* Footer actions */}
-        <div className="flex justify-end gap-2 pt-2 border-t border-border">
-          <button
-            type="button"
+        <div className="flex justify-end gap-2 border-t border-border pt-2">
+          <Button
+            variant="secondary"
             onClick={() => {
               setExportOpen(false);
             }}
-            className="rounded border border-border px-3 py-1.5 text-sm"
           >
             Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleDownload}
-            className="rounded border border-border px-3 py-1.5 text-sm"
-            aria-label="Download"
-          >
+          </Button>
+          <Button variant="secondary" onClick={handleDownload}>
             Download
-          </button>
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="rounded bg-accent px-3 py-1.5 text-sm text-white"
-            aria-label="Copy to clipboard"
-          >
+          </Button>
+          <Button variant="primary" onClick={handleCopy}>
             {copyDone ? 'Copied!' : 'Copy to clipboard'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

@@ -53,16 +53,17 @@ describe('IssuesPagination', () => {
     expect(screen.getByText(/Page 2 of 3/)).toBeInTheDocument();
   });
 
-  it('renders the page size selector with documented options', () => {
+  it('renders the page size selector with documented options', async () => {
     render(<IssuesPagination total={250} />);
-    expect(screen.getByLabelText(/Page size/)).toBeInTheDocument();
-    const options = screen.getAllByRole('option');
+    await userEvent.click(screen.getByRole('combobox', { name: /Page size/ }));
+    const options = await screen.findAllByRole('option');
     expect(options.map((o) => o.textContent)).toEqual(['50', '100', '200', '500']);
   });
 
   it('changing page size writes both filtersStore and prefsStore', async () => {
     render(<IssuesPagination total={250} />);
-    await userEvent.selectOptions(screen.getByLabelText(/Page size/), '200');
+    await userEvent.click(screen.getByRole('combobox', { name: /Page size/ }));
+    await userEvent.click(await screen.findByRole('option', { name: '200' }));
     expect(useFiltersStore.getState().pageSize).toBe(200);
     expect(usePrefsStore.getState().defaultPageSize).toBe(200);
   });
@@ -70,7 +71,8 @@ describe('IssuesPagination', () => {
   it('changing page size resets page to 1', async () => {
     useFiltersStore.setState({ page: 2 });
     render(<IssuesPagination total={250} />);
-    await userEvent.selectOptions(screen.getByLabelText(/Page size/), '50');
+    await userEvent.click(screen.getByRole('combobox', { name: /Page size/ }));
+    await userEvent.click(await screen.findByRole('option', { name: '50' }));
     expect(useFiltersStore.getState().page).toBe(1);
   });
 
@@ -79,6 +81,6 @@ describe('IssuesPagination', () => {
     expect(screen.queryByRole('button', { name: /Previous/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Next/ })).not.toBeInTheDocument();
     // page size selector remains so the user can switch
-    expect(screen.getByLabelText(/Page size/)).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /Page size/ })).toBeInTheDocument();
   });
 });

@@ -11,6 +11,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Button } from '../../components/primitives/Button';
+import { Select, SelectItem } from '../../components/primitives/Select';
 import { useFiltersStore, usePrefsStore } from '../../app/stores';
 
 const PAGE_SIZES = [50, 100, 200, 500] as const;
@@ -20,7 +21,7 @@ export interface IssuesPaginationProps {
   total: number;
 }
 
-export function IssuesPagination({ total }: IssuesPaginationProps): React.JSX.Element {
+export function IssuesPagination({ total }: Readonly<IssuesPaginationProps>): React.JSX.Element {
   const page = useFiltersStore((s) => s.page);
   const pageSize = useFiltersStore((s) => s.pageSize);
   // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -66,29 +67,23 @@ export function IssuesPagination({ total }: IssuesPaginationProps): React.JSX.El
       ) : (
         <span />
       )}
-      <label className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
         Page size
-        <select
+        <Select
           aria-label="Page size"
-          value={pageSize}
-          className={
-            'rounded border border-border bg-bg-elevated px-1.5 py-0.5 text-text-primary ' +
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ' +
-            'focus-visible:outline-accent'
-          }
-          onChange={(e) => {
-            const n = Number(e.target.value);
-            setPageSize(n);
-            setDefaultPageSize(n);
+          value={String(pageSize)}
+          onValueChange={(v) => {
+            setPageSize(Number(v));
+            setDefaultPageSize(Number(v));
           }}
         >
           {PAGE_SIZES.map((n) => (
-            <option key={n} value={n}>
+            <SelectItem key={n} value={String(n)}>
               {n}
-            </option>
+            </SelectItem>
           ))}
-        </select>
-      </label>
+        </Select>
+      </div>
     </div>
   );
 }
