@@ -751,6 +751,16 @@ The proxy core is vendor-neutral: it imports nothing from any platform's SDK, ac
 - `btoa()` is used for the base64 encoding; it is available in all supported browsers and in the V8-based Vercel edge runtime.
 - Tests that assert the Authorization header value must be updated to expect `Basic …` instead of `Bearer …`.
 
+### ADR-011 — Bundle size: no splitting required for v1.0
+
+**Status:** Accepted • **Date:** 2026-05-12 • **Closes:** Q-3
+
+**Context.** Q-3 named 250 KB gzipped as the budget for the main bundle, with a review trigger at 200 KB and split candidates (Markdown templates, QG measures grid, column chooser) to be evaluated at Phase 11. The question was whether splitting would be required before v1.0 ships.
+
+**Decision.** No splitting for v1.0. A `pnpm build` at the end of Phase 10 produces a single 157 KB gzipped bundle — 37% under the 200 KB review trigger and 63% under the hard cap. None of the split candidates (Markdown templates, table, QG grid) materially contribute to this size; the bulk is React + Radix UI + TanStack Query, which cannot be deferred without hurting the cold-start experience. A CI job added in Phase 11 will enforce the ≤ 250 KB budget on every PR; if a future feature pushes past 200 KB the CI job will emit a warning (non-blocking) so the review can happen incrementally rather than as a surprise at v1.1.
+
+**Consequences.** Simpler build config (no `build.rolldownOptions.output.codeSplitting`). CI enforces the budget automatically. The KitchenSink dev route already uses `lazy()` and is tree-shaken from production — that pattern stays as the template if a future split is warranted.
+
 ### ADR-009 — Graceful fallback when a persisted selection key is missing
 
 **Status:** Accepted • **Date:** 2026-05-10 • **Closes:** Q-4
@@ -769,11 +779,7 @@ Decisions that are *not yet* made and must be resolved before the affected imple
 
 > **Recently resolved:** Q-1 (over-cap handling) — see ADR-007. Q-2 (proxy caching) — see ADR-008. Q-4 (missing-selection behavior) — see ADR-009.
 
-### Q-3: Bundle splitting threshold
-
-The 250KB gzipped main-bundle budget is an aspiration. If features push over that, split candidates: Markdown templates, the QG measures grid, the column chooser. Need a triggered review when bundle hits 200KB.
-
-**Resolution required by:** Phase 11 (Polish).
+### ~~Q-3: Bundle splitting threshold~~ — resolved by ADR-011
 
 ---
 
@@ -787,6 +793,7 @@ The 250KB gzipped main-bundle budget is an aspiration. If features push over tha
 | 0.4 | 2026-05-08 | phase-2 | ProxyOptions extended with optional `fetchImpl` so the Cloudflare adapter can satisfy ADR-008(c)'s "explicit, not implicit" cache-disable requirement (`cf: { cacheTtl: 0, cacheEverything: false }`) without coupling `proxy/core.ts` to platform specifics. Default behavior (`globalThis.fetch`) is unchanged for callers that omit it |
 | 0.5 | 2026-05-09 | phase-4 | `FiltersStore.hotspotsFilters` typed as `HotspotFilters \| null` rather than `HotspotFilters`. The store has to represent the period before a project is selected, and `HotspotFilters.projectKey` is required — `null` is the cleanest "deliberately empty" marker under `exactOptionalPropertyTypes: true`. UI consumers gate the SonarClient call on a non-null value, so `searchHotspots` still receives the documented shape |
 | 0.6 | 2026-05-11 | live-testing | ADR-010 added (amends ADR-006): switch auth from Bearer to Basic. Live test showed legacy hex tokens return `{"valid":false}` with Bearer but `{"valid":true}` with Basic; Basic works for all SonarCloud token formats |
+| 0.7 | 2026-05-12 | phase-11 | ADR-011 added (closes Q-3): bundle 157 KB gzipped, no splitting needed for v1.0; CI budget check enforces ≤ 250 KB on every PR |
 
 When this document is updated, append a row here. Major restructures should also bump the version number visible at the top.
 
