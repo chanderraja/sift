@@ -183,12 +183,15 @@ export class SonarClient {
       // bug or an undocumented SonarCloud shape change, not a server error.
       // Surface as parse_error so the UI can direct users to file an issue
       // rather than blaming SonarCloud's status page.
+      const first = parsed.error.issues[0];
+      const hint = first ? `${first.path.join('.')} — ${first.message}` : 'unknown field';
       logger.warn('[SonarClient] schema validation failed', {
         path,
         status,
+        hint,
         issues: parsed.error.issues,
       });
-      return { kind: 'parse_error' };
+      return { kind: 'parse_error', hint };
     }
     return { kind: 'ok', value: parsed.value };
   }
