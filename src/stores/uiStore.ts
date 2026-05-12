@@ -9,11 +9,13 @@ import { create } from 'zustand';
 export interface UiState {
   settingsOpen: boolean;
   exportOpen: boolean;
+  shortcutsOpen: boolean;
 }
 
 export interface UiActions {
   setSettingsOpen(open: boolean): void;
   setExportOpen(open: boolean): void;
+  setShortcutsOpen(open: boolean): void;
   closeAll(): void;
 }
 
@@ -23,14 +25,18 @@ export function createUiStore() {
   return create<UiStore>((set) => ({
     settingsOpen: false,
     exportOpen: false,
+    shortcutsOpen: false,
     setSettingsOpen(settingsOpen) {
       set({ settingsOpen });
     },
     setExportOpen(exportOpen) {
       set({ exportOpen });
     },
+    setShortcutsOpen(shortcutsOpen) {
+      set({ shortcutsOpen });
+    },
     closeAll() {
-      set({ settingsOpen: false, exportOpen: false });
+      set({ settingsOpen: false, exportOpen: false, shortcutsOpen: false });
     },
   }));
 }

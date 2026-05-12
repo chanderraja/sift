@@ -20,6 +20,26 @@ expect.extend(axeMatchers);
 // jsdom from throwing during render. Real browser tests live in
 // playwright/.
 if (typeof window !== 'undefined') {
+  // jsdom doesn't implement matchMedia; provide a configurable stub so
+  // tests can vi.spyOn(window, 'matchMedia') and override the return value.
+  if (!globalThis.matchMedia) {
+    Object.defineProperty(globalThis, 'matchMedia', {
+      writable: true,
+      configurable: true,
+      value: (query: string): MediaQueryList =>
+        ({
+          matches: false,
+          media: query,
+          addEventListener: (): void => undefined,
+          removeEventListener: (): void => undefined,
+          addListener: (): void => undefined,
+          removeListener: (): void => undefined,
+          dispatchEvent: (): boolean => false,
+          onchange: null,
+        }) as MediaQueryList,
+    });
+  }
+
   if (!Element.prototype.hasPointerCapture) {
     Element.prototype.hasPointerCapture = (): boolean => false;
   }
