@@ -77,7 +77,7 @@ export interface Project {
 export interface Branch {
   name: string;
   isMain: boolean;
-  type: 'LONG' | 'SHORT' | 'PULL_REQUEST';
+  type: 'LONG' | 'SHORT' | 'PULL_REQUEST' | 'BRANCH';
   status?: { qualityGateStatus: QualityGateStatus };
   analysisDate?: string;
 }
