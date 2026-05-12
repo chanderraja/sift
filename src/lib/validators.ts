@@ -24,6 +24,7 @@ import type {
   Hotspot,
   Issue,
   IssueKey,
+  IssuesPage,
   Measure,
   Organization,
   OrgKey,
@@ -275,10 +276,17 @@ const BranchesListResponseSchema = z
   })
   .passthrough();
 
+const issueFacetValueSchema = z.object({ val: z.string(), count: z.number() }).passthrough();
+
+const issueFacetSchema = z
+  .object({ property: z.string(), values: z.array(issueFacetValueSchema) })
+  .passthrough();
+
 const IssuesSearchResponseSchema = z
   .object({
     paging: pagingSchema,
     issues: z.array(IssueSchema),
+    facets: z.array(issueFacetSchema).default([]),
   })
   .passthrough();
 
@@ -317,10 +325,13 @@ export function parseBranchesListResponse(raw: unknown): ParseResult<Branch[]> {
   return ok(result.data.branches as Branch[]);
 }
 
-export function parseIssuesSearchResponse(raw: unknown): ParseResult<Page<Issue>> {
+export function parseIssuesSearchResponse(raw: unknown): ParseResult<IssuesPage> {
   const result = IssuesSearchResponseSchema.safeParse(raw);
   if (!result.success) return fail(result.error);
-  return ok(toPage(result.data.issues as Issue[], result.data.paging));
+  return ok({
+    ...toPage(result.data.issues as Issue[], result.data.paging),
+    facets: result.data.facets,
+  });
 }
 
 export function parseHotspotsSearchResponse(raw: unknown): ParseResult<Page<Hotspot>> {

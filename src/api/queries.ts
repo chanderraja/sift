@@ -21,8 +21,8 @@ import type {
   Branch,
   Hotspot,
   HotspotFilters,
-  Issue,
   IssueFilters,
+  IssuesPage,
   Measure,
   Organization,
   Page,
@@ -97,7 +97,7 @@ export const useIssues = (
   client: SonarClient,
   filters: IssueFilters,
   opts?: PageOpts,
-): UseQueryResult<Result<Page<Issue>>> => useQuery(issuesQuery(client, filters, opts));
+): UseQueryResult<Result<IssuesPage>> => useQuery(issuesQuery(client, filters, opts));
 
 // ---------- Hotspots ----------
 

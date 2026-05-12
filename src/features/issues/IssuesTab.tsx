@@ -10,14 +10,7 @@ import { useIssues } from '../../api/queries';
 import { EmptyState } from '../../components/primitives/EmptyState';
 import { Skeleton } from '../../components/primitives/Skeleton';
 import { sonarClient, useFiltersStore, useSelectionStore } from '../../app/stores';
-import type {
-  Issue,
-  IssueFilters,
-  IssueType,
-  ProjectKey,
-  Severity,
-  Status,
-} from '../../types/sonar';
+import type { Issue, IssueFacet, IssueFilters, ProjectKey } from '../../types/sonar';
 
 import { IssuesErrorState } from './IssuesErrorState';
 import type { IssueCounts } from './IssuesFilterSidebar';
@@ -37,16 +30,22 @@ const buildFilters = (
   branch: branchName,
 });
 
-function computeIssueCounts(items: readonly Issue[]): IssueCounts {
-  const severities: Partial<Record<Severity, number>> = {};
-  const types: Partial<Record<IssueType, number>> = {};
-  const statuses: Partial<Record<Status, number>> = {};
-  for (const issue of items) {
-    severities[issue.severity] = (severities[issue.severity] ?? 0) + 1;
-    types[issue.type] = (types[issue.type] ?? 0) + 1;
-    statuses[issue.status] = (statuses[issue.status] ?? 0) + 1;
+function facetsToIssueCounts(facets: readonly IssueFacet[]): IssueCounts {
+  const counts: IssueCounts = {};
+  for (const facet of facets) {
+    const map: Partial<Record<string, number>> = {};
+    for (const { val, count } of facet.values) {
+      map[val] = count;
+    }
+    if (facet.property === 'severities') {
+      counts.severities = map;
+    } else if (facet.property === 'types') {
+      counts.types = map;
+    } else if (facet.property === 'statuses') {
+      counts.statuses = map;
+    }
   }
-  return { severities, types, statuses };
+  return counts;
 }
 
 export function IssuesTab(): React.JSX.Element {
@@ -64,7 +63,7 @@ export function IssuesTab(): React.JSX.Element {
   // through TanStack's query options merge.
   const query = useIssues(sonarClient, filters, { p: page, ps: pageSize });
   const issueCounts: IssueCounts | undefined =
-    query.data?.kind === 'ok' ? computeIssueCounts(query.data.value.items) : undefined;
+    query.data?.kind === 'ok' ? facetsToIssueCounts(query.data.value.facets) : undefined;
 
   return (
     <div data-testid="issues-tab" className="grid h-full grid-cols-[280px_1fr] gap-4">
