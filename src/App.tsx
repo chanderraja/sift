@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { KeyRound } from 'lucide-react';
 import { Suspense, lazy, useEffect } from 'react';
 
@@ -17,7 +17,7 @@ import { QualityGateTab } from './features/quality-gate/QualityGateTab';
 import { startHashSync } from './stores/hashSyncIntegration';
 import { useAuthStore, useFiltersStore, useSelectionStore, sonarClient } from './app/stores';
 import { TabBar } from './app/TabBar';
-import type { Issue, IssueFilters, Page, Result } from './types/sonar';
+import type { Issue, IssueFilters } from './types/sonar';
 
 // Dev-only kitchen-sink route. Dynamically imported and gated behind
 // import.meta.env.DEV so the module is tree-shaken out of the
@@ -91,28 +91,28 @@ function TabContent(): React.JSX.Element {
 }
 
 /**
- * Reads the currently cached issues page for the active filter set so
- * the ExportModal can generate content without re-fetching.
+ * Subscribes to the currently active issues page so the ExportModal always
+ * reflects the data visible in the table. Using useQuery (not getQueryData)
+ * ensures App re-renders when the query settles, so the Export dialog shows
+ * the real count instead of 0.
  */
 function useVisibleIssues(): Issue[] {
-  const qc = useQueryClient();
   const projectKey = useSelectionStore((s) => s.projectKey);
   const branchName = useSelectionStore((s) => s.branchName);
   const issuesFilters = useFiltersStore((s) => s.issuesFilters);
   const page = useFiltersStore((s) => s.page);
   const pageSize = useFiltersStore((s) => s.pageSize);
 
-  if (projectKey === null || branchName === null) return [];
+  const enabled = projectKey !== null && branchName !== null;
+  const filters: IssueFilters = enabled
+    ? { ...issuesFilters, componentKeys: [projectKey], branch: branchName }
+    : issuesFilters;
 
-  const filters: IssueFilters = {
-    ...issuesFilters,
-    componentKeys: [projectKey],
-    branch: branchName,
-  };
-  const cached = qc.getQueryData<Result<Page<Issue>>>(
-    issuesQuery(sonarClient, filters, { p: page, ps: pageSize }).queryKey,
-  );
-  return cached?.kind === 'ok' ? cached.value.items : [];
+  const result = useQuery({
+    ...issuesQuery(sonarClient, filters, { p: page, ps: pageSize }),
+    enabled,
+  });
+  return result.data?.kind === 'ok' ? result.data.value.items : [];
 }
 
 /**
