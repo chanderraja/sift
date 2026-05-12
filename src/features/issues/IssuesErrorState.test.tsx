@@ -48,4 +48,10 @@ describe('IssuesErrorState', () => {
     render(<IssuesErrorState variant={{ kind: 'network_error', message: 'DNS lookup failed' }} />);
     expect(screen.getByText(/DNS lookup failed/)).toBeInTheDocument();
   });
+
+  it('renders parse_error with a Sift-bug message', () => {
+    render(<IssuesErrorState variant={{ kind: 'parse_error' }} />);
+    expect(screen.getByText(/could not parse/i)).toBeInTheDocument();
+    expect(screen.getByText(/file an issue/i)).toBeInTheDocument();
+  });
 });

@@ -208,6 +208,9 @@ export interface Page<T> {
  *   - `rate_limited`   : 429 — surface upstream Retry-After if provided.
  *   - `server_error`   : 5xx — preserve upstream status for diagnostics.
  *   - `network_error`  : fetch threw / DNS / proxy unreachable.
+ *   - `parse_error`    : 2xx but the body did not match the expected schema —
+ *                        indicates a Sift bug or an undocumented SonarCloud
+ *                        API change. See the Sift issue tracker.
  *   - `over_cap`       : `/issues/search`-only — `paging.total` exceeds the
  *                        10,000 ceiling; UI must narrow the filter set.
  *                        See ADR-007.
@@ -220,4 +223,5 @@ export type Result<T> =
   | { kind: 'rate_limited'; retryAfterSeconds?: number }
   | { kind: 'server_error'; status: number }
   | { kind: 'network_error'; message: string }
+  | { kind: 'parse_error' }
   | { kind: 'over_cap'; total: number };

@@ -82,6 +82,12 @@ describe.each(METHODS)('SonarClient.%s — shared status/network mapping', (_nam
     const result = await call(makeClient());
     expect(result.kind).toBe('network_error');
   });
+
+  it('returns parse_error on 200 with an unexpected body shape', async () => {
+    server.use(http.get(path, () => HttpResponse.json({ unexpected: true })));
+    const result = await call(makeClient());
+    expect(result.kind).toBe('parse_error');
+  });
 });
 
 // === Per-method specifics ===
@@ -101,10 +107,10 @@ describe('SonarClient.validateToken', () => {
     expect(result).toEqual({ kind: 'ok', value: false });
   });
 
-  it('returns server_error when the response body is malformed', async () => {
+  it('returns parse_error when the response body is malformed', async () => {
     server.use(http.get(PATH, () => HttpResponse.json({ something: 'else' })));
     const result = await makeClient().validateToken();
-    expect(result.kind).toBe('server_error');
+    expect(result.kind).toBe('parse_error');
   });
 });
 
@@ -175,10 +181,10 @@ describe('SonarClient.listOrganizations', () => {
     }
   });
 
-  it('returns server_error when the response body is malformed', async () => {
+  it('returns parse_error when the response body is malformed', async () => {
     server.use(http.get(PATH, () => HttpResponse.json({ paging: 'not-an-object' })));
     const result = await makeClient().listOrganizations();
-    expect(result.kind).toBe('server_error');
+    expect(result.kind).toBe('parse_error');
   });
 });
 
