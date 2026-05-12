@@ -89,7 +89,7 @@ export const OrganizationSchema = z
     key: orgKeySchema,
     name: z.string(),
     description: z.string().optional(),
-    subscription: z.string(),
+    subscription: z.string().optional(),
     alm: z
       .object({
         key: z.string(),
@@ -143,8 +143,8 @@ const issueFlowSchema = z
       z
         .object({
           component: z.string(),
-          textRange: textRangeSchema,
-          msg: z.string(),
+          textRange: textRangeSchema.optional(),
+          msg: z.string().optional(),
         })
         .passthrough(),
     ),

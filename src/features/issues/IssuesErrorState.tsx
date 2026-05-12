@@ -84,7 +84,11 @@ export function IssuesErrorState({ variant }: IssuesErrorStateProps): React.JSX.
         <EmptyState
           icon={<AlertCircle className="h-6 w-6" />}
           heading="Unexpected response shape"
-          body="Sift could not parse SonarCloud's response — this is a Sift bug, not a SonarCloud outage. Please file an issue at github.com/sift-app/sift so it can be fixed."
+          body={
+            variant.hint === undefined
+              ? "Sift could not parse SonarCloud's response — this is a Sift bug, not a SonarCloud outage. Please file an issue at github.com/sift-app/sift so it can be fixed."
+              : `Sift could not parse SonarCloud's response (field: ${variant.hint}). This is a Sift bug — please file an issue at github.com/sift-app/sift.`
+          }
         />
       );
   }

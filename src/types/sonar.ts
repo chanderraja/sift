@@ -58,7 +58,7 @@ export interface Organization {
    * spec. Feature code that branches on this should match the documented
    * values explicitly and have a fallback for the unknown case.
    */
-  subscription: string;
+  subscription?: string;
   alm?: { key: string; url: string; personal: boolean };
   actions?: { admin: boolean; delete: boolean; provision: boolean };
   avatar?: string;
@@ -96,7 +96,7 @@ export interface Issue {
   hash?: string;
   textRange?: TextRange;
   flows: {
-    locations: { component: string; textRange: TextRange; msg: string }[];
+    locations: { component: string; textRange?: TextRange; msg?: string }[];
   }[];
   message: string;
   effort?: string;
@@ -240,5 +240,5 @@ export type Result<T> =
   | { kind: 'rate_limited'; retryAfterSeconds?: number }
   | { kind: 'server_error'; status: number }
   | { kind: 'network_error'; message: string }
-  | { kind: 'parse_error' }
+  | { kind: 'parse_error'; hint?: string }
   | { kind: 'over_cap'; total: number };

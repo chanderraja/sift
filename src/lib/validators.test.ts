@@ -71,6 +71,15 @@ describe('parseOrganizationsSearchResponse', () => {
     expect(paths).toContain('organizations.0.key');
   });
 
+  it('accepts an organization without subscription (field is not always returned)', () => {
+    const fixture = clone(loadFixture('organizations-search')) as {
+      organizations: { subscription?: string }[];
+    };
+    delete fixture.organizations[0]?.subscription;
+    const result = parseOrganizationsSearchResponse(fixture);
+    expect(result.ok).toBe(true);
+  });
+
   it('preserves unknown extra fields on organizations', () => {
     interface WithExtra {
       unexpectedFutureField?: string;
@@ -246,6 +255,63 @@ describe('parseIssuesSearchResponse', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.facets).toEqual([]);
+  });
+
+  it('accepts a flow location without textRange (file-level steps have none)', () => {
+    const fixture = {
+      paging: { pageIndex: 1, pageSize: 100, total: 1 },
+      issues: [
+        {
+          key: 'A1',
+          rule: 'java:S123',
+          severity: 'MAJOR',
+          type: 'BUG',
+          status: 'OPEN',
+          resolution: null,
+          component: 'proj:File.java',
+          project: 'proj',
+          message: 'msg',
+          creationDate: '2024-01-01T00:00:00+0000',
+          updateDate: '2024-01-01T00:00:00+0000',
+          flows: [{ locations: [{ component: 'proj:File.java', msg: 'source here' }] }],
+        },
+      ],
+    };
+    const result = parseIssuesSearchResponse(fixture);
+    expect(result.ok).toBe(true);
+  });
+
+  it('accepts a flow location without msg', () => {
+    const fixture = {
+      paging: { pageIndex: 1, pageSize: 100, total: 1 },
+      issues: [
+        {
+          key: 'A1',
+          rule: 'java:S123',
+          severity: 'MAJOR',
+          type: 'BUG',
+          status: 'OPEN',
+          resolution: null,
+          component: 'proj:File.java',
+          project: 'proj',
+          message: 'msg',
+          creationDate: '2024-01-01T00:00:00+0000',
+          updateDate: '2024-01-01T00:00:00+0000',
+          flows: [
+            {
+              locations: [
+                {
+                  component: 'proj:File.java',
+                  textRange: { startLine: 1, endLine: 1, startOffset: 0, endOffset: 5 },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const result = parseIssuesSearchResponse(fixture);
+    expect(result.ok).toBe(true);
   });
 
   it('preserves unknown extra fields on issues', () => {
