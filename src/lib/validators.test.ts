@@ -136,6 +136,14 @@ describe('parseBranchesListResponse', () => {
     expect(result.value[0]?.isMain).toBe(true);
   });
 
+  it('accepts type "BRANCH" (modern SonarCloud deprecates LONG/SHORT)', () => {
+    const fixture = {
+      branches: [{ name: 'main', isMain: true, type: 'BRANCH' }],
+    };
+    const result = parseBranchesListResponse(fixture);
+    expect(result.ok).toBe(true);
+  });
+
   it('rejects when a branch is missing its required `isMain`', () => {
     const fixture = clone(loadFixture('project-branches-list')) as {
       branches: { isMain?: boolean }[];

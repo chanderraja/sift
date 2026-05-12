@@ -125,7 +125,7 @@ export const BranchSchema = z
   .object({
     name: z.string(),
     isMain: z.boolean(),
-    type: z.enum(['LONG', 'SHORT', 'PULL_REQUEST']),
+    type: z.enum(['LONG', 'SHORT', 'PULL_REQUEST', 'BRANCH']),
     status: z
       .object({
         qualityGateStatus: qualityGateStatusSchema,
