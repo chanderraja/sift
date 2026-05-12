@@ -178,15 +178,16 @@ export class SonarClient {
 
     const parsed = parse(raw);
     if (!parsed.ok) {
-      // Bytes did not match the schema. Treat as an upstream-shape error
-      // rather than a network error so the UI can show "we got something
-      // unexpected from SonarCloud" instead of "network failed."
+      // 2xx but the body did not satisfy the Zod schema — this is a Sift
+      // bug or an undocumented SonarCloud shape change, not a server error.
+      // Surface as parse_error so the UI can direct users to file an issue
+      // rather than blaming SonarCloud's status page.
       logger.warn('[SonarClient] schema validation failed', {
         path,
         status,
         issues: parsed.error.issues,
       });
-      return { kind: 'server_error', status };
+      return { kind: 'parse_error' };
     }
     return { kind: 'ok', value: parsed.value };
   }
