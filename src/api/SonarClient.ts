@@ -21,8 +21,8 @@ import type {
   Branch,
   Hotspot,
   HotspotFilters,
-  Issue,
   IssueFilters,
+  IssuesPage,
   Measure,
   Organization,
   Page,
@@ -84,10 +84,11 @@ export class SonarClient {
     );
   }
 
-  async searchIssues(filters: IssueFilters, opts?: PageOpts): Promise<Result<Page<Issue>>> {
+  async searchIssues(filters: IssueFilters, opts?: PageOpts): Promise<Result<IssuesPage>> {
     const params = encodeIssueFilters(filters);
     if (opts?.p !== undefined) params.set('p', String(opts.p));
     if (opts?.ps !== undefined) params.set('ps', String(opts.ps));
+    params.set('facets', 'severities,types,statuses');
     const result = await this.get(
       `${PROXY_BASE}/issues/search?${params.toString()}`,
       parseIssuesSearchResponse,

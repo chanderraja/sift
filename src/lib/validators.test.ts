@@ -211,6 +211,43 @@ describe('parseIssuesSearchResponse', () => {
     expect(paths).toContain('issues.0.severity');
   });
 
+  it('includes server-side facets in the parsed result', () => {
+    const fixture = {
+      paging: { pageIndex: 1, pageSize: 100, total: 115 },
+      issues: [],
+      facets: [
+        {
+          property: 'severities',
+          values: [
+            { val: 'CRITICAL', count: 12 },
+            { val: 'MAJOR', count: 80 },
+          ],
+        },
+        {
+          property: 'statuses',
+          values: [{ val: 'OPEN', count: 98 }],
+        },
+      ],
+    };
+    const result = parseIssuesSearchResponse(fixture);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.facets).toHaveLength(2);
+    expect(result.value.facets[0]).toMatchObject({ property: 'severities' });
+    expect(result.value.facets[0]?.values).toContainEqual({ val: 'CRITICAL', count: 12 });
+  });
+
+  it('defaults to an empty facets array when the field is absent', () => {
+    const fixture = {
+      paging: { pageIndex: 1, pageSize: 100, total: 0 },
+      issues: [],
+    };
+    const result = parseIssuesSearchResponse(fixture);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.facets).toEqual([]);
+  });
+
   it('preserves unknown extra fields on issues', () => {
     interface WithExtra {
       v2OnlyField?: { nested: boolean };

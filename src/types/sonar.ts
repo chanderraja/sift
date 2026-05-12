@@ -194,6 +194,23 @@ export interface Page<T> {
   total: number;
 }
 
+/** One value bucket in a SonarCloud issues/search facet. */
+export interface IssueFacetValue {
+  val: string;
+  count: number;
+}
+
+/** A single facet dimension (e.g. severities, types, statuses) with counts. */
+export interface IssueFacet {
+  property: string;
+  values: IssueFacetValue[];
+}
+
+/** Page<Issue> augmented with server-side facet counts from issues/search. */
+export interface IssuesPage extends Page<Issue> {
+  facets: IssueFacet[];
+}
+
 /**
  * Discriminated union returned by every public `SonarClient` method. Per
  * ARCHITECTURE.md §5 ("Errors as values, not exceptions"), the client never

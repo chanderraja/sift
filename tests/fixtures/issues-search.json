@@ -2454,5 +2454,49 @@
       "name": "acme"
     }
   ],
-  "facets": []
+  "facets": [
+    {
+      "property": "severities",
+      "values": [
+        {
+          "val": "CRITICAL",
+          "count": 11
+        },
+        {
+          "val": "MAJOR",
+          "count": 18
+        },
+        {
+          "val": "MINOR",
+          "count": 21
+        }
+      ]
+    },
+    {
+      "property": "types",
+      "values": [
+        {
+          "val": "CODE_SMELL",
+          "count": 49
+        },
+        {
+          "val": "VULNERABILITY",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "property": "statuses",
+      "values": [
+        {
+          "val": "OPEN",
+          "count": 30
+        },
+        {
+          "val": "CLOSED",
+          "count": 20
+        }
+      ]
+    }
+  ]
 }
