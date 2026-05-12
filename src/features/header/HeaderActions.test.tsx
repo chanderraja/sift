@@ -20,13 +20,14 @@ describe('HeaderActions', () => {
     expect(screen.getByRole('button', { name: 'Open export' })).toBeInTheDocument();
   });
 
-  it('clicking settings opens the drawer', async () => {
+  it('clicking settings sets settingsOpen to true', async () => {
     reset();
     render(<HeaderActions />);
     expect(useUiStore.getState().settingsOpen).toBe(false);
     await userEvent.click(screen.getByRole('button', { name: 'Open settings' }));
     expect(useUiStore.getState().settingsOpen).toBe(true);
-    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    // SettingsDrawer is mounted in App.tsx, not here; HeaderActions only
+    // owns the button and the uiStore flag.
   });
 
   it('clicking export sets exportOpen to true', async () => {
@@ -35,15 +36,6 @@ describe('HeaderActions', () => {
     expect(useUiStore.getState().exportOpen).toBe(false);
     await userEvent.click(screen.getByRole('button', { name: 'Open export' }));
     expect(useUiStore.getState().exportOpen).toBe(true);
-    // The actual ExportModal is mounted in App.tsx, not here; HeaderActions
-    // only owns the button and the uiStore flag.
-  });
-
-  it('Escape closes the open drawer', async () => {
-    reset();
-    useUiStore.setState({ settingsOpen: true });
-    render(<HeaderActions />);
-    await userEvent.keyboard('{Escape}');
-    expect(useUiStore.getState().settingsOpen).toBe(false);
+    // ExportModal is mounted in App.tsx, not here.
   });
 });

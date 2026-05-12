@@ -19,7 +19,7 @@ export interface DrawerProps {
   children: ReactNode;
 }
 
-const overlayClasses = 'fixed inset-0 z-40 bg-bg-base/80';
+const overlayClasses = 'fixed inset-0 z-40 bg-black/50';
 
 const contentClasses =
   'fixed right-0 top-0 z-50 h-full w-full max-w-md ' +

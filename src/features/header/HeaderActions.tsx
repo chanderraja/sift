@@ -7,12 +7,12 @@
 import { Download, Settings } from 'lucide-react';
 
 import { Button } from '../../components/primitives/Button';
-import { Drawer } from '../../components/primitives/Drawer';
 import { Tooltip } from '../../components/primitives/Tooltip';
 import { useUiStore } from '../../app/stores';
 
+// Settings drawer and Export modal are mounted in App.tsx; HeaderActions
+// only owns the icon buttons and writes the uiStore flags.
 export function HeaderActions(): React.JSX.Element {
-  const settingsOpen = useUiStore((s) => s.settingsOpen);
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const setSettingsOpen = useUiStore.getState().setSettingsOpen;
   // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -40,15 +40,6 @@ export function HeaderActions(): React.JSX.Element {
           <Download className="h-4 w-4" aria-hidden="true" />
         </Button>
       </Tooltip>
-
-      <Drawer
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        title="Settings"
-        description="Token storage, theme, and defaults. Full UI lands in Phase 11."
-      >
-        <p className="text-xs text-text-secondary">Settings drawer content arrives in Phase 11.</p>
-      </Drawer>
     </>
   );
 }

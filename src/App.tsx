@@ -17,6 +17,10 @@ import { QualityGateTab } from './features/quality-gate/QualityGateTab';
 import { startHashSync } from './stores/hashSyncIntegration';
 import { useAuthStore, useFiltersStore, useSelectionStore, sonarClient } from './app/stores';
 import { TabBar } from './app/TabBar';
+import { SettingsDrawer } from './features/settings/SettingsDrawer';
+import { ShortcutsModal } from './features/settings/ShortcutsModal';
+import { useKeyboardShortcuts } from './features/settings/useKeyboardShortcuts';
+import { useTheme } from './features/settings/useTheme';
 import type { Issue, IssueFilters } from './types/sonar';
 
 // Dev-only kitchen-sink route. Dynamically imported and gated behind
@@ -124,6 +128,8 @@ export default function App(): React.JSX.Element {
   // user pastes a token or switches region. Hydrates silently on cold
   // start when the token was restored from storage.
   useValidateAuthEffect();
+  useTheme();
+  useKeyboardShortcuts();
 
   // ADR-009: when a persisted selection key (org / project / branch)
   // is missing from the freshly-loaded list, clear that level + cascade
@@ -159,6 +165,8 @@ export default function App(): React.JSX.Element {
       </main>
       {/* Overlay mount points — Modal / Drawer / Toast portals attach here. */}
       <ExportModal issues={visibleIssues} />
+      <SettingsDrawer />
+      <ShortcutsModal />
       <Toaster />
     </div>
   );
