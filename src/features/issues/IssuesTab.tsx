@@ -10,9 +10,17 @@ import { useIssues } from '../../api/queries';
 import { EmptyState } from '../../components/primitives/EmptyState';
 import { Skeleton } from '../../components/primitives/Skeleton';
 import { sonarClient, useFiltersStore, useSelectionStore } from '../../app/stores';
-import type { Issue, IssueFilters, ProjectKey } from '../../types/sonar';
+import type {
+  Issue,
+  IssueFilters,
+  IssueType,
+  ProjectKey,
+  Severity,
+  Status,
+} from '../../types/sonar';
 
 import { IssuesErrorState } from './IssuesErrorState';
+import type { IssueCounts } from './IssuesFilterSidebar';
 import { IssuesFilterSidebar } from './IssuesFilterSidebar';
 import { IssuesPagination } from './IssuesPagination';
 import { IssuesTable } from './IssuesTable';
@@ -29,6 +37,18 @@ const buildFilters = (
   branch: branchName,
 });
 
+function computeIssueCounts(items: readonly Issue[]): IssueCounts {
+  const severities: Partial<Record<Severity, number>> = {};
+  const types: Partial<Record<IssueType, number>> = {};
+  const statuses: Partial<Record<Status, number>> = {};
+  for (const issue of items) {
+    severities[issue.severity] = (severities[issue.severity] ?? 0) + 1;
+    types[issue.type] = (types[issue.type] ?? 0) + 1;
+    statuses[issue.status] = (statuses[issue.status] ?? 0) + 1;
+  }
+  return { severities, types, statuses };
+}
+
 export function IssuesTab(): React.JSX.Element {
   const projectKey = useSelectionStore((s) => s.projectKey);
   const branchName = useSelectionStore((s) => s.branchName);
@@ -43,6 +63,8 @@ export function IssuesTab(): React.JSX.Element {
   // useIssues honors `enabled` via the query options factory; pass it
   // through TanStack's query options merge.
   const query = useIssues(sonarClient, filters, { p: page, ps: pageSize });
+  const issueCounts: IssueCounts | undefined =
+    query.data?.kind === 'ok' ? computeIssueCounts(query.data.value.items) : undefined;
 
   return (
     <div data-testid="issues-tab" className="grid h-full grid-cols-[280px_1fr] gap-4">
@@ -51,7 +73,7 @@ export function IssuesTab(): React.JSX.Element {
         aria-label="Issue filters"
         className="border-r border-border-subtle pr-4"
       >
-        <IssuesFilterSidebar />
+        <IssuesFilterSidebar {...(issueCounts === undefined ? {} : { issueCounts })} />
       </aside>
       <section data-testid="issues-results" className="flex min-w-0 flex-col gap-3">
         {!enabled ? null : query.isPending ? (

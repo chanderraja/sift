@@ -77,4 +77,27 @@ describe('IssuesFilterSidebar', () => {
     await userEvent.click(screen.getByLabelText('MAJOR'));
     expect(useFiltersStore.getState().page).toBe(1);
   });
+
+  it('shows severity count next to the option when issueCounts.severities is provided', () => {
+    render(<IssuesFilterSidebar issueCounts={{ severities: { BLOCKER: 5, CRITICAL: 12 } }} />);
+    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
+  });
+
+  it('shows type count next to the option when issueCounts.types is provided', () => {
+    render(<IssuesFilterSidebar issueCounts={{ types: { BUG: 8, CODE_SMELL: 3 } }} />);
+    expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+  });
+
+  it('shows status count next to the option when issueCounts.statuses is provided', () => {
+    render(<IssuesFilterSidebar issueCounts={{ statuses: { OPEN: 97 } }} />);
+    expect(screen.getByText('97')).toBeInTheDocument();
+  });
+
+  it('severity checkboxes remain accessible by label name when counts are rendered', async () => {
+    render(<IssuesFilterSidebar issueCounts={{ severities: { BLOCKER: 5 } }} />);
+    await userEvent.click(screen.getByLabelText('BLOCKER'));
+    expect(useFiltersStore.getState().issuesFilters.severities).toEqual(['BLOCKER']);
+  });
 });
