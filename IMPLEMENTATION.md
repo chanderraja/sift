@@ -816,6 +816,15 @@ QG:
 
 - Default LLM-remediation prompt wording (the template's prepended instruction). Suggest a default; ask for sign-off.
 
+**Phase 10 follow-up — hotspot and QG export (shipped in `feat/phase-10-hotspot-qg-export`).**
+
+SPEC.md §7.4 originally specified only Issues-tab templates. This PR closed that gap:
+
+- Four hotspot Markdown templates added to `src/lib/markdown.ts`: triage list (probability-prefixed), grouped by file, grouped by security category, and LLM security review (see SPEC.md §7.4 "Hotspots templates").
+- One Quality Gate Markdown template (`markdownQualityGateSnapshot`): H1 status + conditions table + measures table (see SPEC.md §7.4 "Quality Gate template").
+- `hotspotsToCsv` and `qualityGateToCsv` added to `src/lib/csv.ts` with the column schemas defined in SPEC.md §7.4 "CSV schemas per tab".
+- `ExportModal` made tab-aware: reads `filtersStore.tab`, swaps template list and data source accordingly. QG tab collapses to a single non-interactive "Snapshot" label. `App.tsx` gained `useVisibleHotspots`, `useVisibleQualityGate`, and `useVisibleMeasures` hooks to supply the additional data.
+
 ---
 
 ## Phase 11 — Settings, Theme, Polish
