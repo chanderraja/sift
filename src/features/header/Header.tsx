@@ -22,7 +22,7 @@ export function Header(): React.JSX.Element {
       data-testid="app-header"
       className="flex h-14 items-start gap-3 border-b border-border-subtle bg-bg-surface px-4 py-2"
     >
-      <div className="self-center text-sm font-semibold text-text-primary">Sift</div>
+      <h1 className="self-center text-sm font-semibold text-text-primary">Sift</h1>
 
       <div data-testid="header-region-slot" className="self-center">
         <RegionSelector />
