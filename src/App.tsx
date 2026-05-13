@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { KeyRound } from 'lucide-react';
 import { Suspense, lazy, useEffect } from 'react';
 
-import { issuesQuery } from './api/queries';
+import { hotspotsQuery, issuesQuery, measuresQuery, qualityGateQuery } from './api/queries';
 import { EmptyState } from './components/primitives/EmptyState';
 import { Toaster } from './components/primitives/Toast';
 import { Header } from './features/header/Header';
@@ -21,7 +21,14 @@ import { SettingsDrawer } from './features/settings/SettingsDrawer';
 import { ShortcutsModal } from './features/settings/ShortcutsModal';
 import { useKeyboardShortcuts } from './features/settings/useKeyboardShortcuts';
 import { useTheme } from './features/settings/useTheme';
-import type { Issue, IssueFilters } from './types/sonar';
+import type {
+  Hotspot,
+  HotspotFilters,
+  Issue,
+  IssueFilters,
+  Measure,
+  QualityGate,
+} from './types/sonar';
 
 // Dev-only kitchen-sink route. Dynamically imported and gated behind
 // import.meta.env.DEV so the module is tree-shaken out of the
@@ -119,6 +126,51 @@ function useVisibleIssues(): Issue[] {
   return result.data?.kind === 'ok' ? result.data.value.items : [];
 }
 
+function useVisibleHotspots(): Hotspot[] {
+  const projectKey = useSelectionStore((s) => s.projectKey);
+  const branchName = useSelectionStore((s) => s.branchName);
+  const hotspotsFilters = useFiltersStore((s) => s.hotspotsFilters);
+
+  const enabled = projectKey !== null && branchName !== null && hotspotsFilters !== null;
+  const filters: HotspotFilters = enabled
+    ? { ...hotspotsFilters, projectKey, branch: branchName }
+    : { projectKey: (projectKey ?? '') as HotspotFilters['projectKey'] };
+
+  const result = useQuery({ ...hotspotsQuery(sonarClient, filters), enabled });
+  return result.data?.kind === 'ok' ? result.data.value.items : [];
+}
+
+const QG_MEASURE_KEYS = [
+  'complexity',
+  'reliability_rating',
+  'duplicated_lines_density',
+  'security_rating',
+  'ncloc',
+  'sqale_rating',
+];
+
+function useVisibleQualityGate(): QualityGate | null {
+  const projectKey = useSelectionStore((s) => s.projectKey);
+  const branchName = useSelectionStore((s) => s.branchName);
+  const enabled = projectKey !== null && branchName !== null;
+  const result = useQuery({
+    ...qualityGateQuery(sonarClient, projectKey ?? '', branchName ?? ''),
+    enabled,
+  });
+  return result.data?.kind === 'ok' ? result.data.value : null;
+}
+
+function useVisibleMeasures(): Measure[] {
+  const projectKey = useSelectionStore((s) => s.projectKey);
+  const branchName = useSelectionStore((s) => s.branchName);
+  const enabled = projectKey !== null && branchName !== null;
+  const result = useQuery({
+    ...measuresQuery(sonarClient, projectKey ?? '', branchName ?? '', QG_MEASURE_KEYS),
+    enabled,
+  });
+  return result.data?.kind === 'ok' ? result.data.value : [];
+}
+
 /**
  * Top-level page composition: header at top, tab area below, overlay
  * slots layered on top.
@@ -148,6 +200,9 @@ export default function App(): React.JSX.Element {
   }, []);
 
   const visibleIssues = useVisibleIssues();
+  const visibleHotspots = useVisibleHotspots();
+  const visibleQualityGate = useVisibleQualityGate();
+  const visibleMeasures = useVisibleMeasures();
 
   if (KitchenSink !== null && isKitchenSinkPath()) {
     return (
@@ -164,7 +219,12 @@ export default function App(): React.JSX.Element {
         <TabContent />
       </main>
       {/* Overlay mount points — Modal / Drawer / Toast portals attach here. */}
-      <ExportModal issues={visibleIssues} />
+      <ExportModal
+        issues={visibleIssues}
+        hotspots={visibleHotspots}
+        qualityGate={visibleQualityGate}
+        measures={visibleMeasures}
+      />
       <SettingsDrawer />
       <ShortcutsModal />
       <Toaster />

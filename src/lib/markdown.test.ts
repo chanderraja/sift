@@ -6,8 +6,48 @@ import {
   markdownGroupedByFile,
   markdownGroupedByRule,
   markdownLlmRemediation,
+  markdownHotspotTriage,
+  markdownHotspotGroupedByFile,
+  markdownHotspotGroupedByCategory,
+  markdownHotspotLlmSecurityReview,
+  markdownQualityGateSnapshot,
 } from './markdown';
-import type { Issue } from '../types/sonar';
+import type { Hotspot, Issue } from '../types/sonar';
+import { baseHotspot, baseQualityGate, baseMeasures } from '../../tests/hotspot-fixtures';
+
+const hotspot1 = baseHotspot;
+
+const hotspot2 = {
+  ...baseHotspot,
+  key: 'HS2',
+  component: 'acme:src/crypto/utils.java',
+  securityCategory: 'cryptography',
+  vulnerabilityProbability: 'MEDIUM' as const,
+  line: 12,
+  message: 'Weak cipher used.',
+  creationDate: '2026-05-02T00:00:00+0000',
+  updateDate: '2026-05-02T00:00:00+0000',
+  ruleKey: 'java:S4426' as (typeof baseHotspot)['ruleKey'],
+};
+
+const qg = {
+  ...baseQualityGate,
+  projectStatus: {
+    ...baseQualityGate.projectStatus,
+    conditions: [
+      ...baseQualityGate.projectStatus.conditions,
+      {
+        status: 'OK' as const,
+        metricKey: 'new_duplicated_lines_density',
+        comparator: 'GT' as const,
+        errorThreshold: '3',
+        actualValue: '1.2',
+      },
+    ],
+  },
+};
+
+const measures = [...baseMeasures, { metric: 'reliability_rating', value: '1.0', bestValue: true }];
 
 const issue1: Issue = {
   key: 'KEY1' as Issue['key'],
@@ -45,6 +85,11 @@ const context = {
   appliedFilters: 'severity=BLOCKER,CRITICAL',
 };
 
+function expectHeaderBlock(md: string): void {
+  expect(md).toContain('acme');
+  expect(md).toContain('main');
+}
+
 describe('markdownTriage', () => {
   it('produces numbered list with severity prefix and file:line in code', () => {
     const md = markdownTriage([issue1, issue2], context);
@@ -57,8 +102,7 @@ describe('markdownTriage', () => {
 
   it('includes header block', () => {
     const md = markdownTriage([issue1], context);
-    expect(md).toContain('acme');
-    expect(md).toContain('main');
+    expectHeaderBlock(md);
     expect(md).toContain('2026-05-11');
   });
 });
@@ -72,8 +116,7 @@ describe('markdownGroupedByFile', () => {
   });
 
   it('includes header block', () => {
-    const md = markdownGroupedByFile([issue1], context);
-    expect(md).toContain('acme');
+    expectHeaderBlock(markdownGroupedByFile([issue1], context));
   });
 });
 
@@ -86,8 +129,7 @@ describe('markdownGroupedByRule', () => {
   });
 
   it('includes header block', () => {
-    const md = markdownGroupedByRule([issue1], context);
-    expect(md).toContain('acme');
+    expectHeaderBlock(markdownGroupedByRule([issue1], context));
   });
 });
 
@@ -103,8 +145,111 @@ describe('markdownLlmRemediation', () => {
 
   it('includes header block and all issues', () => {
     const md = markdownLlmRemediation([issue1, issue2], context);
-    expect(md).toContain('acme');
+    expectHeaderBlock(md);
     expect(md).toContain('payment.ts');
     expect(md).toContain('auth.ts');
+  });
+});
+
+describe('markdownHotspotTriage', () => {
+  it('produces numbered list with probability prefix and file:line in code', () => {
+    const md = markdownHotspotTriage([hotspot1, hotspot2], context);
+    expect(md).toContain('1. HIGH');
+    expect(md).toContain('`src/auth/legacy.java:47`');
+    expect(md).toContain('java:S2068');
+    expect(md).toContain('2. MEDIUM');
+    expect(md).toContain('`src/crypto/utils.java:12`');
+  });
+
+  it('includes header block', () => {
+    expectHeaderBlock(markdownHotspotTriage([hotspot1], context));
+  });
+
+  it('handles empty list gracefully', () => {
+    const md = markdownHotspotTriage([], context);
+    expect(md).toContain('# Hotspot Triage List');
+  });
+});
+
+describe('markdownHotspotGroupedByFile', () => {
+  it('produces H2 per file with bullets for hotspots', () => {
+    const md = markdownHotspotGroupedByFile([hotspot1, hotspot2], context);
+    expect(md).toContain('## src/auth/legacy.java');
+    expect(md).toContain('## src/crypto/utils.java');
+    expect(md).toMatch(/^-\s/m);
+  });
+
+  it('groups two hotspots in the same file under a single H2', () => {
+    const hs2sameFile: Hotspot = { ...hotspot2, component: 'acme:src/auth/legacy.java', line: 99 };
+    const md = markdownHotspotGroupedByFile([hotspot1, hs2sameFile], context);
+    const h2Count = (md.match(/^## /gm) ?? []).length;
+    expect(h2Count).toBe(1);
+  });
+
+  it('includes header block', () => {
+    expectHeaderBlock(markdownHotspotGroupedByFile([hotspot1], context));
+  });
+});
+
+describe('markdownHotspotGroupedByCategory', () => {
+  it('produces H2 per security category with bullets', () => {
+    const md = markdownHotspotGroupedByCategory([hotspot1, hotspot2], context);
+    expect(md).toContain('## auth');
+    expect(md).toContain('## cryptography');
+    expect(md).toMatch(/^-\s/m);
+  });
+
+  it('groups hotspots sharing a category under one H2', () => {
+    const hs2sameCategory: Hotspot = { ...hotspot2, securityCategory: 'auth' };
+    const md = markdownHotspotGroupedByCategory([hotspot1, hs2sameCategory], context);
+    const h2Count = (md.match(/^## /gm) ?? []).length;
+    expect(h2Count).toBe(1);
+  });
+
+  it('includes header block', () => {
+    expectHeaderBlock(markdownHotspotGroupedByCategory([hotspot1], context));
+  });
+});
+
+describe('markdownHotspotLlmSecurityReview', () => {
+  it('prepends security engineer instruction and lists hotspots', () => {
+    const md = markdownHotspotLlmSecurityReview([hotspot1, hotspot2], context);
+    const instructionIdx = md.indexOf('You are a senior security engineer');
+    const hotspotIdx = md.indexOf('### Hotspots');
+    expect(instructionIdx).toBeGreaterThanOrEqual(0);
+    expect(hotspotIdx).toBeGreaterThan(instructionIdx);
+  });
+
+  it('includes probability, rule, file, and category for each hotspot', () => {
+    const md = markdownHotspotLlmSecurityReview([hotspot1], context);
+    expect(md).toContain('HIGH');
+    expect(md).toContain('java:S2068');
+    expect(md).toContain('src/auth/legacy.java');
+    expect(md).toContain('auth');
+  });
+});
+
+describe('markdownQualityGateSnapshot', () => {
+  it('produces H1 with gate status', () => {
+    const md = markdownQualityGateSnapshot(qg, measures, context);
+    expect(md).toContain('# Quality Gate: ERROR');
+  });
+
+  it('includes conditions table with all rows', () => {
+    const md = markdownQualityGateSnapshot(qg, measures, context);
+    expect(md).toContain('new_coverage');
+    expect(md).toContain('65.4');
+    expect(md).toContain('new_duplicated_lines_density');
+  });
+
+  it('includes measures table', () => {
+    const md = markdownQualityGateSnapshot(qg, measures, context);
+    expect(md).toContain('ncloc');
+    expect(md).toContain('4849');
+    expect(md).toContain('reliability_rating');
+  });
+
+  it('includes header block', () => {
+    expectHeaderBlock(markdownQualityGateSnapshot(qg, measures, context));
   });
 });

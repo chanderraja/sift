@@ -300,11 +300,32 @@ Triggered by the Export button in the header. Modal contents:
 
 1. **Header:** Title ("Export findings") plus a breadcrumb subtitle showing context — `{project key} · {branch} · {tab} · {filtered count} findings` — so users confirm they're exporting the right slice without having to close the modal.
 2. **Format:** Markdown / CSV (segmented control).
-3. **Template** (Markdown only) — radio cards in a 2×2 grid. Each card contains the option name, a one-line description, **and a live preview of the format's first ~3 lines using the user's actual current data**. The preview makes the difference between templates immediate without requiring trial-and-error:
+3. **Template** (Markdown only) — radio cards (2×2 grid for Issues and Hotspots; single non-interactive label for Quality Gate). Each card contains the option name and a one-line description. Template list is determined by the active tab:
+
+   ##### Issues templates
+
    - **Triage list** — flat numbered list, severity-prefixed. *Preview shows:* `1. BLOCKER · payment.ts:142 · S6571…`
    - **Grouped by file** — H2 per file, bullets per finding. *Preview shows:* `## src/services/payment.ts` followed by indented bullets.
    - **Grouped by rule** — H2 per rule with description, bullets per occurrence. *Preview shows:* `## typescript:S6571 / Cognitive Complexity…` with occurrences.
    - **LLM remediation prompt** — templated instruction prepended, structured findings list following. *Preview shows:* `You are a code-quality assistant…` followed by `### Findings`.
+
+   ##### Hotspots templates
+
+   - **Triage list** — flat numbered list, vulnerability-probability-prefixed. *Preview shows:* `1. HIGH · src/auth/legacy.java:47 · S2068…`
+   - **Grouped by file** — H2 per file, bullets per hotspot.
+   - **Grouped by security category** — H2 per category (Auth, SQL Injection, Weak Cryptography, etc.), bullets per occurrence. This is the hotspot analogue of "grouped by rule" because security category is the more useful grouping dimension for security review.
+   - **LLM security review** — security-engineer persona; requests judgment-call recommendations (Change required / Acceptable as-is / Needs more context) per hotspot, distinct from the issues LLM remediation prompt.
+
+   ##### Quality Gate template
+
+   - **Snapshot** — single Markdown document: H1 with status (`# Quality Gate: PASSED`), a Conditions table (Metric, Comparator, Threshold, Actual, Status), and a Measures table (Metric, Value, Best value flag). For the Quality Gate tab the template selector collapses to a single non-interactive label rather than a radio grid.
+
+   ##### CSV schemas per tab
+
+   - **Issues** — unchanged: Key, Severity, Type, Rule, Status, Resolution, Component, Line, Message, Effort, Tags, Assignee, CreationDate, UpdateDate.
+   - **Hotspots** — columns: Probability, Status, Category, Rule, Message, File, Line, Created.
+   - **Quality Gate** — one combined CSV with a `Section` column (`"condition"` or `"measure"`) distinguishing row types. Columns: Section, Metric, Comparator, Threshold, Actual, Value, Best, Status. Comparator/Threshold/Actual/Status are populated for condition rows; Value/Best for measure rows.
+
 4. **Field selector** — toggle chips for each available column (Severity, Type, Status, Rule, Message, File, Line, Effort, Tags, Created, Assignee). Defaults match the table column chooser.
 5. **Scope:** radio group — Visible (current filter and sort, currently shown rows) / All in current filter / All in project (subject to 10k cap; same banner appears here as in §7.1 if exceeded).
 6. **Limit:** default 200, hard max 1000 (LLM context-window-friendly).
