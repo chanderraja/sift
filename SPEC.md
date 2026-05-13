@@ -316,9 +316,47 @@ Triggered by the Export button in the header. Modal contents:
    - **Grouped by security category** — H2 per category (Auth, SQL Injection, Weak Cryptography, etc.), bullets per occurrence. This is the hotspot analogue of "grouped by rule" because security category is the more useful grouping dimension for security review.
    - **LLM security review** — security-engineer persona; requests judgment-call recommendations (Change required / Acceptable as-is / Needs more context) per hotspot, distinct from the issues LLM remediation prompt.
 
-   ##### Quality Gate template
+   ##### Quality Gate templates
 
-   - **Snapshot** — single Markdown document: H1 with status (`# Quality Gate: PASSED`), a Conditions table (Metric, Comparator, Threshold, Actual, Status), and a Measures table (Metric, Value, Best value flag). For the Quality Gate tab the template selector collapses to a single non-interactive label rather than a radio grid.
+   - **Snapshot** — single Markdown document: H1 with status (`# Quality Gate: PASSED`), a Conditions table (Metric, Comparator, Threshold, Actual, Status), and a Measures table (Metric, Value, Best value flag).
+
+   - **Actionable** — composite Markdown document joining QG status with the issues and hotspots driving each failing condition, plus an LLM prompt requesting a prioritized fix plan.
+
+     Structure (in order):
+     1. LLM prompt prefix (user-editable before pasting)
+     2. QG status block (same content as Snapshot template)
+     3. For each failing condition: a named section with the condition's actual value and a list of the driving issues fetched from the matching SonarCloud query
+     4. Measures table (for context)
+     5. Closing note if `security_hotspots_reviewed` or `new_security_hotspots_reviewed` is in the failing set
+
+     Driver mapping — implemented in `src/lib/qgDrivers.ts`:
+
+     | Failing metric | Query type | Filters |
+     |---|---|---|
+     | `new_reliability_rating` | issues | type=BUG, inNewCodePeriod=true, sev≥rating, OPEN |
+     | `reliability_rating` | issues | type=BUG, sev≥rating, OPEN |
+     | `new_security_rating` | issues | type=VULNERABILITY, inNewCodePeriod=true, sev≥rating, OPEN |
+     | `security_rating` | issues | type=VULNERABILITY, sev≥rating, OPEN |
+     | `new_maintainability_rating` | issues | type=CODE_SMELL, inNewCodePeriod=true, sev≥rating, OPEN |
+     | `maintainability_rating` | issues | type=CODE_SMELL, sev≥rating, OPEN |
+     | `new_security_hotspots_reviewed` | hotspots | inNewCodePeriod=true, status=TO_REVIEW |
+     | `security_hotspots_reviewed` | hotspots | status=TO_REVIEW |
+     | `new_blocker_violations` | issues | severity=BLOCKER, inNewCodePeriod=true, OPEN |
+     | `new_critical_violations` | issues | severity=CRITICAL, inNewCodePeriod=true, OPEN |
+     | `new_major_violations` | issues | severity=MAJOR, inNewCodePeriod=true, OPEN |
+     | `new_coverage` / `coverage` | (none) | Note: "Requires test coverage improvements; no specific issues drive this metric." |
+     | `new_duplicated_lines_density` | (none) | Note: "Requires deduplication; no specific issues drive this metric." |
+     | (unknown) | (none) | Note: "No issue-level driver mapping found for this metric." |
+
+     Severity-from-rating scaling: E (5) → BLOCKER+CRITICAL; D (4) → CRITICAL+ (BLOCKER+CRITICAL); C (3) → MAJOR+ (BLOCKER+CRITICAL+MAJOR); B (2) → MINOR+ (all above INFO). Widening one step beyond the exact threshold shows the LLM the most likely-related issues without being too narrow.
+
+     Per-driver limit: top 25 by severity then creation date descending. Composite cap: 200 findings total across all drivers (proportionally truncated).
+
+     Default LLM prompt prefix: "You are a senior engineer reviewing a Quality Gate failure for a colleague. Below is the current Quality Gate status, the specific issues and hotspots driving each failing condition, and the project's overall measures for context. Produce a prioritized fix plan: order failing conditions by impact (worst rating first; hotspots-reviewed gaps last); list the minimum-change fix per driving issue; group issues with shared root causes; flag issues needing context you don't have; call out non-code actions explicitly (e.g. 'review N hotspots in SonarCloud'); estimate effort per condition in rough buckets: small, medium, large. Order from highest-impact to lowest. If a condition has no driving issues, call out the action needed instead."
+
+     Error handling: if a driver query fails the Actionable export still generates; the failing condition's section includes an inline note explaining the failure and all successful drivers render normally. The modal shows a loading state ("Fetching drivers… N/M") and disables action buttons until orchestration completes. On partial failure a toast notifies how many drivers succeeded vs. failed. On total failure, Snapshot-equivalent content is generated with a banner.
+
+   For the Quality Gate tab the template selector uses a 2×1 radio grid (Snapshot / Actionable).
 
    ##### CSV schemas per tab
 
@@ -332,7 +370,10 @@ Triggered by the Export button in the header. Modal contents:
 7. **Footer left:** size estimate of the export in KB plus a one-line summary of what the header block will contain (e.g. "~12 KB · header includes filters, project, branch, timestamp"). The estimate tells users at a glance whether the result will fit in a typical LLM context window before they commit.
 8. **Footer right:** Cancel / Download (secondary) / Copy to clipboard (primary).
 
-Markdown header block at the top of every export contains: project key, branch, generation timestamp, total findings, applied filters.
+Markdown header block at the top of every export contains: project key, branch, generation timestamp, applied filters, and a tab-specific count field:
+- **Issues exports:** `total_findings` — count of visible issues after current filter.
+- **Hotspots exports:** `total_hotspots` — count of visible hotspots after current filter.
+- **Quality Gate exports:** `quality_gate_status` (OK / WARN / ERROR) and `conditions_failing` (N/M format, e.g. "2/5"). `total_findings` is omitted from QG exports — it has no meaningful interpretation there. Filters for QG exports are always `{}` since the Quality Gate tab is not filterable.
 
 CSV is RFC 4180-compliant with UTF-8 BOM (Excel-friendly), default filename `sift-{projectKey}-{branch}-{view}-{ISO-date}.csv`.
 
