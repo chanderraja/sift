@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import type { Hotspot, Issue, Measure, QualityGate } from '../types/sonar';
+import { DRIVER_LIMIT, type ConditionWithDrivers } from './qgDrivers';
 
 export interface IssuesMarkdownContext {
   readonly tab: 'issues';
@@ -234,39 +235,106 @@ export function markdownHotspotLlmSecurityReview(
   return [headerBlock(ctx), HOTSPOT_LLM_PROMPT, '### Hotspots', '', ...findings, ''].join('\n');
 }
 
-// ===== Quality Gate template =====
+// ===== Quality Gate templates =====
+
+function renderConditionsTable(conditions: QualityGate['projectStatus']['conditions']): string {
+  return [
+    '| Metric | Comparator | Threshold | Actual | Status |',
+    '|--------|------------|-----------|--------|--------|',
+    ...conditions.map(
+      (c) =>
+        `| ${c.metricKey} | ${c.comparator} | ${c.errorThreshold} | ${c.actualValue} | ${c.status} |`,
+    ),
+  ].join('\n');
+}
+
+function renderMeasuresTable(measures: readonly Measure[]): string {
+  return [
+    '| Metric | Value | Best Value |',
+    '|--------|-------|------------|',
+    ...measures.map((m) => `| ${m.metric} | ${m.value ?? ''} | ${String(m.bestValue ?? '')} |`),
+  ].join('\n');
+}
 
 export function markdownQualityGateSnapshot(
   qg: QualityGate,
   measures: readonly Measure[],
   ctx: MarkdownContext,
 ): string {
-  const conditionsTable = [
-    '| Metric | Comparator | Threshold | Actual | Status |',
-    '|--------|------------|-----------|--------|--------|',
-    ...qg.projectStatus.conditions.map(
-      (c) =>
-        `| ${c.metricKey} | ${c.comparator} | ${c.errorThreshold} | ${c.actualValue} | ${c.status} |`,
-    ),
-  ].join('\n');
-
-  const measuresTable = [
-    '| Metric | Value | Best Value |',
-    '|--------|-------|------------|',
-    ...measures.map((m) => `| ${m.metric} | ${m.value ?? ''} | ${String(m.bestValue ?? '')} |`),
-  ].join('\n');
-
   return [
     headerBlock(ctx),
     `# Quality Gate: ${qg.projectStatus.status}`,
     '',
     '## Conditions',
     '',
-    conditionsTable,
+    renderConditionsTable(qg.projectStatus.conditions),
     '',
     '## Measures',
     '',
-    measuresTable,
+    renderMeasuresTable(measures),
     '',
+  ].join('\n');
+}
+
+function renderDriverResult(result: ConditionWithDrivers['driverResult']): string[] {
+  if (result.kind === 'issues') {
+    return [
+      ...result.items
+        .slice(0, DRIVER_LIMIT)
+        .map(
+          (issue) =>
+            `- **${issue.severity}** · \`${filePath(issue.component)}:${issue.line ?? '?'}\` · \`${issue.rule}\`\n  ${issue.message}`,
+        ),
+      '',
+    ];
+  }
+  if (result.kind === 'hotspots') {
+    return [
+      ...result.items
+        .slice(0, DRIVER_LIMIT)
+        .map(
+          (h) =>
+            `- **${h.vulnerabilityProbability}** · \`${filePath(h.component)}:${h.line ?? '?'}\` · ${h.securityCategory}\n  ${h.message}`,
+        ),
+      '',
+    ];
+  }
+  const prefix = result.kind === 'error' ? 'Error: ' : '';
+  return [`> ${prefix}${result.message}`, ''];
+}
+
+export const QG_ACTIONABLE_LLM_PROMPT =
+  'You are a senior engineer reviewing a failing Quality Gate export from SonarCloud. ' +
+  'The conditions above represent the metrics that caused the gate to fail, together ' +
+  'with the specific issues or hotspots driving each condition.\n\n' +
+  'For each failing condition:\n' +
+  '- Summarise the root cause in one sentence.\n' +
+  '- Propose the minimum set of changes that would resolve the condition.\n' +
+  '- If a group of issues shares a root cause, propose a single fix for the group.\n\n' +
+  'Order your response from highest impact to lowest. Skip conditions marked as notes ' +
+  '(no actionable issue data) with a one-line acknowledgement.\n';
+
+export function markdownQualityGateActionable(
+  qg: QualityGate,
+  measures: readonly Measure[],
+  conditionDrivers: readonly ConditionWithDrivers[],
+  ctx: QualityGateMarkdownContext,
+): string {
+  const conditionSections = conditionDrivers.flatMap(({ condition, driverResult }) => [
+    `## ${condition.metricKey}: ${condition.actualValue} (threshold: ${condition.errorThreshold})`,
+    '',
+    ...renderDriverResult(driverResult),
+  ]);
+
+  return [
+    headerBlock(ctx),
+    `# Quality Gate: ${qg.projectStatus.status}`,
+    '',
+    ...conditionSections,
+    '## Measures',
+    '',
+    renderMeasuresTable(measures),
+    '',
+    QG_ACTIONABLE_LLM_PROMPT,
   ].join('\n');
 }

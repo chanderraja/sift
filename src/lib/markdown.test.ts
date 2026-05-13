@@ -11,8 +11,10 @@ import {
   markdownHotspotGroupedByCategory,
   markdownHotspotLlmSecurityReview,
   markdownQualityGateSnapshot,
+  markdownQualityGateActionable,
 } from './markdown';
 import type { Hotspot, Issue } from '../types/sonar';
+import { DRIVER_LIMIT, type ConditionWithDrivers } from './qgDrivers';
 import { baseHotspot, baseQualityGate, baseMeasures } from '../../tests/hotspot-fixtures';
 
 const hotspot1 = baseHotspot;
@@ -253,6 +255,98 @@ describe('markdownHotspotLlmSecurityReview', () => {
     expect(md).toContain('java:S2068');
     expect(md).toContain('src/auth/legacy.java');
     expect(md).toContain('auth');
+  });
+});
+
+describe('markdownQualityGateActionable', () => {
+  const condition1 = {
+    status: 'ERROR' as const,
+    metricKey: 'reliability_rating',
+    comparator: 'GT' as const,
+    errorThreshold: '1',
+    actualValue: '3.0',
+  };
+
+  const condition2 = {
+    status: 'ERROR' as const,
+    metricKey: 'security_hotspots_reviewed',
+    comparator: 'LT' as const,
+    errorThreshold: '80',
+    actualValue: '50',
+  };
+
+  it('includes header block with QG-specific fields', () => {
+    const md = markdownQualityGateActionable(qg, measures, [], qgCtx);
+    expect(md).toContain('quality_gate_status: ERROR');
+    expect(md).toContain('conditions_failing: 1/2');
+    expect(md).toContain('acme');
+    expect(md).toContain('main');
+  });
+
+  it('produces H1 with gate status', () => {
+    const md = markdownQualityGateActionable(qg, measures, [], qgCtx);
+    expect(md).toContain('# Quality Gate: ERROR');
+  });
+
+  it('renders an issues driver with issue rows', () => {
+    const condWithDriver: ConditionWithDrivers = {
+      condition: condition1,
+      driverResult: { kind: 'issues', items: [issue1, issue2] },
+    };
+    const md = markdownQualityGateActionable(qg, measures, [condWithDriver], qgCtx);
+    expect(md).toContain('reliability_rating');
+    expect(md).toContain('payment.ts');
+    expect(md).toContain('BLOCKER');
+  });
+
+  it('renders a hotspot driver with hotspot rows', () => {
+    const condWithDriver: ConditionWithDrivers = {
+      condition: condition2,
+      driverResult: { kind: 'hotspots', items: [hotspot1] },
+    };
+    const md = markdownQualityGateActionable(qg, measures, [condWithDriver], qgCtx);
+    expect(md).toContain('security_hotspots_reviewed');
+    expect(md).toContain('src/auth/legacy.java');
+    expect(md).toContain('HIGH');
+  });
+
+  it('renders a note driver', () => {
+    const condWithDriver: ConditionWithDrivers = {
+      condition: { ...condition1, metricKey: 'coverage' },
+      driverResult: { kind: 'note', message: 'Requires test coverage improvements.' },
+    };
+    const md = markdownQualityGateActionable(qg, measures, [condWithDriver], qgCtx);
+    expect(md).toContain('coverage');
+    expect(md).toContain('Requires test coverage improvements.');
+  });
+
+  it('renders an error driver', () => {
+    const condWithDriver: ConditionWithDrivers = {
+      condition: condition1,
+      driverResult: { kind: 'error', message: 'Request failed.' },
+    };
+    const md = markdownQualityGateActionable(qg, measures, [condWithDriver], qgCtx);
+    expect(md).toContain('reliability_rating');
+    expect(md).toContain('Request failed.');
+  });
+
+  it('caps issue rows at DRIVER_LIMIT', () => {
+    const manyIssues = Array.from({ length: DRIVER_LIMIT + 5 }, (_, i) => ({
+      ...issue1,
+      key: `KEY${i}` as Issue['key'],
+    }));
+    const condWithDriver: ConditionWithDrivers = {
+      condition: condition1,
+      driverResult: { kind: 'issues', items: manyIssues },
+    };
+    const md = markdownQualityGateActionable(qg, measures, [condWithDriver], qgCtx);
+    const rows = (md.match(/^- \*\*/gm) ?? []).length;
+    expect(rows).toBe(DRIVER_LIMIT);
+  });
+
+  it('includes the LLM prompt', () => {
+    const md = markdownQualityGateActionable(qg, measures, [], qgCtx);
+    expect(md).toMatch(/You are a senior engineer/i);
   });
 });
 
