@@ -5,7 +5,8 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useFiltersStore, useSelectionStore, useUiStore } from '../../app/stores';
-import type { Hotspot, Issue, Measure, QualityGate } from '../../types/sonar';
+import type { Issue } from '../../types/sonar';
+import { baseHotspot, baseQualityGate, baseMeasures } from '../../../tests/hotspot-fixtures';
 import { wrap } from '../test-helpers/sessionWrap';
 
 import { ExportModal } from './ExportModal';
@@ -139,59 +140,13 @@ describe('ExportModal', () => {
   });
 });
 
-const hotspot: Hotspot = {
-  key: 'HS1',
-  component: 'acme:src/auth/legacy.java',
-  project: 'acme' as Hotspot['project'],
-  securityCategory: 'auth',
-  vulnerabilityProbability: 'HIGH',
-  status: 'TO_REVIEW',
-  line: 47,
-  message: 'Hard-coded credentials.',
-  creationDate: '2026-05-01T00:00:00+0000',
-  updateDate: '2026-05-01T00:00:00+0000',
-  ruleKey: 'java:S2068' as Hotspot['ruleKey'],
-};
-
-const qg: QualityGate = {
-  projectStatus: {
-    status: 'ERROR',
-    conditions: [
-      {
-        status: 'ERROR',
-        metricKey: 'new_coverage',
-        comparator: 'LT',
-        errorThreshold: '80',
-        actualValue: '65.4',
-      },
-    ],
-  },
-};
-
-const measures: Measure[] = [{ metric: 'ncloc', value: '4849' }];
+const hotspot = baseHotspot;
+const qg = baseQualityGate;
+const measures = baseMeasures;
 
 describe('ExportModal — tab-aware templates', () => {
   beforeEach(() => {
-    useSelectionStore.setState({
-      organizationKey: null,
-      projectKey: 'acme' as Issue['project'],
-      branchName: 'main',
-    });
-    useFiltersStore.getState().reset();
     useUiStore.setState({ exportOpen: true });
-    clipboardWriteText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, 'clipboard', {
-      value: { writeText: clipboardWriteText },
-      writable: true,
-      configurable: true,
-    });
-  });
-
-  afterEach(() => {
-    useUiStore.setState({ exportOpen: false });
-    useSelectionStore.getState().reset();
-    useFiltersStore.getState().reset();
-    vi.restoreAllMocks();
   });
 
   it('issues tab shows issues templates', () => {

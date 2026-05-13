@@ -26,6 +26,7 @@
     "src",
     "tests/setup.ts",
     "tests/msw.ts",
+    "tests/hotspot-fixtures.ts",
     "tests/vitest-axe.d.ts",
     "tests/unit",
     "tests/integration"

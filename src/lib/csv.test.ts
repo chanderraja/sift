@@ -3,6 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { hotspotsToCsv, issuesToCsv, qualityGateToCsv } from './csv';
 import type { Hotspot, Issue, Measure, QualityGate } from '../types/sonar';
+import { baseHotspot, baseQualityGate, baseMeasures } from '../../tests/hotspot-fixtures';
 
 const UTF8_BOM = '﻿';
 
@@ -55,19 +56,7 @@ describe('issuesToCsv', () => {
   });
 });
 
-const hotspotBase: Hotspot = {
-  key: 'HS1',
-  component: 'acme:src/auth/legacy.java',
-  project: 'acme' as Hotspot['project'],
-  securityCategory: 'auth',
-  vulnerabilityProbability: 'HIGH',
-  status: 'TO_REVIEW',
-  line: 47,
-  message: 'Hard-coded credentials detected.',
-  creationDate: '2026-05-01T00:00:00+0000',
-  updateDate: '2026-05-01T00:00:00+0000',
-  ruleKey: 'java:S2068' as Hotspot['ruleKey'],
-};
+const hotspotBase: Hotspot = baseHotspot;
 
 describe('hotspotsToCsv', () => {
   it('empty list → header row only (with BOM)', () => {
@@ -113,23 +102,10 @@ describe('hotspotsToCsv', () => {
   });
 });
 
-const qg: QualityGate = {
-  projectStatus: {
-    status: 'ERROR',
-    conditions: [
-      {
-        status: 'ERROR',
-        metricKey: 'new_coverage',
-        comparator: 'LT',
-        errorThreshold: '80',
-        actualValue: '65.4',
-      },
-    ],
-  },
-};
+const qg: QualityGate = baseQualityGate;
 
 const qgMeasures: Measure[] = [
-  { metric: 'ncloc', value: '4849' },
+  ...baseMeasures,
   { metric: 'reliability_rating', value: '1.0', bestValue: true },
 ];
 

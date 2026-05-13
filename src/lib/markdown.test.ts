@@ -12,51 +12,34 @@ import {
   markdownHotspotLlmSecurityReview,
   markdownQualityGateSnapshot,
 } from './markdown';
-import type { Hotspot, Issue, Measure, QualityGate } from '../types/sonar';
+import type { Hotspot, Issue } from '../types/sonar';
+import { baseHotspot, baseQualityGate, baseMeasures } from '../../tests/hotspot-fixtures';
 
-const hotspot1: Hotspot = {
-  key: 'HS1',
-  component: 'acme:src/auth/legacy.java',
-  project: 'acme' as Hotspot['project'],
-  securityCategory: 'auth',
-  vulnerabilityProbability: 'HIGH',
-  status: 'TO_REVIEW',
-  line: 47,
-  message: 'Hard-coded credentials detected.',
-  creationDate: '2026-05-01T00:00:00+0000',
-  updateDate: '2026-05-01T00:00:00+0000',
-  ruleKey: 'java:S2068' as Hotspot['ruleKey'],
-};
+const hotspot1 = baseHotspot;
 
-const hotspot2: Hotspot = {
+const hotspot2 = {
+  ...baseHotspot,
   key: 'HS2',
   component: 'acme:src/crypto/utils.java',
-  project: 'acme' as Hotspot['project'],
   securityCategory: 'cryptography',
-  vulnerabilityProbability: 'MEDIUM',
-  status: 'TO_REVIEW',
+  vulnerabilityProbability: 'MEDIUM' as const,
   line: 12,
   message: 'Weak cipher used.',
   creationDate: '2026-05-02T00:00:00+0000',
   updateDate: '2026-05-02T00:00:00+0000',
-  ruleKey: 'java:S4426' as Hotspot['ruleKey'],
+  ruleKey: 'java:S4426' as (typeof baseHotspot)['ruleKey'],
 };
 
-const qg: QualityGate = {
+const qg = {
+  ...baseQualityGate,
   projectStatus: {
-    status: 'ERROR',
+    ...baseQualityGate.projectStatus,
     conditions: [
+      ...baseQualityGate.projectStatus.conditions,
       {
-        status: 'ERROR',
-        metricKey: 'new_coverage',
-        comparator: 'LT',
-        errorThreshold: '80',
-        actualValue: '65.4',
-      },
-      {
-        status: 'OK',
+        status: 'OK' as const,
         metricKey: 'new_duplicated_lines_density',
-        comparator: 'GT',
+        comparator: 'GT' as const,
         errorThreshold: '3',
         actualValue: '1.2',
       },
@@ -64,10 +47,7 @@ const qg: QualityGate = {
   },
 };
 
-const measures: Measure[] = [
-  { metric: 'ncloc', value: '4849' },
-  { metric: 'reliability_rating', value: '1.0', bestValue: true },
-];
+const measures = [...baseMeasures, { metric: 'reliability_rating', value: '1.0', bestValue: true }];
 
 const issue1: Issue = {
   key: 'KEY1' as Issue['key'],
