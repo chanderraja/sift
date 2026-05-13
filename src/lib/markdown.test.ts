@@ -85,6 +85,11 @@ const context = {
   appliedFilters: 'severity=BLOCKER,CRITICAL',
 };
 
+function expectHeaderBlock(md: string): void {
+  expect(md).toContain('acme');
+  expect(md).toContain('main');
+}
+
 describe('markdownTriage', () => {
   it('produces numbered list with severity prefix and file:line in code', () => {
     const md = markdownTriage([issue1, issue2], context);
@@ -97,8 +102,7 @@ describe('markdownTriage', () => {
 
   it('includes header block', () => {
     const md = markdownTriage([issue1], context);
-    expect(md).toContain('acme');
-    expect(md).toContain('main');
+    expectHeaderBlock(md);
     expect(md).toContain('2026-05-11');
   });
 });
@@ -112,8 +116,7 @@ describe('markdownGroupedByFile', () => {
   });
 
   it('includes header block', () => {
-    const md = markdownGroupedByFile([issue1], context);
-    expect(md).toContain('acme');
+    expectHeaderBlock(markdownGroupedByFile([issue1], context));
   });
 });
 
@@ -126,8 +129,7 @@ describe('markdownGroupedByRule', () => {
   });
 
   it('includes header block', () => {
-    const md = markdownGroupedByRule([issue1], context);
-    expect(md).toContain('acme');
+    expectHeaderBlock(markdownGroupedByRule([issue1], context));
   });
 });
 
@@ -143,7 +145,7 @@ describe('markdownLlmRemediation', () => {
 
   it('includes header block and all issues', () => {
     const md = markdownLlmRemediation([issue1, issue2], context);
-    expect(md).toContain('acme');
+    expectHeaderBlock(md);
     expect(md).toContain('payment.ts');
     expect(md).toContain('auth.ts');
   });
@@ -160,9 +162,7 @@ describe('markdownHotspotTriage', () => {
   });
 
   it('includes header block', () => {
-    const md = markdownHotspotTriage([hotspot1], context);
-    expect(md).toContain('acme');
-    expect(md).toContain('main');
+    expectHeaderBlock(markdownHotspotTriage([hotspot1], context));
   });
 
   it('handles empty list gracefully', () => {
@@ -187,8 +187,7 @@ describe('markdownHotspotGroupedByFile', () => {
   });
 
   it('includes header block', () => {
-    const md = markdownHotspotGroupedByFile([hotspot1], context);
-    expect(md).toContain('acme');
+    expectHeaderBlock(markdownHotspotGroupedByFile([hotspot1], context));
   });
 });
 
@@ -208,8 +207,7 @@ describe('markdownHotspotGroupedByCategory', () => {
   });
 
   it('includes header block', () => {
-    const md = markdownHotspotGroupedByCategory([hotspot1], context);
-    expect(md).toContain('acme');
+    expectHeaderBlock(markdownHotspotGroupedByCategory([hotspot1], context));
   });
 });
 
@@ -252,8 +250,6 @@ describe('markdownQualityGateSnapshot', () => {
   });
 
   it('includes header block', () => {
-    const md = markdownQualityGateSnapshot(qg, measures, context);
-    expect(md).toContain('acme');
-    expect(md).toContain('main');
+    expectHeaderBlock(markdownQualityGateSnapshot(qg, measures, context));
   });
 });

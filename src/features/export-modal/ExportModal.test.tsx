@@ -31,6 +31,14 @@ const issue: Issue = {
 
 let clipboardWriteText: ReturnType<typeof vi.fn>;
 
+async function assertClipboard(check: (content: string) => void): Promise<void> {
+  await waitFor(() => {
+    expect(clipboardWriteText).toHaveBeenCalledOnce();
+    const [content] = clipboardWriteText.mock.calls[0] as [string];
+    check(content);
+  });
+}
+
 beforeEach(() => {
   useSelectionStore.setState({
     organizationKey: null,
@@ -105,11 +113,7 @@ describe('ExportModal', () => {
     render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
 
     await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
-    await waitFor(() => {
-      expect(clipboardWriteText).toHaveBeenCalledOnce();
-      const [content] = clipboardWriteText.mock.calls[0] as [string];
-      expect(content).toContain('acme');
-    });
+    await assertClipboard((c) => expect(c).toContain('acme'));
   });
 
   it('"Download" triggers an anchor click with blob URL', async () => {
@@ -183,11 +187,9 @@ describe('ExportModal — tab-aware templates', () => {
     useFiltersStore.setState({ tab: 'hotspots' });
     render(wrap(<ExportModal issues={[]} hotspots={[hotspot]} qualityGate={null} measures={[]} />));
     await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
-    await waitFor(() => {
-      expect(clipboardWriteText).toHaveBeenCalledOnce();
-      const [content] = clipboardWriteText.mock.calls[0] as [string];
-      expect(content).toContain('Hotspot Triage List');
-      expect(content).toContain('HIGH');
+    await assertClipboard((c) => {
+      expect(c).toContain('Hotspot Triage List');
+      expect(c).toContain('HIGH');
     });
   });
 
@@ -195,11 +197,9 @@ describe('ExportModal — tab-aware templates', () => {
     useFiltersStore.setState({ tab: 'quality-gate' });
     render(wrap(<ExportModal issues={[]} hotspots={[]} qualityGate={qg} measures={measures} />));
     await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
-    await waitFor(() => {
-      expect(clipboardWriteText).toHaveBeenCalledOnce();
-      const [content] = clipboardWriteText.mock.calls[0] as [string];
-      expect(content).toContain('Quality Gate: ERROR');
-      expect(content).toContain('new_coverage');
+    await assertClipboard((c) => {
+      expect(c).toContain('Quality Gate: ERROR');
+      expect(c).toContain('new_coverage');
     });
   });
 
@@ -208,11 +208,9 @@ describe('ExportModal — tab-aware templates', () => {
     render(wrap(<ExportModal issues={[]} hotspots={[hotspot]} qualityGate={null} measures={[]} />));
     await userEvent.click(screen.getByRole('radio', { name: /csv/i }));
     await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
-    await waitFor(() => {
-      expect(clipboardWriteText).toHaveBeenCalledOnce();
-      const [content] = clipboardWriteText.mock.calls[0] as [string];
-      expect(content).toContain('Probability');
-      expect(content).toContain('HIGH');
+    await assertClipboard((c) => {
+      expect(c).toContain('Probability');
+      expect(c).toContain('HIGH');
     });
   });
 
@@ -221,12 +219,10 @@ describe('ExportModal — tab-aware templates', () => {
     render(wrap(<ExportModal issues={[]} hotspots={[]} qualityGate={qg} measures={measures} />));
     await userEvent.click(screen.getByRole('radio', { name: /csv/i }));
     await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
-    await waitFor(() => {
-      expect(clipboardWriteText).toHaveBeenCalledOnce();
-      const [content] = clipboardWriteText.mock.calls[0] as [string];
-      expect(content).toContain('Section');
-      expect(content).toContain('condition');
-      expect(content).toContain('new_coverage');
+    await assertClipboard((c) => {
+      expect(c).toContain('Section');
+      expect(c).toContain('condition');
+      expect(c).toContain('new_coverage');
     });
   });
 });
