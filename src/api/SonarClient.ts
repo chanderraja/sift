@@ -21,8 +21,8 @@ import type {
   Branch,
   Hotspot,
   HotspotFilters,
-  Issue,
   IssueFilters,
+  IssuesPage,
   Measure,
   Organization,
   Page,
@@ -84,10 +84,11 @@ export class SonarClient {
     );
   }
 
-  async searchIssues(filters: IssueFilters, opts?: PageOpts): Promise<Result<Page<Issue>>> {
+  async searchIssues(filters: IssueFilters, opts?: PageOpts): Promise<Result<IssuesPage>> {
     const params = encodeIssueFilters(filters);
     if (opts?.p !== undefined) params.set('p', String(opts.p));
     if (opts?.ps !== undefined) params.set('ps', String(opts.ps));
+    params.set('facets', 'severities,types,statuses');
     const result = await this.get(
       `${PROXY_BASE}/issues/search?${params.toString()}`,
       parseIssuesSearchResponse,
@@ -182,12 +183,15 @@ export class SonarClient {
       // bug or an undocumented SonarCloud shape change, not a server error.
       // Surface as parse_error so the UI can direct users to file an issue
       // rather than blaming SonarCloud's status page.
+      const first = parsed.error.issues[0];
+      const hint = first ? `${first.path.join('.')} — ${first.message}` : 'unknown field';
       logger.warn('[SonarClient] schema validation failed', {
         path,
         status,
+        hint,
         issues: parsed.error.issues,
       });
-      return { kind: 'parse_error' };
+      return { kind: 'parse_error', hint };
     }
     return { kind: 'ok', value: parsed.value };
   }

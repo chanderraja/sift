@@ -48,6 +48,37 @@ const loadFixture = (name: keyof typeof FIXTURES): unknown => FIXTURES[name];
 /** Deep clone via structuredClone — fixtures are pure JSON so it suffices. */
 const clone = <T>(value: T): T => structuredClone(value);
 
+type AnyParseResult =
+  | { ok: true; value: unknown }
+  | { ok: false; error: { issues: readonly { path: readonly PropertyKey[] }[] } };
+
+function expectRejectedAtPath(result: AnyParseResult, path: string): void {
+  expect(result.ok).toBe(false);
+  if (result.ok) return;
+  expect(result.error.issues.map((i) => i.path.join('.'))).toContain(path);
+}
+
+/** Builds a minimal single-issue search response with the given flows array. */
+const issueWithFlows = (flows: unknown[]) => ({
+  paging: { pageIndex: 1, pageSize: 100, total: 1 },
+  issues: [
+    {
+      key: 'A1',
+      rule: 'java:S123',
+      severity: 'MAJOR',
+      type: 'BUG',
+      status: 'OPEN',
+      resolution: null,
+      component: 'proj:File.java',
+      project: 'proj',
+      message: 'msg',
+      creationDate: '2024-01-01T00:00:00+0000',
+      updateDate: '2024-01-01T00:00:00+0000',
+      flows,
+    },
+  ],
+});
+
 describe('parseOrganizationsSearchResponse', () => {
   it('parses the fixture', () => {
     const result = parseOrganizationsSearchResponse(loadFixture('organizations-search'));
@@ -64,11 +95,16 @@ describe('parseOrganizationsSearchResponse', () => {
     };
     delete fixture.organizations[0]?.key;
 
+    expectRejectedAtPath(parseOrganizationsSearchResponse(fixture), 'organizations.0.key');
+  });
+
+  it('accepts an organization without subscription (field is not always returned)', () => {
+    const fixture = clone(loadFixture('organizations-search')) as {
+      organizations: { subscription?: string }[];
+    };
+    delete fixture.organizations[0]?.subscription;
     const result = parseOrganizationsSearchResponse(fixture);
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    const paths = result.error.issues.map((i) => i.path.join('.'));
-    expect(paths).toContain('organizations.0.key');
+    expect(result.ok).toBe(true);
   });
 
   it('preserves unknown extra fields on organizations', () => {
@@ -103,11 +139,7 @@ describe('parseProjectsSearchResponse', () => {
     };
     delete fixture.components[0]?.qualifier;
 
-    const result = parseProjectsSearchResponse(fixture);
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    const paths = result.error.issues.map((i) => i.path.join('.'));
-    expect(paths).toContain('components.0.qualifier');
+    expectRejectedAtPath(parseProjectsSearchResponse(fixture), 'components.0.qualifier');
   });
 
   it('preserves unknown extra fields on projects', () => {
@@ -136,17 +168,21 @@ describe('parseBranchesListResponse', () => {
     expect(result.value[0]?.isMain).toBe(true);
   });
 
+  it('accepts type "BRANCH" (modern SonarCloud deprecates LONG/SHORT)', () => {
+    const fixture = {
+      branches: [{ name: 'main', isMain: true, type: 'BRANCH' }],
+    };
+    const result = parseBranchesListResponse(fixture);
+    expect(result.ok).toBe(true);
+  });
+
   it('rejects when a branch is missing its required `isMain`', () => {
     const fixture = clone(loadFixture('project-branches-list')) as {
       branches: { isMain?: boolean }[];
     };
     delete fixture.branches[0]?.isMain;
 
-    const result = parseBranchesListResponse(fixture);
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    const paths = result.error.issues.map((i) => i.path.join('.'));
-    expect(paths).toContain('branches.0.isMain');
+    expectRejectedAtPath(parseBranchesListResponse(fixture), 'branches.0.isMain');
   });
 
   it('preserves unknown extra fields on branches', () => {
@@ -196,11 +232,81 @@ describe('parseIssuesSearchResponse', () => {
     };
     delete fixture.issues[0]?.severity;
 
+    expectRejectedAtPath(parseIssuesSearchResponse(fixture), 'issues.0.severity');
+  });
+
+  it('includes server-side facets in the parsed result', () => {
+    const fixture = {
+      paging: { pageIndex: 1, pageSize: 100, total: 115 },
+      issues: [],
+      facets: [
+        {
+          property: 'severities',
+          values: [
+            { val: 'CRITICAL', count: 12 },
+            { val: 'MAJOR', count: 80 },
+          ],
+        },
+        {
+          property: 'statuses',
+          values: [{ val: 'OPEN', count: 98 }],
+        },
+      ],
+    };
     const result = parseIssuesSearchResponse(fixture);
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    const paths = result.error.issues.map((i) => i.path.join('.'));
-    expect(paths).toContain('issues.0.severity');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.facets).toHaveLength(2);
+    expect(result.value.facets[0]).toMatchObject({ property: 'severities' });
+    expect(result.value.facets[0]?.values).toContainEqual({ val: 'CRITICAL', count: 12 });
+  });
+
+  it('defaults to an empty facets array when the field is absent', () => {
+    const fixture = {
+      paging: { pageIndex: 1, pageSize: 100, total: 0 },
+      issues: [],
+    };
+    const result = parseIssuesSearchResponse(fixture);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.facets).toEqual([]);
+  });
+
+  it('accepts a flow location without textRange (file-level steps have none)', () => {
+    const result = parseIssuesSearchResponse(
+      issueWithFlows([{ locations: [{ component: 'proj:File.java', msg: 'source here' }] }]),
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it('accepts a flow location without msg', () => {
+    const result = parseIssuesSearchResponse(
+      issueWithFlows([
+        {
+          locations: [
+            {
+              component: 'proj:File.java',
+              textRange: { startLine: 1, endLine: 1, startOffset: 0, endOffset: 5 },
+            },
+          ],
+        },
+      ]),
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it('accepts a flow location with msg: null (SonarCloud sends null when no message)', () => {
+    const result = parseIssuesSearchResponse(
+      issueWithFlows([{ locations: [{ component: 'proj:File.java', msg: null }] }]),
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it('accepts a flow location with component: null (deleted/renamed file)', () => {
+    const result = parseIssuesSearchResponse(
+      issueWithFlows([{ locations: [{ component: null, msg: 'step' }] }]),
+    );
+    expect(result.ok).toBe(true);
   });
 
   it('preserves unknown extra fields on issues', () => {
@@ -248,11 +354,34 @@ describe('parseHotspotsSearchResponse', () => {
       ruleKey: 'java:S1234',
     });
 
+    expectRejectedAtPath(
+      parseHotspotsSearchResponse(fixture),
+      'hotspots.0.vulnerabilityProbability',
+    );
+  });
+
+  it('accepts a file-level hotspot that omits `line` (no specific line number)', () => {
+    const fixture = clone(loadFixture('hotspots-search')) as {
+      hotspots: Record<string, unknown>[];
+    };
+    fixture.hotspots.push({
+      key: 'h2',
+      component: 'acme_widget-service:src/secret.ts',
+      project: 'acme_widget-service',
+      securityCategory: 'auth',
+      vulnerabilityProbability: 'HIGH',
+      status: 'TO_REVIEW',
+      // line intentionally absent — file-level hotspot
+      message: 'file-level hotspot',
+      creationDate: '2026-05-08T00:00:00+0000',
+      updateDate: '2026-05-08T00:00:00+0000',
+      ruleKey: 'java:S1234',
+    });
+
     const result = parseHotspotsSearchResponse(fixture);
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    const paths = result.error.issues.map((i) => i.path.join('.'));
-    expect(paths).toContain('hotspots.0.vulnerabilityProbability');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.items[0]?.line).toBeUndefined();
   });
 
   it('preserves unknown extra fields at the response level', () => {
@@ -282,11 +411,7 @@ describe('parseQualityGate', () => {
     };
     delete fixture.projectStatus.status;
 
-    const result = parseQualityGate(fixture);
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    const paths = result.error.issues.map((i) => i.path.join('.'));
-    expect(paths).toContain('projectStatus.status');
+    expectRejectedAtPath(parseQualityGate(fixture), 'projectStatus.status');
   });
 
   it('preserves unknown extra fields on conditions', () => {
@@ -322,11 +447,7 @@ describe('parseMeasuresComponentResponse', () => {
     };
     delete fixture.component.measures[0]?.metric;
 
-    const result = parseMeasuresComponentResponse(fixture);
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    const paths = result.error.issues.map((i) => i.path.join('.'));
-    expect(paths).toContain('component.measures.0.metric');
+    expectRejectedAtPath(parseMeasuresComponentResponse(fixture), 'component.measures.0.metric');
   });
 
   it('preserves unknown extra fields on measures', () => {

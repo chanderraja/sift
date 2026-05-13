@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { HttpResponse, http } from 'msw';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { server } from '../../../tests/msw';
 import { useAuthStore, useSelectionStore } from '../../app/stores';
 
 import { OrgPicker } from './OrgPicker';
@@ -47,6 +49,29 @@ describe('OrgPicker', () => {
       expect(screen.getByRole('combobox', { name: 'Organization' })).toBeInTheDocument();
     });
     expect(useSelectionStore.getState().organizationKey).toBe('other-corp');
+  });
+
+  it('does not query orgs before auth is valid, then loads them once valid', async () => {
+    // Simulate production: proxy returns 401 until the user provides a valid token.
+    // Without an `enabled` guard the premature query poisons the cache and orgs
+    // never appear even after auth succeeds (staleTime keeps the 401 for 5 min).
+    server.use(
+      http.get('/api/sonar/v1/organizations/search', () => new HttpResponse(null, { status: 401 })),
+    );
+    useAuthStore.setState({ validation: 'idle' });
+    render(wrap(<OrgPicker />));
+
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+
+    // Swap the stub to return real orgs before auth flips to valid.
+    stubOrgs([{ key: 'acme', name: 'Acme Corp' }]);
+    act(() => {
+      useAuthStore.setState({ validation: 'valid' });
+    });
+
+    await waitFor(() => {
+      expect(useSelectionStore.getState().organizationKey).toBe('acme');
+    });
   });
 
   it('changing org via the picker writes selection store', async () => {

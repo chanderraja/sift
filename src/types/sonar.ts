@@ -58,7 +58,7 @@ export interface Organization {
    * spec. Feature code that branches on this should match the documented
    * values explicitly and have a fallback for the unknown case.
    */
-  subscription: string;
+  subscription?: string;
   alm?: { key: string; url: string; personal: boolean };
   actions?: { admin: boolean; delete: boolean; provision: boolean };
   avatar?: string;
@@ -77,7 +77,7 @@ export interface Project {
 export interface Branch {
   name: string;
   isMain: boolean;
-  type: 'LONG' | 'SHORT' | 'PULL_REQUEST';
+  type: 'LONG' | 'SHORT' | 'PULL_REQUEST' | 'BRANCH';
   status?: { qualityGateStatus: QualityGateStatus };
   analysisDate?: string;
 }
@@ -96,7 +96,7 @@ export interface Issue {
   hash?: string;
   textRange?: TextRange;
   flows: {
-    locations: { component: string; textRange: TextRange; msg: string }[];
+    locations: { component?: string | null; textRange?: TextRange; msg?: string | null }[];
   }[];
   message: string;
   effort?: string;
@@ -118,7 +118,7 @@ export interface Hotspot {
   vulnerabilityProbability: 'HIGH' | 'MEDIUM' | 'LOW';
   status: 'TO_REVIEW' | 'REVIEWED';
   resolution?: 'FIXED' | 'SAFE' | 'ACKNOWLEDGED';
-  line: number;
+  line?: number;
   message: string;
   creationDate: string;
   updateDate: string;
@@ -194,6 +194,23 @@ export interface Page<T> {
   total: number;
 }
 
+/** One value bucket in a SonarCloud issues/search facet. */
+export interface IssueFacetValue {
+  val: string;
+  count: number;
+}
+
+/** A single facet dimension (e.g. severities, types, statuses) with counts. */
+export interface IssueFacet {
+  property: string;
+  values: IssueFacetValue[];
+}
+
+/** Page<Issue> augmented with server-side facet counts from issues/search. */
+export interface IssuesPage extends Page<Issue> {
+  facets: IssueFacet[];
+}
+
 /**
  * Discriminated union returned by every public `SonarClient` method. Per
  * ARCHITECTURE.md §5 ("Errors as values, not exceptions"), the client never
@@ -223,5 +240,5 @@ export type Result<T> =
   | { kind: 'rate_limited'; retryAfterSeconds?: number }
   | { kind: 'server_error'; status: number }
   | { kind: 'network_error'; message: string }
-  | { kind: 'parse_error' }
+  | { kind: 'parse_error'; hint?: string }
   | { kind: 'over_cap'; total: number };

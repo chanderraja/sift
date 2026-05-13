@@ -3,7 +3,7 @@
     {
       "name": "master",
       "isMain": true,
-      "type": "LONG",
+      "type": "BRANCH",
       "status": {
         "qualityGateStatus": "OK",
         "bugs": 0,

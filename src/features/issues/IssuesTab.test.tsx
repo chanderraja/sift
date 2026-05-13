@@ -113,6 +113,58 @@ describe('IssuesTab — data states', () => {
     expect(await screen.findByText(/Network error/)).toBeInTheDocument();
   });
 
+  it('shows server-side facet counts in the sidebar (not page-based counts)', async () => {
+    // The API returns 2 CRITICAL on this page but 12 total — facets have the truth.
+    server.use(
+      http.get('/api/sonar/v1/issues/search', () =>
+        HttpResponse.json({
+          paging: { pageIndex: 1, pageSize: 100, total: 115 },
+          issues: [
+            {
+              key: 'issue-1',
+              rule: 'typescript:S1',
+              severity: 'CRITICAL',
+              type: 'CODE_SMELL',
+              status: 'OPEN',
+              resolution: null,
+              component: 'proj:file.ts',
+              project: 'my-project',
+              message: 'Test issue',
+              flows: [],
+              tags: [],
+              creationDate: '2024-01-01T00:00:00+0000',
+              updateDate: '2024-01-01T00:00:00+0000',
+            },
+            {
+              key: 'issue-2',
+              rule: 'typescript:S2',
+              severity: 'CRITICAL',
+              type: 'CODE_SMELL',
+              status: 'OPEN',
+              resolution: null,
+              component: 'proj:file.ts',
+              project: 'my-project',
+              message: 'Test issue 2',
+              flows: [],
+              tags: [],
+              creationDate: '2024-01-01T00:00:00+0000',
+              updateDate: '2024-01-01T00:00:00+0000',
+            },
+          ],
+          facets: [
+            {
+              property: 'severities',
+              values: [{ val: 'CRITICAL', count: 12 }],
+            },
+          ],
+        }),
+      ),
+    );
+    render(wrap(<IssuesTab />));
+    // The sidebar should display 12 (from facets) not 2 (from page items).
+    expect(await screen.findByText('12')).toBeInTheDocument();
+  });
+
   it('skips the query and shows a placeholder when no project is selected', () => {
     useSelectionStore.getState().reset();
     render(wrap(<IssuesTab />));

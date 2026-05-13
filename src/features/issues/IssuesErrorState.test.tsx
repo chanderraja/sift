@@ -54,4 +54,13 @@ describe('IssuesErrorState', () => {
     expect(screen.getByText(/could not parse/i)).toBeInTheDocument();
     expect(screen.getByText(/file an issue/i)).toBeInTheDocument();
   });
+
+  it('renders parse_error with the failing field when hint is provided', () => {
+    render(
+      <IssuesErrorState
+        variant={{ kind: 'parse_error', hint: 'issues.0.severity — Invalid enum value' }}
+      />,
+    );
+    expect(screen.getByText(/issues\.0\.severity/)).toBeInTheDocument();
+  });
 });

@@ -24,6 +24,7 @@ import type {
   Hotspot,
   Issue,
   IssueKey,
+  IssuesPage,
   Measure,
   Organization,
   OrgKey,
@@ -88,7 +89,7 @@ export const OrganizationSchema = z
     key: orgKeySchema,
     name: z.string(),
     description: z.string().optional(),
-    subscription: z.string(),
+    subscription: z.string().optional(),
     alm: z
       .object({
         key: z.string(),
@@ -125,7 +126,7 @@ export const BranchSchema = z
   .object({
     name: z.string(),
     isMain: z.boolean(),
-    type: z.enum(['LONG', 'SHORT', 'PULL_REQUEST']),
+    type: z.enum(['LONG', 'SHORT', 'PULL_REQUEST', 'BRANCH']),
     status: z
       .object({
         qualityGateStatus: qualityGateStatusSchema,
@@ -141,9 +142,9 @@ const issueFlowSchema = z
     locations: z.array(
       z
         .object({
-          component: z.string(),
-          textRange: textRangeSchema,
-          msg: z.string(),
+          component: z.string().nullish(),
+          textRange: textRangeSchema.optional(),
+          msg: z.string().nullish(),
         })
         .passthrough(),
     ),
@@ -194,7 +195,7 @@ export const HotspotSchema = z
     vulnerabilityProbability: z.enum(['HIGH', 'MEDIUM', 'LOW']),
     status: z.enum(['TO_REVIEW', 'REVIEWED']),
     resolution: z.enum(['FIXED', 'SAFE', 'ACKNOWLEDGED']).optional(),
-    line: z.number(),
+    line: z.number().optional(),
     message: z.string(),
     creationDate: z.string(),
     updateDate: z.string(),
@@ -275,10 +276,17 @@ const BranchesListResponseSchema = z
   })
   .passthrough();
 
+const issueFacetValueSchema = z.object({ val: z.string(), count: z.number() }).passthrough();
+
+const issueFacetSchema = z
+  .object({ property: z.string(), values: z.array(issueFacetValueSchema) })
+  .passthrough();
+
 const IssuesSearchResponseSchema = z
   .object({
     paging: pagingSchema,
     issues: z.array(IssueSchema),
+    facets: z.array(issueFacetSchema).default([]),
   })
   .passthrough();
 
@@ -317,10 +325,13 @@ export function parseBranchesListResponse(raw: unknown): ParseResult<Branch[]> {
   return ok(result.data.branches as Branch[]);
 }
 
-export function parseIssuesSearchResponse(raw: unknown): ParseResult<Page<Issue>> {
+export function parseIssuesSearchResponse(raw: unknown): ParseResult<IssuesPage> {
   const result = IssuesSearchResponseSchema.safeParse(raw);
   if (!result.success) return fail(result.error);
-  return ok(toPage(result.data.issues as Issue[], result.data.paging));
+  return ok({
+    ...toPage(result.data.issues as Issue[], result.data.paging),
+    facets: result.data.facets,
+  });
 }
 
 export function parseHotspotsSearchResponse(raw: unknown): ParseResult<Page<Hotspot>> {

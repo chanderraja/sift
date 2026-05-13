@@ -21,8 +21,8 @@ import type {
   Branch,
   Hotspot,
   HotspotFilters,
-  Issue,
   IssueFilters,
+  IssuesPage,
   Measure,
   Organization,
   Page,
@@ -45,15 +45,18 @@ export const STALE_TIMES = {
 
 // ---------- Organizations ----------
 
-export const organizationsQuery = (client: SonarClient) =>
+export const organizationsQuery = (client: SonarClient, enabled = true) =>
   ({
     queryKey: ['organizations'] as const,
     queryFn: () => client.listOrganizations(),
     staleTime: STALE_TIMES.organizations,
+    enabled,
   }) as const;
 
-export const useOrganizations = (client: SonarClient): UseQueryResult<Result<Organization[]>> =>
-  useQuery(organizationsQuery(client));
+export const useOrganizations = (
+  client: SonarClient,
+  enabled = true,
+): UseQueryResult<Result<Organization[]>> => useQuery(organizationsQuery(client, enabled));
 
 // ---------- Projects ----------
 
@@ -97,7 +100,7 @@ export const useIssues = (
   client: SonarClient,
   filters: IssueFilters,
   opts?: PageOpts,
-): UseQueryResult<Result<Page<Issue>>> => useQuery(issuesQuery(client, filters, opts));
+): UseQueryResult<Result<IssuesPage>> => useQuery(issuesQuery(client, filters, opts));
 
 // ---------- Hotspots ----------
 
