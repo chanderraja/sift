@@ -44,6 +44,18 @@ const noteSpec = (d: ConditionDriver): NoteDriverSpec => {
   return d.spec as NoteDriverSpec;
 };
 
+function getIssueSpec(metric: string, value = '3.0', branch = BRANCH): IssueDriverSpec {
+  return issueSpec(getConditionDrivers([mk(metric, value)], PROJECT, branch)[0]!);
+}
+
+function getHotspotSpec(metric: string, value = '50', branch = BRANCH): HotspotDriverSpec {
+  return hotspotSpec(getConditionDrivers([mk(metric, value)], PROJECT, branch)[0]!);
+}
+
+function getNoteSpec(metric: string, value = '65'): NoteDriverSpec {
+  return noteSpec(getConditionDrivers([mk(metric, value)], PROJECT, BRANCH)[0]!);
+}
+
 describe('getConditionDrivers — constants', () => {
   it('DRIVER_LIMIT is 25', () => expect(DRIVER_LIMIT).toBe(25));
   it('COMPOSITE_CAP is 200', () => expect(COMPOSITE_CAP).toBe(200));
@@ -74,27 +86,20 @@ describe('getConditionDrivers — filtering', () => {
 
 describe('getConditionDrivers — reliability_rating', () => {
   it('maps to issues/BUG/OPEN', () => {
-    const s = issueSpec(
-      getConditionDrivers([mk('reliability_rating', '3.0')], PROJECT, BRANCH)[0]!,
-    );
+    const s = getIssueSpec('reliability_rating');
     expect(s.filters.types).toEqual(['BUG']);
     expect(s.filters.statuses).toEqual(['OPEN']);
     expect(s.filters.inNewCodePeriod).toBeUndefined();
   });
 
   it('includes the project key in componentKeys', () => {
-    const s = issueSpec(
-      getConditionDrivers([mk('reliability_rating', '3.0')], PROJECT, BRANCH)[0]!,
-    );
-    expect(s.filters.componentKeys).toContain(PROJECT);
+    expect(getIssueSpec('reliability_rating').filters.componentKeys).toContain(PROJECT);
   });
 });
 
 describe('getConditionDrivers — new_reliability_rating', () => {
   it('maps to issues/BUG/OPEN with inNewCodePeriod', () => {
-    const s = issueSpec(
-      getConditionDrivers([mk('new_reliability_rating', '3.0')], PROJECT, BRANCH)[0]!,
-    );
+    const s = getIssueSpec('new_reliability_rating');
     expect(s.filters.types).toEqual(['BUG']);
     expect(s.filters.statuses).toEqual(['OPEN']);
     expect(s.filters.inNewCodePeriod).toBe(true);
@@ -103,7 +108,7 @@ describe('getConditionDrivers — new_reliability_rating', () => {
 
 describe('getConditionDrivers — security_rating', () => {
   it('maps to issues/VULNERABILITY/OPEN', () => {
-    const s = issueSpec(getConditionDrivers([mk('security_rating', '3.0')], PROJECT, BRANCH)[0]!);
+    const s = getIssueSpec('security_rating');
     expect(s.filters.types).toEqual(['VULNERABILITY']);
     expect(s.filters.statuses).toEqual(['OPEN']);
   });
@@ -111,9 +116,7 @@ describe('getConditionDrivers — security_rating', () => {
 
 describe('getConditionDrivers — new_security_rating', () => {
   it('maps to issues/VULNERABILITY with inNewCodePeriod', () => {
-    const s = issueSpec(
-      getConditionDrivers([mk('new_security_rating', '3.0')], PROJECT, BRANCH)[0]!,
-    );
+    const s = getIssueSpec('new_security_rating');
     expect(s.filters.types).toEqual(['VULNERABILITY']);
     expect(s.filters.inNewCodePeriod).toBe(true);
   });
@@ -121,9 +124,7 @@ describe('getConditionDrivers — new_security_rating', () => {
 
 describe('getConditionDrivers — maintainability_rating', () => {
   it('maps to issues/CODE_SMELL/OPEN', () => {
-    const s = issueSpec(
-      getConditionDrivers([mk('maintainability_rating', '3.0')], PROJECT, BRANCH)[0]!,
-    );
+    const s = getIssueSpec('maintainability_rating');
     expect(s.filters.types).toEqual(['CODE_SMELL']);
     expect(s.filters.statuses).toEqual(['OPEN']);
   });
@@ -131,9 +132,7 @@ describe('getConditionDrivers — maintainability_rating', () => {
 
 describe('getConditionDrivers — new_maintainability_rating', () => {
   it('maps to issues/CODE_SMELL with inNewCodePeriod', () => {
-    const s = issueSpec(
-      getConditionDrivers([mk('new_maintainability_rating', '3.0')], PROJECT, BRANCH)[0]!,
-    );
+    const s = getIssueSpec('new_maintainability_rating');
     expect(s.filters.types).toEqual(['CODE_SMELL']);
     expect(s.filters.inNewCodePeriod).toBe(true);
   });
@@ -141,80 +140,70 @@ describe('getConditionDrivers — new_maintainability_rating', () => {
 
 describe('getConditionDrivers — severity scaling', () => {
   it('rating B (2) → MINOR+', () => {
-    const s = issueSpec(
-      getConditionDrivers([mk('reliability_rating', '2.0')], PROJECT, BRANCH)[0]!,
-    );
-    expect(s.filters.severities).toEqual(['BLOCKER', 'CRITICAL', 'MAJOR', 'MINOR']);
+    expect(getIssueSpec('reliability_rating', '2.0').filters.severities).toEqual([
+      'BLOCKER',
+      'CRITICAL',
+      'MAJOR',
+      'MINOR',
+    ]);
   });
 
   it('rating C (3) → MAJOR+', () => {
-    const s = issueSpec(
-      getConditionDrivers([mk('reliability_rating', '3.0')], PROJECT, BRANCH)[0]!,
-    );
-    expect(s.filters.severities).toEqual(['BLOCKER', 'CRITICAL', 'MAJOR']);
+    expect(getIssueSpec('reliability_rating', '3.0').filters.severities).toEqual([
+      'BLOCKER',
+      'CRITICAL',
+      'MAJOR',
+    ]);
   });
 
   it('rating D (4) → CRITICAL+', () => {
-    const s = issueSpec(
-      getConditionDrivers([mk('reliability_rating', '4.0')], PROJECT, BRANCH)[0]!,
-    );
-    expect(s.filters.severities).toEqual(['BLOCKER', 'CRITICAL']);
+    expect(getIssueSpec('reliability_rating', '4.0').filters.severities).toEqual([
+      'BLOCKER',
+      'CRITICAL',
+    ]);
   });
 
   it('rating E (5) → BLOCKER+CRITICAL', () => {
-    const s = issueSpec(
-      getConditionDrivers([mk('reliability_rating', '5.0')], PROJECT, BRANCH)[0]!,
-    );
-    expect(s.filters.severities).toEqual(['BLOCKER', 'CRITICAL']);
+    expect(getIssueSpec('reliability_rating', '5.0').filters.severities).toEqual([
+      'BLOCKER',
+      'CRITICAL',
+    ]);
   });
 });
 
 describe('getConditionDrivers — hotspot metrics', () => {
   it('security_hotspots_reviewed maps to hotspots/TO_REVIEW', () => {
-    const s = hotspotSpec(
-      getConditionDrivers([mk('security_hotspots_reviewed', '50')], PROJECT, BRANCH)[0]!,
-    );
+    const s = getHotspotSpec('security_hotspots_reviewed');
     expect(s.filters.status).toBe('TO_REVIEW');
     expect(s.filters.inNewCodePeriod).toBeUndefined();
   });
 
   it('new_security_hotspots_reviewed maps to hotspots/TO_REVIEW with inNewCodePeriod', () => {
-    const s = hotspotSpec(
-      getConditionDrivers([mk('new_security_hotspots_reviewed', '50')], PROJECT, BRANCH)[0]!,
-    );
+    const s = getHotspotSpec('new_security_hotspots_reviewed');
     expect(s.filters.status).toBe('TO_REVIEW');
     expect(s.filters.inNewCodePeriod).toBe(true);
   });
 
   it('includes the project key', () => {
-    const s = hotspotSpec(
-      getConditionDrivers([mk('security_hotspots_reviewed', '50')], PROJECT, BRANCH)[0]!,
-    );
-    expect(s.filters.projectKey).toBe(PROJECT);
+    expect(getHotspotSpec('security_hotspots_reviewed').filters.projectKey).toBe(PROJECT);
   });
 });
 
 describe('getConditionDrivers — violation metrics', () => {
   it('new_blocker_violations → BLOCKER with inNewCodePeriod', () => {
-    const s = issueSpec(
-      getConditionDrivers([mk('new_blocker_violations', '3')], PROJECT, BRANCH)[0]!,
-    );
+    const s = getIssueSpec('new_blocker_violations', '3');
     expect(s.filters.severities).toEqual(['BLOCKER']);
     expect(s.filters.inNewCodePeriod).toBe(true);
   });
 
   it('new_critical_violations → CRITICAL with inNewCodePeriod', () => {
-    const s = issueSpec(
-      getConditionDrivers([mk('new_critical_violations', '5')], PROJECT, BRANCH)[0]!,
-    );
+    const s = getIssueSpec('new_critical_violations', '5');
     expect(s.filters.severities).toEqual(['CRITICAL']);
     expect(s.filters.inNewCodePeriod).toBe(true);
   });
 
   it('new_major_violations → MAJOR with inNewCodePeriod', () => {
-    const s = issueSpec(
-      getConditionDrivers([mk('new_major_violations', '10')], PROJECT, BRANCH)[0]!,
-    );
+    const s = getIssueSpec('new_major_violations', '10');
     expect(s.filters.severities).toEqual(['MAJOR']);
     expect(s.filters.inNewCodePeriod).toBe(true);
   });
@@ -222,40 +211,30 @@ describe('getConditionDrivers — violation metrics', () => {
 
 describe('getConditionDrivers — note metrics', () => {
   it('coverage → note', () => {
-    const s = noteSpec(getConditionDrivers([mk('coverage', '65')], PROJECT, BRANCH)[0]!);
-    expect(s.message).toMatch(/coverage/i);
+    expect(getNoteSpec('coverage').message).toMatch(/coverage/i);
   });
 
   it('new_coverage → note', () => {
-    const s = noteSpec(getConditionDrivers([mk('new_coverage', '65')], PROJECT, BRANCH)[0]!);
-    expect(s.message).toMatch(/coverage/i);
+    expect(getNoteSpec('new_coverage').message).toMatch(/coverage/i);
   });
 
   it('new_duplicated_lines_density → note', () => {
-    const s = noteSpec(
-      getConditionDrivers([mk('new_duplicated_lines_density', '5')], PROJECT, BRANCH)[0]!,
-    );
-    expect(s.message).toMatch(/dedup/i);
+    expect(getNoteSpec('new_duplicated_lines_density', '5').message).toMatch(/dedup/i);
   });
 
   it('unknown metric → note', () => {
-    const s = noteSpec(getConditionDrivers([mk('some_future_metric', '42')], PROJECT, BRANCH)[0]!);
-    expect(s.message).toBeTruthy();
+    expect(getNoteSpec('some_future_metric', '42').message).toBeTruthy();
   });
 });
 
 describe('getConditionDrivers — branch forwarded', () => {
   it('issue filters carry the branch', () => {
-    const s = issueSpec(
-      getConditionDrivers([mk('reliability_rating', '3.0')], PROJECT, 'feat/x')[0]!,
-    );
-    expect(s.filters.branch).toBe('feat/x');
+    expect(getIssueSpec('reliability_rating', '3.0', 'feat/x').filters.branch).toBe('feat/x');
   });
 
   it('hotspot filters carry the branch', () => {
-    const s = hotspotSpec(
-      getConditionDrivers([mk('security_hotspots_reviewed', '50')], PROJECT, 'feat/x')[0]!,
+    expect(getHotspotSpec('security_hotspots_reviewed', '50', 'feat/x').filters.branch).toBe(
+      'feat/x',
     );
-    expect(s.filters.branch).toBe('feat/x');
   });
 });

@@ -119,6 +119,13 @@ function expectHotspotHeader(md: string): void {
   expect(md).toContain('total_hotspots: 2');
 }
 
+function expectQgHeader(md: string): void {
+  expect(md).toContain('acme');
+  expect(md).toContain('main');
+  expect(md).toContain('quality_gate_status: ERROR');
+  expect(md).toContain('conditions_failing: 1/2');
+}
+
 describe('markdownTriage', () => {
   it('produces numbered list with severity prefix and file:line in code', () => {
     const md = markdownTriage([issue1, issue2], issueCtx);
@@ -276,11 +283,7 @@ describe('markdownQualityGateActionable', () => {
   };
 
   it('includes header block with QG-specific fields', () => {
-    const md = markdownQualityGateActionable(qg, measures, [], qgCtx);
-    expect(md).toContain('quality_gate_status: ERROR');
-    expect(md).toContain('conditions_failing: 1/2');
-    expect(md).toContain('acme');
-    expect(md).toContain('main');
+    expectQgHeader(markdownQualityGateActionable(qg, measures, [], qgCtx));
   });
 
   it('produces H1 with gate status', () => {
@@ -371,10 +374,6 @@ describe('markdownQualityGateSnapshot', () => {
   });
 
   it('includes header block', () => {
-    const md = markdownQualityGateSnapshot(qg, measures, qgCtx);
-    expect(md).toContain('acme');
-    expect(md).toContain('main');
-    expect(md).toContain('quality_gate_status: ERROR');
-    expect(md).toContain('conditions_failing: 1/2');
+    expectQgHeader(markdownQualityGateSnapshot(qg, measures, qgCtx));
   });
 });

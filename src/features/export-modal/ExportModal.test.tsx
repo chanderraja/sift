@@ -224,7 +224,7 @@ describe('ExportModal — tab-aware templates', () => {
     await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/1.*condition.*could not/i)).toBeInTheDocument();
+      expect(screen.getByText(/1 condition could not be fetched/i)).toBeInTheDocument();
     });
   });
 
