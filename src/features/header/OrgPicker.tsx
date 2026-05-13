@@ -28,7 +28,7 @@ export function OrgPicker(): React.JSX.Element {
   const validation = useAuthStore((s) => s.validation);
   const enabled = validation === 'valid';
 
-  const orgQuery = useOrganizations(sonarClient);
+  const orgQuery = useOrganizations(sonarClient, enabled);
   const orgs = orgQuery.data?.kind === 'ok' ? orgQuery.data.value : [];
 
   const orgKey = useSelectionStore((s) => s.organizationKey);

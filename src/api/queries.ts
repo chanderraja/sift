@@ -45,15 +45,18 @@ export const STALE_TIMES = {
 
 // ---------- Organizations ----------
 
-export const organizationsQuery = (client: SonarClient) =>
+export const organizationsQuery = (client: SonarClient, enabled = true) =>
   ({
     queryKey: ['organizations'] as const,
     queryFn: () => client.listOrganizations(),
     staleTime: STALE_TIMES.organizations,
+    enabled,
   }) as const;
 
-export const useOrganizations = (client: SonarClient): UseQueryResult<Result<Organization[]>> =>
-  useQuery(organizationsQuery(client));
+export const useOrganizations = (
+  client: SonarClient,
+  enabled = true,
+): UseQueryResult<Result<Organization[]>> => useQuery(organizationsQuery(client, enabled));
 
 // ---------- Projects ----------
 
