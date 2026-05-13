@@ -16,6 +16,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import clsx from 'clsx';
 import { useMemo, useState } from 'react';
 
 import {
@@ -54,7 +55,7 @@ export function FindingsTable<T>({
   renderExpandPanel,
   sort,
   onSortChange,
-}: FindingsTableProps<T>): React.JSX.Element {
+}: Readonly<FindingsTableProps<T>>): React.JSX.Element {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   // Map the caller's sort directives → TanStack SortingState and back.
@@ -115,10 +116,15 @@ export function FindingsTable<T>({
           return (
             <TableRow
               key={row.id}
+              data-row="true"
+              tabIndex={0}
               expanded={isExpanded}
               expandedContent={panel}
               expandedColSpan={columns.length}
-              className={panel === null ? undefined : 'cursor-pointer'}
+              className={clsx(
+                panel !== null && 'cursor-pointer',
+                'focus-visible:bg-bg-surface-hover focus-visible:outline-none',
+              )}
               onClick={
                 panel === null
                   ? undefined
