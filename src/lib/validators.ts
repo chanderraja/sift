@@ -142,9 +142,9 @@ const issueFlowSchema = z
     locations: z.array(
       z
         .object({
-          component: z.string(),
+          component: z.string().nullish(),
           textRange: textRangeSchema.optional(),
-          msg: z.string().optional(),
+          msg: z.string().nullish(),
         })
         .passthrough(),
     ),
@@ -195,7 +195,7 @@ export const HotspotSchema = z
     vulnerabilityProbability: z.enum(['HIGH', 'MEDIUM', 'LOW']),
     status: z.enum(['TO_REVIEW', 'REVIEWED']),
     resolution: z.enum(['FIXED', 'SAFE', 'ACKNOWLEDGED']).optional(),
-    line: z.number(),
+    line: z.number().optional(),
     message: z.string(),
     creationDate: z.string(),
     updateDate: z.string(),

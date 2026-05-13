@@ -96,7 +96,7 @@ export interface Issue {
   hash?: string;
   textRange?: TextRange;
   flows: {
-    locations: { component: string; textRange?: TextRange; msg?: string }[];
+    locations: { component?: string | null; textRange?: TextRange; msg?: string | null }[];
   }[];
   message: string;
   effort?: string;
@@ -118,7 +118,7 @@ export interface Hotspot {
   vulnerabilityProbability: 'HIGH' | 'MEDIUM' | 'LOW';
   status: 'TO_REVIEW' | 'REVIEWED';
   resolution?: 'FIXED' | 'SAFE' | 'ACKNOWLEDGED';
-  line: number;
+  line?: number;
   message: string;
   creationDate: string;
   updateDate: string;

@@ -314,6 +314,62 @@ describe('parseIssuesSearchResponse', () => {
     expect(result.ok).toBe(true);
   });
 
+  it('accepts a flow location with msg: null (SonarCloud sends null when no message)', () => {
+    const fixture = {
+      paging: { pageIndex: 1, pageSize: 100, total: 1 },
+      issues: [
+        {
+          key: 'A1',
+          rule: 'java:S123',
+          severity: 'MAJOR',
+          type: 'BUG',
+          status: 'OPEN',
+          resolution: null,
+          component: 'proj:File.java',
+          project: 'proj',
+          message: 'msg',
+          creationDate: '2024-01-01T00:00:00+0000',
+          updateDate: '2024-01-01T00:00:00+0000',
+          flows: [
+            {
+              locations: [{ component: 'proj:File.java', msg: null }],
+            },
+          ],
+        },
+      ],
+    };
+    const result = parseIssuesSearchResponse(fixture);
+    expect(result.ok).toBe(true);
+  });
+
+  it('accepts a flow location with component: null (deleted/renamed file)', () => {
+    const fixture = {
+      paging: { pageIndex: 1, pageSize: 100, total: 1 },
+      issues: [
+        {
+          key: 'A1',
+          rule: 'java:S123',
+          severity: 'MAJOR',
+          type: 'BUG',
+          status: 'OPEN',
+          resolution: null,
+          component: 'proj:File.java',
+          project: 'proj',
+          message: 'msg',
+          creationDate: '2024-01-01T00:00:00+0000',
+          updateDate: '2024-01-01T00:00:00+0000',
+          flows: [
+            {
+              locations: [{ component: null, msg: 'step' }],
+            },
+          ],
+        },
+      ],
+    };
+    const result = parseIssuesSearchResponse(fixture);
+    expect(result.ok).toBe(true);
+  });
+
   it('preserves unknown extra fields on issues', () => {
     interface WithExtra {
       v2OnlyField?: { nested: boolean };
@@ -364,6 +420,30 @@ describe('parseHotspotsSearchResponse', () => {
     if (result.ok) return;
     const paths = result.error.issues.map((i) => i.path.join('.'));
     expect(paths).toContain('hotspots.0.vulnerabilityProbability');
+  });
+
+  it('accepts a file-level hotspot that omits `line` (no specific line number)', () => {
+    const fixture = clone(loadFixture('hotspots-search')) as {
+      hotspots: Record<string, unknown>[];
+    };
+    fixture.hotspots.push({
+      key: 'h2',
+      component: 'acme_widget-service:src/secret.ts',
+      project: 'acme_widget-service',
+      securityCategory: 'auth',
+      vulnerabilityProbability: 'HIGH',
+      status: 'TO_REVIEW',
+      // line intentionally absent — file-level hotspot
+      message: 'file-level hotspot',
+      creationDate: '2026-05-08T00:00:00+0000',
+      updateDate: '2026-05-08T00:00:00+0000',
+      ruleKey: 'java:S1234',
+    });
+
+    const result = parseHotspotsSearchResponse(fixture);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.items[0]?.line).toBeUndefined();
   });
 
   it('preserves unknown extra fields at the response level', () => {
