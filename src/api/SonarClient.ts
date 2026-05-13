@@ -105,6 +105,7 @@ export class SonarClient {
     if (filters.branch !== undefined) params.set('branch', filters.branch);
     if (filters.status !== undefined) params.set('status', filters.status);
     if (filters.resolution !== undefined) params.set('resolution', filters.resolution);
+    if (filters.inNewCodePeriod === true) params.set('inNewCodePeriod', 'true');
     if (opts?.p !== undefined) params.set('p', String(opts.p));
     if (opts?.ps !== undefined) params.set('ps', String(opts.ps));
     return this.get(
@@ -238,6 +239,7 @@ const encodeIssueFilters = (filters: IssueFilters): URLSearchParams => {
   if (filters.createdAfter !== undefined) params.set('createdAfter', filters.createdAfter);
   if (filters.createdBefore !== undefined) params.set('createdBefore', filters.createdBefore);
   if (filters.hasComments !== undefined) params.set('hasComments', String(filters.hasComments));
+  if (filters.inNewCodePeriod === true) params.set('inNewCodePeriod', 'true');
   return params;
 };
 

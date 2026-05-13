@@ -161,6 +161,7 @@ export interface IssueFilters {
   createdAfter?: string;
   createdBefore?: string;
   hasComments?: boolean;
+  inNewCodePeriod?: boolean;
 }
 
 export interface HotspotFilters {
@@ -168,6 +169,7 @@ export interface HotspotFilters {
   branch?: string;
   status?: 'TO_REVIEW' | 'REVIEWED';
   resolution?: 'FIXED' | 'SAFE' | 'ACKNOWLEDGED';
+  inNewCodePeriod?: boolean;
 }
 
 /** Pagination options accepted by every paginated SonarCloud V1 endpoint. */
