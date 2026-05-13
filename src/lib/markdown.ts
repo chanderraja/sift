@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-import type { Issue } from '../types/sonar';
+import type { Hotspot, Issue, Measure, QualityGate } from '../types/sonar';
 
 export interface MarkdownContext {
   projectKey: string;
@@ -110,4 +110,129 @@ export function markdownLlmRemediation(issues: readonly Issue[], ctx: MarkdownCo
   );
 
   return [headerBlock(ctx), instruction, '### Findings', '', ...findings, ''].join('\n');
+}
+
+// ===== Hotspot templates =====
+
+export function markdownHotspotTriage(hotspots: readonly Hotspot[], ctx: MarkdownContext): string {
+  const lines = hotspots.map(
+    (h, idx) =>
+      `${idx + 1}. ${h.vulnerabilityProbability} · \`${filePath(h.component)}:${h.line ?? '?'}\` · ${h.ruleKey}\n   ${h.message}`,
+  );
+  return [headerBlock(ctx), '# Hotspot Triage List', '', ...lines, ''].join('\n');
+}
+
+export function markdownHotspotGroupedByFile(
+  hotspots: readonly Hotspot[],
+  ctx: MarkdownContext,
+): string {
+  const byFile = new Map<string, Hotspot[]>();
+  for (const h of hotspots) {
+    const path = filePath(h.component);
+    const group = byFile.get(path) ?? [];
+    group.push(h);
+    byFile.set(path, group);
+  }
+
+  const sections: string[] = [];
+  for (const [path, group] of byFile) {
+    sections.push(`## ${path}`);
+    for (const h of group) {
+      sections.push(
+        `- **${h.vulnerabilityProbability}** · ${h.securityCategory} · line ${h.line ?? '?'} · \`${h.ruleKey}\`\n  ${h.message}`,
+      );
+    }
+    sections.push('');
+  }
+
+  return [headerBlock(ctx), '# Hotspots by File', '', ...sections].join('\n');
+}
+
+export function markdownHotspotGroupedByCategory(
+  hotspots: readonly Hotspot[],
+  ctx: MarkdownContext,
+): string {
+  const byCategory = new Map<string, Hotspot[]>();
+  for (const h of hotspots) {
+    const group = byCategory.get(h.securityCategory) ?? [];
+    group.push(h);
+    byCategory.set(h.securityCategory, group);
+  }
+
+  const sections: string[] = [];
+  for (const [category, group] of byCategory) {
+    sections.push(`## ${category}`);
+    for (const h of group) {
+      sections.push(
+        `- **${h.vulnerabilityProbability}** · \`${filePath(h.component)}:${h.line ?? '?'}\`\n  ${h.message}`,
+      );
+    }
+    sections.push('');
+  }
+
+  return [headerBlock(ctx), '# Hotspots by Security Category', '', ...sections].join('\n');
+}
+
+export const HOTSPOT_LLM_PROMPT =
+  'You are a senior security engineer reviewing static-analysis hotspots for a ' +
+  'colleague. Below is a structured list of security hotspots exported from ' +
+  'SonarCloud — each is a code path the analyzer flagged as security-sensitive ' +
+  'but did not classify as a definite vulnerability. Your job is to make a ' +
+  'judgment call per hotspot.\n\n' +
+  'For each hotspot, recommend one of:\n' +
+  '- Change required, with the minimum hardening change as a code snippet when ' +
+  'the change is straightforward.\n' +
+  '- Acceptable as-is, with a one-sentence rationale why the surrounding code ' +
+  'or invariants make this safe.\n' +
+  '- Needs more context, flagging what additional information would resolve it ' +
+  'rather than guessing.\n\n' +
+  'Order findings by your assessment of risk. When multiple hotspots share a ' +
+  'single root cause, propose a single fix for the group.\n';
+
+export function markdownHotspotLlmSecurityReview(
+  hotspots: readonly Hotspot[],
+  ctx: MarkdownContext,
+): string {
+  const findings = hotspots.map(
+    (h) =>
+      `- **${h.vulnerabilityProbability}** · \`${h.ruleKey}\` · \`${filePath(h.component)}:${h.line ?? '?'}\` · ${h.securityCategory}\n  ${h.message}`,
+  );
+  return [headerBlock(ctx), HOTSPOT_LLM_PROMPT, '### Hotspots', '', ...findings, ''].join('\n');
+}
+
+// ===== Quality Gate template =====
+
+export function markdownQualityGateSnapshot(
+  qg: QualityGate,
+  measures: readonly Measure[],
+  ctx: MarkdownContext,
+): string {
+  const conditionsTable = [
+    '| Metric | Comparator | Threshold | Actual | Status |',
+    '|--------|------------|-----------|--------|--------|',
+    ...qg.projectStatus.conditions.map(
+      (c) =>
+        `| ${c.metricKey} | ${c.comparator} | ${c.errorThreshold} | ${c.actualValue} | ${c.status} |`,
+    ),
+  ].join('\n');
+
+  const measuresTable = [
+    '| Metric | Value | Best Value |',
+    '|--------|-------|------------|',
+    ...measures.map((m) => `| ${m.metric} | ${m.value ?? ''} | ${String(m.bestValue ?? '')} |`),
+  ].join('\n');
+
+  return [
+    headerBlock(ctx),
+    `# Quality Gate: ${qg.projectStatus.status}`,
+    '',
+    '## Conditions',
+    '',
+    conditionsTable,
+    '',
+    '## Measures',
+    '',
+    measuresTable,
+    '',
+  ].join('\n');
 }
