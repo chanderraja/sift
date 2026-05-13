@@ -171,21 +171,42 @@ export function ExportModal({
   const limitId = useId();
 
   let findingCount: number;
+  let ctx: MarkdownContext;
   if (tab === 'hotspots') {
     findingCount = hotspots.length;
+    ctx = {
+      tab: 'hotspots',
+      projectKey,
+      branch: branchName,
+      generatedAt: new Date().toISOString(),
+      totalHotspots: hotspots.length,
+      appliedFilters: JSON.stringify(issuesFilters),
+    };
   } else if (tab === 'quality-gate') {
     findingCount = 0;
+    const failing =
+      qualityGate?.projectStatus.conditions.filter((c) => c.status !== 'OK').length ?? 0;
+    const total = qualityGate?.projectStatus.conditions.length ?? 0;
+    ctx = {
+      tab: 'quality-gate',
+      projectKey,
+      branch: branchName,
+      generatedAt: new Date().toISOString(),
+      qualityGateStatus: qualityGate?.projectStatus.status ?? 'NONE',
+      conditionsFailing: `${failing}/${total}`,
+      appliedFilters: JSON.stringify(issuesFilters),
+    };
   } else {
     findingCount = issues.length;
+    ctx = {
+      tab: 'issues',
+      projectKey,
+      branch: branchName,
+      generatedAt: new Date().toISOString(),
+      totalFindings: issues.length,
+      appliedFilters: JSON.stringify(issuesFilters),
+    };
   }
-
-  const ctx: MarkdownContext = {
-    projectKey,
-    branch: branchName,
-    generatedAt: new Date().toISOString(),
-    totalFindings: findingCount,
-    appliedFilters: JSON.stringify(issuesFilters),
-  };
 
   const filename =
     format === 'csv'

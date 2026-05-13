@@ -2,17 +2,51 @@
 
 import type { Hotspot, Issue, Measure, QualityGate } from '../types/sonar';
 
-export interface MarkdownContext {
-  projectKey: string;
-  branch: string;
-  generatedAt: string;
-  totalFindings: number;
-  appliedFilters: string;
+export interface IssuesMarkdownContext {
+  readonly tab: 'issues';
+  readonly projectKey: string;
+  readonly branch: string;
+  readonly generatedAt: string;
+  readonly totalFindings: number;
+  readonly appliedFilters: string;
 }
+
+export interface HotspotsMarkdownContext {
+  readonly tab: 'hotspots';
+  readonly projectKey: string;
+  readonly branch: string;
+  readonly generatedAt: string;
+  readonly totalHotspots: number;
+  readonly appliedFilters: string;
+}
+
+export interface QualityGateMarkdownContext {
+  readonly tab: 'quality-gate';
+  readonly projectKey: string;
+  readonly branch: string;
+  readonly generatedAt: string;
+  readonly qualityGateStatus: string;
+  readonly conditionsFailing: string;
+  readonly appliedFilters: string;
+}
+
+export type MarkdownContext =
+  | IssuesMarkdownContext
+  | HotspotsMarkdownContext
+  | QualityGateMarkdownContext;
 
 function filePath(component: string): string {
   const colonIdx = component.indexOf(':');
   return colonIdx === -1 ? component : component.slice(colonIdx + 1);
+}
+
+function countLines(ctx: MarkdownContext): string[] {
+  if (ctx.tab === 'issues') return [`total_findings: ${ctx.totalFindings}`];
+  if (ctx.tab === 'hotspots') return [`total_hotspots: ${ctx.totalHotspots}`];
+  return [
+    `quality_gate_status: ${ctx.qualityGateStatus}`,
+    `conditions_failing: ${ctx.conditionsFailing}`,
+  ];
 }
 
 function headerBlock(ctx: MarkdownContext): string {
@@ -21,7 +55,7 @@ function headerBlock(ctx: MarkdownContext): string {
     `project: ${ctx.projectKey}`,
     `branch: ${ctx.branch}`,
     `generated: ${ctx.generatedAt}`,
-    `total_findings: ${ctx.totalFindings}`,
+    ...countLines(ctx),
     `filters: ${ctx.appliedFilters}`,
     '---',
     '',
