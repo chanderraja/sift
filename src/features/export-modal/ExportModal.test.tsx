@@ -10,6 +10,11 @@ import { baseHotspot, baseQualityGate, baseMeasures } from '../../../tests/hotsp
 import { wrap } from '../test-helpers/sessionWrap';
 
 import { ExportModal } from './ExportModal';
+import { orchestrateActionable } from './orchestrateActionable';
+
+vi.mock('./orchestrateActionable', () => ({
+  orchestrateActionable: vi.fn(),
+}));
 
 const issue: Issue = {
   key: 'KEY1' as Issue['key'],
@@ -54,6 +59,8 @@ beforeEach(() => {
     writable: true,
     configurable: true,
   });
+
+  vi.mocked(orchestrateActionable).mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -61,6 +68,7 @@ afterEach(() => {
   useSelectionStore.getState().reset();
   useFiltersStore.getState().reset();
   vi.restoreAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('ExportModal', () => {
@@ -175,12 +183,49 @@ describe('ExportModal — tab-aware templates', () => {
     expect(screen.queryByText(/snapshot/i)).not.toBeInTheDocument();
   });
 
-  it('quality-gate tab shows only the Snapshot label (non-interactive)', () => {
+  it('quality-gate tab shows Snapshot (default) and Actionable template radios', () => {
     useFiltersStore.setState({ tab: 'quality-gate' });
     render(wrap(<ExportModal issues={[]} hotspots={[]} qualityGate={qg} measures={measures} />));
-    expect(screen.getByText(/snapshot/i)).toBeInTheDocument();
-    expect(screen.queryByRole('radio', { name: /snapshot/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /snapshot/i })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /actionable/i })).not.toBeChecked();
     expect(screen.queryByText(/triage list/i)).not.toBeInTheDocument();
+  });
+
+  it('selecting Actionable on QG tab and clicking Copy runs orchestration and writes markdown', async () => {
+    useFiltersStore.setState({ tab: 'quality-gate' });
+    render(wrap(<ExportModal issues={[]} hotspots={[]} qualityGate={qg} measures={measures} />));
+
+    await userEvent.click(screen.getByRole('radio', { name: /actionable/i }));
+    await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
+
+    await assertClipboard((c) => {
+      expect(c).toContain('Quality Gate: ERROR');
+    });
+    expect(vi.mocked(orchestrateActionable)).toHaveBeenCalledOnce();
+  });
+
+  it('shows partial-failure warning when some drivers errored', async () => {
+    vi.mocked(orchestrateActionable).mockResolvedValue([
+      {
+        condition: {
+          status: 'ERROR' as const,
+          metricKey: 'reliability_rating',
+          comparator: 'GT' as const,
+          errorThreshold: '1',
+          actualValue: '3.0',
+        },
+        driverResult: { kind: 'error', message: 'network_error' },
+      },
+    ]);
+    useFiltersStore.setState({ tab: 'quality-gate' });
+    render(wrap(<ExportModal issues={[]} hotspots={[]} qualityGate={qg} measures={measures} />));
+
+    await userEvent.click(screen.getByRole('radio', { name: /actionable/i }));
+    await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/1.*condition.*could not/i)).toBeInTheDocument();
+    });
   });
 
   it('copy on hotspots tab writes hotspot markdown', async () => {

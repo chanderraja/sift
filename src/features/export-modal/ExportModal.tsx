@@ -2,7 +2,7 @@
 
 import { useState, useId } from 'react';
 
-import { useFiltersStore, useSelectionStore, useUiStore } from '../../app/stores';
+import { sonarClient, useFiltersStore, useSelectionStore, useUiStore } from '../../app/stores';
 import { Button } from '../../components/primitives/Button';
 import { Input } from '../../components/primitives/Input';
 import { Modal } from '../../components/primitives/Modal';
@@ -16,11 +16,15 @@ import {
   markdownHotspotLlmSecurityReview,
   markdownHotspotTriage,
   markdownLlmRemediation,
+  markdownQualityGateActionable,
   markdownQualityGateSnapshot,
   markdownTriage,
   type MarkdownContext,
+  type QualityGateMarkdownContext,
 } from '../../lib/markdown';
+import { getConditionDrivers } from '../../lib/qgDrivers';
 import type { Hotspot, Issue, Measure, QualityGate } from '../../types/sonar';
+import { orchestrateActionable } from './orchestrateActionable';
 
 type Format = 'markdown' | 'csv';
 type IssueMdTemplate = 'triage' | 'grouped-by-file' | 'grouped-by-rule' | 'llm-remediation';
@@ -162,11 +166,17 @@ export function ExportModal({
   const tab = useFiltersStore((s) => s.tab);
   const issuesFilters = useFiltersStore((s) => s.issuesFilters);
 
+  type QgMdTemplate = 'snapshot' | 'actionable';
+
   const [format, setFormat] = useState<Format>('markdown');
   const [issueTemplate, setIssueTemplate] = useState<IssueMdTemplate>('triage');
   const [hotspotTemplate, setHotspotTemplate] = useState<HotspotMdTemplate>('hs-triage');
+  const [qgTemplate, setQgTemplate] = useState<QgMdTemplate>('snapshot');
   const [limit, setLimit] = useState(LIMIT_DEFAULT);
   const [copyDone, setCopyDone] = useState(false);
+  const [orchestrating, setOrchestrating] = useState(false);
+  const [orchestrationProgress, setOrchestrationProgress] = useState<[number, number] | null>(null);
+  const [partialFailures, setPartialFailures] = useState(0);
 
   const limitId = useId();
 
@@ -227,19 +237,69 @@ export function ExportModal({
       ctx,
     });
 
+  const getActionableContent = (): Promise<string | null> => {
+    if (!qualityGate) return Promise.resolve(null);
+    const conditionDrivers = getConditionDrivers(
+      qualityGate.projectStatus.conditions,
+      projectKey,
+      branchName,
+    );
+    setOrchestrating(true);
+    setOrchestrationProgress(null);
+    setPartialFailures(0);
+    return orchestrateActionable(sonarClient, conditionDrivers, (done, total) => {
+      setOrchestrationProgress([done, total]);
+    })
+      .then((results) => {
+        const errorCount = results.filter((r) => r.driverResult.kind === 'error').length;
+        setPartialFailures(errorCount);
+        setOrchestrating(false);
+        setOrchestrationProgress(null);
+        return markdownQualityGateActionable(
+          qualityGate,
+          measures,
+          results,
+          ctx as QualityGateMarkdownContext,
+        );
+      })
+      .catch(() => {
+        setOrchestrating(false);
+        setOrchestrationProgress(null);
+        return null;
+      });
+  };
+
+  const afterCopy = (): void => {
+    setCopyDone(true);
+    setTimeout(() => {
+      setCopyDone(false);
+    }, 2000);
+  };
+
   const handleCopy = (): void => {
-    void navigator.clipboard.writeText(getContent()).then(() => {
-      setCopyDone(true);
-      setTimeout(() => {
-        setCopyDone(false);
-      }, 2000);
-    });
+    if (tab === 'quality-gate' && format === 'markdown' && qgTemplate === 'actionable') {
+      void getActionableContent().then((content) => {
+        if (content === null) return;
+        void navigator.clipboard.writeText(content).then(afterCopy);
+      });
+      return;
+    }
+    void navigator.clipboard.writeText(getContent()).then(afterCopy);
   };
 
   const handleDownload = (): void => {
+    if (tab === 'quality-gate' && format === 'markdown' && qgTemplate === 'actionable') {
+      void getActionableContent().then((content) => {
+        if (content === null) return;
+        triggerDownload(content, filename, 'text/markdown;charset=utf-8');
+      });
+      return;
+    }
     const mimeType = format === 'csv' ? 'text/csv;charset=utf-8' : 'text/markdown;charset=utf-8';
     triggerDownload(getContent(), filename, mimeType);
   };
+
+  const copyLabel = copyDone ? 'Copied!' : 'Copy to clipboard';
 
   return (
     <Modal
@@ -304,13 +364,28 @@ export function ExportModal({
         )}
 
         {format === 'markdown' && tab === 'quality-gate' && (
-          <div>
-            <p className="mb-1 text-xs font-medium text-text-secondary">Template</p>
-            <p className="text-sm text-text-primary">Snapshot</p>
-            <p className="text-xs text-text-tertiary">
-              H1 status, conditions table, measures table.
-            </p>
-          </div>
+          <fieldset>
+            <legend className="mb-1 text-xs font-medium text-text-secondary">Template</legend>
+            <RadioGroup
+              value={qgTemplate}
+              onValueChange={(v) => {
+                setQgTemplate(v as QgMdTemplate);
+              }}
+            >
+              <Radio value="snapshot">
+                <span className="font-medium">Snapshot</span>
+                <span className="ml-2 text-text-tertiary">
+                  H1 status, conditions table, measures table.
+                </span>
+              </Radio>
+              <Radio value="actionable">
+                <span className="font-medium">Actionable</span>
+                <span className="ml-2 text-text-tertiary">
+                  Failing conditions with driver issues/hotspots and LLM prompt.
+                </span>
+              </Radio>
+            </RadioGroup>
+          </fieldset>
         )}
 
         {/* Limit — not applicable for QG (single document) */}
@@ -340,6 +415,16 @@ export function ExportModal({
         )}
 
         {/* Footer actions */}
+        {orchestrating && orchestrationProgress !== null && (
+          <p className="text-xs text-text-secondary">
+            Fetching {orchestrationProgress[0]}/{orchestrationProgress[1]}…
+          </p>
+        )}
+        {partialFailures > 0 && !orchestrating && (
+          <p className="text-xs text-yellow-500">
+            {partialFailures} condition{partialFailures > 1 ? 's' : ''} could not be fetched.
+          </p>
+        )}
         <div className="flex justify-end gap-2 border-t border-border pt-2">
           <Button
             variant="secondary"
@@ -349,11 +434,11 @@ export function ExportModal({
           >
             Cancel
           </Button>
-          <Button variant="secondary" onClick={handleDownload}>
+          <Button variant="secondary" onClick={handleDownload} disabled={orchestrating}>
             Download
           </Button>
-          <Button variant="primary" onClick={handleCopy}>
-            {copyDone ? 'Copied!' : 'Copy to clipboard'}
+          <Button variant="primary" onClick={handleCopy} disabled={orchestrating}>
+            {orchestrating ? 'Fetching…' : copyLabel}
           </Button>
         </div>
       </div>
