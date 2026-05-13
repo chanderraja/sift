@@ -84,12 +84,10 @@ describe('orchestrateActionable — issues driver', () => {
       updateDate: '',
       flows: [],
     };
-    const mockIssues = vi
-      .fn()
-      .mockResolvedValue({
-        kind: 'ok',
-        value: { ...emptyIssuesPage, items: [mockIssue], total: 1 },
-      });
+    const mockIssues = vi.fn().mockResolvedValue({
+      kind: 'ok',
+      value: { ...emptyIssuesPage, items: [mockIssue], total: 1 },
+    });
     const results = await orchestrateActionable(makeClient(mockIssues), [issueDriver]);
     const spec = issueDriver.spec;
     expect(mockIssues).toHaveBeenCalledWith(spec.type === 'issues' ? spec.filters : undefined, {
