@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
-import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as {
   version: string;
 };
 
-const gitCommit = (() => {
+function readGitCommit(): string {
   try {
-    return execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim();
+    const head = readFileSync(new URL('.git/HEAD', import.meta.url), 'utf-8').trim();
+    const ref = head.startsWith('ref: ') ? head.slice(5) : null;
+    const sha = ref ? readFileSync(new URL(`.git/${ref}`, import.meta.url), 'utf-8').trim() : head;
+    return sha.slice(0, 7);
   } catch {
     return 'unknown';
   }
-})();
+}
 
 export const appVersion: string = pkg.version;
-export const appCommit: string = gitCommit;
+export const appCommit: string = readGitCommit();
