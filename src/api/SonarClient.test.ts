@@ -387,13 +387,21 @@ describe('SonarClient.searchHotspots', () => {
     await makeClient().searchHotspots({
       projectKey,
       branch: 'main',
-      status: 'TO_REVIEW',
+      status: 'REVIEWED',
       resolution: 'SAFE',
     });
     const params = new URL(cap.read()).searchParams;
     expect(params.get('projectKey')).toBe(projectKey);
     expect(params.get('branch')).toBe('main');
-    expect(params.get('status')).toBe('TO_REVIEW');
+    expect(params.get('status')).toBe('REVIEWED');
+    expect(params.get('resolution')).toBe('SAFE');
+  });
+
+  it('auto-sets status=REVIEWED when resolution is given without explicit status', async () => {
+    const cap = captureUrl(PATH, emptyPage('hotspots'));
+    await makeClient().searchHotspots({ projectKey, resolution: 'SAFE' });
+    const params = new URL(cap.read()).searchParams;
+    expect(params.get('status')).toBe('REVIEWED');
     expect(params.get('resolution')).toBe('SAFE');
   });
 

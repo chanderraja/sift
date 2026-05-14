@@ -105,8 +105,14 @@ export class SonarClient {
   async searchHotspots(filters: HotspotFilters, opts?: PageOpts): Promise<Result<Page<Hotspot>>> {
     const params = new URLSearchParams({ projectKey: filters.projectKey });
     if (filters.branch !== undefined) params.set('branch', filters.branch);
-    if (filters.status !== undefined) params.set('status', filters.status);
-    if (filters.resolution !== undefined) params.set('resolution', filters.resolution);
+    // SonarCloud requires status=REVIEWED whenever resolution is specified.
+    // A missing or TO_REVIEW status alongside a resolution always yields 400.
+    if (filters.resolution !== undefined) {
+      params.set('status', 'REVIEWED');
+      params.set('resolution', filters.resolution);
+    } else if (filters.status !== undefined) {
+      params.set('status', filters.status);
+    }
     if (filters.inNewCodePeriod === true) params.set('inNewCodePeriod', 'true');
     if (opts?.p !== undefined) params.set('p', String(opts.p));
     if (opts?.ps !== undefined) params.set('ps', String(opts.ps));
