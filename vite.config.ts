@@ -1,26 +1,14 @@
 // SPDX-License-Identifier: MIT
-import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as {
-  version: string;
-};
-const gitCommit = (() => {
-  try {
-    return execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim();
-  } catch {
-    return 'unknown';
-  }
-})();
+import { appCommit, appVersion } from './build-info';
 
 export default defineConfig({
   plugins: [react()],
   define: {
-    __APP_VERSION__: JSON.stringify(pkg.version),
-    __APP_COMMIT__: JSON.stringify(gitCommit),
+    __APP_VERSION__: JSON.stringify(appVersion),
+    __APP_COMMIT__: JSON.stringify(appCommit),
   },
   server: {
     proxy: {

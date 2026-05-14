@@ -84,12 +84,20 @@ describe('getConditionDrivers — filtering', () => {
   });
 });
 
-describe('getConditionDrivers — reliability_rating', () => {
-  it('maps to issues/BUG/OPEN', () => {
-    const s = getIssueSpec('reliability_rating');
-    expect(s.filters.types).toEqual(['BUG']);
+describe('getConditionDrivers — issue metric mapping', () => {
+  it.each([
+    ['reliability_rating', ['BUG'], false],
+    ['new_reliability_rating', ['BUG'], true],
+    ['security_rating', ['VULNERABILITY'], false],
+    ['new_security_rating', ['VULNERABILITY'], true],
+    ['maintainability_rating', ['CODE_SMELL'], false],
+    ['new_maintainability_rating', ['CODE_SMELL'], true],
+  ] as const)('%s → issues/OPEN', (metric, types, inNew) => {
+    const s = getIssueSpec(metric);
+    expect(s.filters.types).toEqual(types);
     expect(s.filters.statuses).toEqual(['OPEN']);
-    expect(s.filters.inNewCodePeriod).toBeUndefined();
+    if (inNew) expect(s.filters.inNewCodePeriod).toBe(true);
+    else expect(s.filters.inNewCodePeriod).toBeUndefined();
   });
 
   it('includes the project key in componentKeys', () => {
@@ -97,77 +105,14 @@ describe('getConditionDrivers — reliability_rating', () => {
   });
 });
 
-describe('getConditionDrivers — new_reliability_rating', () => {
-  it('maps to issues/BUG/OPEN with inNewCodePeriod', () => {
-    const s = getIssueSpec('new_reliability_rating');
-    expect(s.filters.types).toEqual(['BUG']);
-    expect(s.filters.statuses).toEqual(['OPEN']);
-    expect(s.filters.inNewCodePeriod).toBe(true);
-  });
-});
-
-describe('getConditionDrivers — security_rating', () => {
-  it('maps to issues/VULNERABILITY/OPEN', () => {
-    const s = getIssueSpec('security_rating');
-    expect(s.filters.types).toEqual(['VULNERABILITY']);
-    expect(s.filters.statuses).toEqual(['OPEN']);
-  });
-});
-
-describe('getConditionDrivers — new_security_rating', () => {
-  it('maps to issues/VULNERABILITY with inNewCodePeriod', () => {
-    const s = getIssueSpec('new_security_rating');
-    expect(s.filters.types).toEqual(['VULNERABILITY']);
-    expect(s.filters.inNewCodePeriod).toBe(true);
-  });
-});
-
-describe('getConditionDrivers — maintainability_rating', () => {
-  it('maps to issues/CODE_SMELL/OPEN', () => {
-    const s = getIssueSpec('maintainability_rating');
-    expect(s.filters.types).toEqual(['CODE_SMELL']);
-    expect(s.filters.statuses).toEqual(['OPEN']);
-  });
-});
-
-describe('getConditionDrivers — new_maintainability_rating', () => {
-  it('maps to issues/CODE_SMELL with inNewCodePeriod', () => {
-    const s = getIssueSpec('new_maintainability_rating');
-    expect(s.filters.types).toEqual(['CODE_SMELL']);
-    expect(s.filters.inNewCodePeriod).toBe(true);
-  });
-});
-
 describe('getConditionDrivers — severity scaling', () => {
-  it('rating B (2) → MINOR+', () => {
-    expect(getIssueSpec('reliability_rating', '2.0').filters.severities).toEqual([
-      'BLOCKER',
-      'CRITICAL',
-      'MAJOR',
-      'MINOR',
-    ]);
-  });
-
-  it('rating C (3) → MAJOR+', () => {
-    expect(getIssueSpec('reliability_rating', '3.0').filters.severities).toEqual([
-      'BLOCKER',
-      'CRITICAL',
-      'MAJOR',
-    ]);
-  });
-
-  it('rating D (4) → CRITICAL+', () => {
-    expect(getIssueSpec('reliability_rating', '4.0').filters.severities).toEqual([
-      'BLOCKER',
-      'CRITICAL',
-    ]);
-  });
-
-  it('rating E (5) → BLOCKER+CRITICAL', () => {
-    expect(getIssueSpec('reliability_rating', '5.0').filters.severities).toEqual([
-      'BLOCKER',
-      'CRITICAL',
-    ]);
+  it.each([
+    ['2.0', ['BLOCKER', 'CRITICAL', 'MAJOR', 'MINOR']],
+    ['3.0', ['BLOCKER', 'CRITICAL', 'MAJOR']],
+    ['4.0', ['BLOCKER', 'CRITICAL']],
+    ['5.0', ['BLOCKER', 'CRITICAL']],
+  ] as const)('rating %s maps severities', (value, sevs) => {
+    expect(getIssueSpec('reliability_rating', value).filters.severities).toEqual(sevs);
   });
 });
 
@@ -190,21 +135,13 @@ describe('getConditionDrivers — hotspot metrics', () => {
 });
 
 describe('getConditionDrivers — violation metrics', () => {
-  it('new_blocker_violations → BLOCKER with inNewCodePeriod', () => {
-    const s = getIssueSpec('new_blocker_violations', '3');
-    expect(s.filters.severities).toEqual(['BLOCKER']);
-    expect(s.filters.inNewCodePeriod).toBe(true);
-  });
-
-  it('new_critical_violations → CRITICAL with inNewCodePeriod', () => {
-    const s = getIssueSpec('new_critical_violations', '5');
-    expect(s.filters.severities).toEqual(['CRITICAL']);
-    expect(s.filters.inNewCodePeriod).toBe(true);
-  });
-
-  it('new_major_violations → MAJOR with inNewCodePeriod', () => {
-    const s = getIssueSpec('new_major_violations', '10');
-    expect(s.filters.severities).toEqual(['MAJOR']);
+  it.each([
+    ['new_blocker_violations', ['BLOCKER']],
+    ['new_critical_violations', ['CRITICAL']],
+    ['new_major_violations', ['MAJOR']],
+  ] as const)('%s → severity with inNewCodePeriod', (metric, sevs) => {
+    const s = getIssueSpec(metric, '3');
+    expect(s.filters.severities).toEqual(sevs);
     expect(s.filters.inNewCodePeriod).toBe(true);
   });
 });
