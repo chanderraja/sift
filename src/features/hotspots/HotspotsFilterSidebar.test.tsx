@@ -32,13 +32,20 @@ describe('HotspotsFilterSidebar', () => {
     expect(screen.getAllByLabelText('Any').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByLabelText('TO REVIEW')).toBeInTheDocument();
     expect(screen.getByLabelText('REVIEWED')).toBeInTheDocument();
+    expect(screen.getByLabelText('ACKNOWLEDGED')).toBeInTheDocument();
   });
 
   it('renders the resolution options including Any', () => {
     render(<HotspotsFilterSidebar />);
     expect(screen.getByLabelText('FIXED')).toBeInTheDocument();
     expect(screen.getByLabelText('SAFE')).toBeInTheDocument();
-    expect(screen.getByLabelText('ACKNOWLEDGED')).toBeInTheDocument();
+  });
+
+  it('selecting ACKNOWLEDGED writes status, not resolution', async () => {
+    render(<HotspotsFilterSidebar />);
+    await userEvent.click(screen.getByLabelText('ACKNOWLEDGED'));
+    expect(useFiltersStore.getState().hotspotsFilters?.status).toBe('ACKNOWLEDGED');
+    expect(useFiltersStore.getState().hotspotsFilters?.resolution).toBeUndefined();
   });
 
   it('selecting a status writes filtersStore.hotspotsFilters.status', async () => {
