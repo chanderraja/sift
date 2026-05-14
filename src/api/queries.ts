@@ -60,31 +60,33 @@ export const useOrganizations = (
 
 // ---------- Projects ----------
 
-export const projectsQuery = (client: SonarClient, orgKey: string, opts?: PageOpts) =>
+export const projectsQuery = (client: SonarClient, orgKey: string | null, opts?: PageOpts) =>
   ({
     queryKey: ['projects', orgKey, opts ?? null] as const,
     queryFn: () => client.listProjects(orgKey, opts),
     staleTime: STALE_TIMES.projects,
+    enabled: orgKey !== null,
   }) as const;
 
 export const useProjects = (
   client: SonarClient,
-  orgKey: string,
+  orgKey: string | null,
   opts?: PageOpts,
 ): UseQueryResult<Result<Page<Project>>> => useQuery(projectsQuery(client, orgKey, opts));
 
 // ---------- Branches ----------
 
-export const branchesQuery = (client: SonarClient, projectKey: string) =>
+export const branchesQuery = (client: SonarClient, projectKey: string | null) =>
   ({
     queryKey: ['branches', projectKey] as const,
     queryFn: () => client.listBranches(projectKey),
     staleTime: STALE_TIMES.branches,
+    enabled: projectKey !== null,
   }) as const;
 
 export const useBranches = (
   client: SonarClient,
-  projectKey: string,
+  projectKey: string | null,
 ): UseQueryResult<Result<Branch[]>> => useQuery(branchesQuery(client, projectKey));
 
 // ---------- Issues ----------

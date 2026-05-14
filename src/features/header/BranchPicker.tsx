@@ -18,7 +18,7 @@ export function BranchPicker(): React.JSX.Element {
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const setBranch = useSelectionStore.getState().setBranch;
 
-  const branchesQuery = useBranches(sonarClient, projectKey ?? '');
+  const branchesQuery = useBranches(sonarClient, projectKey);
   const branches = branchesQuery.data?.kind === 'ok' ? branchesQuery.data.value : [];
 
   // Auto-default to the main branch on first appearance after a
@@ -43,7 +43,7 @@ export function BranchPicker(): React.JSX.Element {
 
   return (
     <Select
-      {...(branchName !== null ? { value: branchName } : {})}
+      value={branchName ?? ''}
       onValueChange={setBranch}
       placeholder="Branch"
       aria-label="Branch"

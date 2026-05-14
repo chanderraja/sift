@@ -55,7 +55,7 @@ export function OrgPicker(): React.JSX.Element {
 
   return (
     <Select
-      {...(orgKey !== null ? { value: orgKey } : {})}
+      value={orgKey ?? ''}
       onValueChange={(v) => {
         setOrganization(v as OrgKey);
       }}

@@ -19,7 +19,7 @@ export function ProjectPicker(): React.JSX.Element {
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const setProject = useSelectionStore.getState().setProject;
 
-  const projectsQuery = useProjects(sonarClient, orgKey ?? '', { ps: 500 });
+  const projectsQuery = useProjects(sonarClient, orgKey, { ps: 500 });
 
   if (orgKey === null) {
     // Disabled cascade per ARCHITECTURE.md: project picker waits for
@@ -36,7 +36,7 @@ export function ProjectPicker(): React.JSX.Element {
 
   return (
     <Combobox
-      {...(projectKey !== null ? { value: projectKey } : {})}
+      value={projectKey ?? ''}
       onValueChange={(v) => {
         setProject(v as ProjectKey);
       }}
