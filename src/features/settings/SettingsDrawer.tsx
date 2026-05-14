@@ -46,7 +46,7 @@ export function SettingsDrawer(): React.JSX.Element {
     usePrefsStore.getState().reset();
     useSelectionStore.getState().reset();
     useFiltersStore.getState().reset();
-    window.location.reload();
+    globalThis.location.reload();
   };
 
   return (
@@ -94,6 +94,14 @@ export function SettingsDrawer(): React.JSX.Element {
           </Button>
           <p className="mt-1 text-2xs text-text-tertiary">
             Clears your token and all persisted state.
+          </p>
+        </section>
+
+        <section className="border-t border-border-subtle pt-4">
+          <p className="text-2xs text-text-tertiary">
+            <span>v{__APP_VERSION__}</span>
+            <span className="mx-1 opacity-40">·</span>
+            <span className="font-mono">{__APP_COMMIT__}</span>
           </p>
         </section>
       </div>
