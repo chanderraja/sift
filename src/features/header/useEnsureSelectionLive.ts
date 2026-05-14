@@ -31,8 +31,8 @@ export function useEnsureSelectionLive(): void {
   const branchName = useSelectionStore((s) => s.branchName);
 
   const orgsQuery = useOrganizations(sonarClient);
-  const projectsQuery = useProjects(sonarClient, orgKey ?? '', { ps: 500 });
-  const branchesQuery = useBranches(sonarClient, projectKey ?? '');
+  const projectsQuery = useProjects(sonarClient, orgKey, { ps: 500 });
+  const branchesQuery = useBranches(sonarClient, projectKey);
 
   useEffect(() => {
     // Re-read live state so a cascading clear earlier in this effect
@@ -77,18 +77,14 @@ export function useEnsureSelectionLive(): void {
       branchesQuery.data?.kind === 'ok'
     ) {
       const branches = branchesQuery.data.value;
-      if (!branches.some((b) => b.name === afterProject.branchName)) {
-        const main = branches.find((b) => b.isMain);
-        if (main !== undefined) {
-          toast.warn(
-            `Selected branch "${afterProject.branchName}" is no longer available — switched to "${main.name}".`,
-          );
-          useSelectionStore.setState({ branchName: main.name });
-        } else {
-          toast.warn(`Selected branch "${afterProject.branchName}" is no longer available.`);
-          useSelectionStore.setState({ branchName: null });
-        }
-      }
+      if (branches.some((b) => b.name === afterProject.branchName)) return;
+      const main = branches.find((b) => b.isMain);
+      toast.warn(
+        main
+          ? `Selected branch "${afterProject.branchName}" is no longer available — switched to "${main.name}".`
+          : `Selected branch "${afterProject.branchName}" is no longer available.`,
+      );
+      useSelectionStore.setState({ branchName: main?.name ?? null });
     }
   }, [orgKey, projectKey, branchName, orgsQuery.data, projectsQuery.data, branchesQuery.data]);
 }

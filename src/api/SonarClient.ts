@@ -66,8 +66,9 @@ export class SonarClient {
     return { kind: 'ok', value: result.value.items };
   }
 
-  async listProjects(orgKey: string, opts?: PageOpts): Promise<Result<Page<Project>>> {
-    const params = new URLSearchParams({ organization: orgKey });
+  async listProjects(orgKey: string | null, opts?: PageOpts): Promise<Result<Page<Project>>> {
+    const params = new URLSearchParams();
+    if (orgKey !== null) params.set('organization', orgKey);
     if (opts?.p !== undefined) params.set('p', String(opts.p));
     if (opts?.ps !== undefined) params.set('ps', String(opts.ps));
     return this.get(
@@ -76,7 +77,8 @@ export class SonarClient {
     );
   }
 
-  async listBranches(projectKey: string): Promise<Result<Branch[]>> {
+  async listBranches(projectKey: string | null): Promise<Result<Branch[]>> {
+    if (projectKey === null) return { kind: 'not_found' };
     const params = new URLSearchParams({ project: projectKey });
     return this.get(
       `${PROXY_BASE}/project_branches/list?${params.toString()}`,
