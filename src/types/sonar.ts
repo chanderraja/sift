@@ -167,7 +167,8 @@ export interface IssueFilters {
 export interface HotspotFilters {
   projectKey: ProjectKey;
   branch?: string;
-  status?: 'TO_REVIEW' | 'ACKNOWLEDGED' | 'REVIEWED';
+  /** SonarCloud hotspots/search only accepts TO_REVIEW and REVIEWED as filter values; ACKNOWLEDGED is a domain status but not a filterable API param. */
+  status?: 'TO_REVIEW' | 'REVIEWED';
   resolution?: 'FIXED' | 'SAFE';
   inNewCodePeriod?: boolean;
 }
