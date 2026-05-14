@@ -116,8 +116,8 @@ export interface Hotspot {
   project: ProjectKey;
   securityCategory: string;
   vulnerabilityProbability: 'HIGH' | 'MEDIUM' | 'LOW';
-  status: 'TO_REVIEW' | 'REVIEWED';
-  resolution?: 'FIXED' | 'SAFE' | 'ACKNOWLEDGED';
+  status: 'TO_REVIEW' | 'ACKNOWLEDGED' | 'REVIEWED';
+  resolution?: 'FIXED' | 'SAFE';
   line?: number;
   message: string;
   creationDate: string;
@@ -167,8 +167,8 @@ export interface IssueFilters {
 export interface HotspotFilters {
   projectKey: ProjectKey;
   branch?: string;
-  status?: 'TO_REVIEW' | 'REVIEWED';
-  resolution?: 'FIXED' | 'SAFE' | 'ACKNOWLEDGED';
+  status?: 'TO_REVIEW' | 'ACKNOWLEDGED' | 'REVIEWED';
+  resolution?: 'FIXED' | 'SAFE';
   inNewCodePeriod?: boolean;
 }
 

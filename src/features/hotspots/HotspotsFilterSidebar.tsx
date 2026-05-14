@@ -3,7 +3,7 @@
 // HotspotsFilterSidebar — narrower filter surface than Issues since
 // SonarCloud's hotspots search exposes only two single-valued
 // dimensions: status (TO_REVIEW / REVIEWED) and resolution (FIXED /
-// SAFE / ACKNOWLEDGED). Each group is a radio set with an "Any"
+// SAFE). Each group is a radio set with an "Any"
 // option that clears the filter.
 
 import { FilterGroup } from '../../components/primitives/FilterGroup';
@@ -16,8 +16,8 @@ const ANY = '__any__';
 type StatusValue = NonNullable<HotspotFilters['status']>;
 type ResolutionValue = NonNullable<HotspotFilters['resolution']>;
 
-const STATUSES: readonly StatusValue[] = ['TO_REVIEW', 'REVIEWED'];
-const RESOLUTIONS: readonly ResolutionValue[] = ['FIXED', 'SAFE', 'ACKNOWLEDGED'];
+const STATUSES: readonly StatusValue[] = ['TO_REVIEW', 'ACKNOWLEDGED', 'REVIEWED'];
+const RESOLUTIONS: readonly ResolutionValue[] = ['FIXED', 'SAFE'];
 
 // "Any" clears the dimension by removing the key from hotspotsFilters
 // entirely. `exactOptionalPropertyTypes` forbids setting it to
