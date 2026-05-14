@@ -2,7 +2,9 @@
 
 > A one-page browser dashboard for SonarCloud findings — issues, security hotspots, and quality-gate status — with Markdown / CSV export designed for LLM-assisted remediation planning.
 
-**Status:** Phases 1–10 merged on `master`. **Live at [sift-red.vercel.app](https://sift-red.vercel.app).** See [`IMPLEMENTATION.md`](./IMPLEMENTATION.md) for the full 12-phase plan. Phase 11 (Settings, Theme, Polish) is next.
+**[Live demo → sift-red.vercel.app](https://sift-red.vercel.app)** · **v1.0.0** — all 12 phases shipped.
+
+![Sift — Issues tab, dark theme](docs/mocks/dark/01-populated-issues.png)
 
 ## Why
 
@@ -37,7 +39,26 @@ pnpm build        # production bundle
 
 ## Self-host
 
-The canonical instance runs on Vercel. The proxy adapter for Cloudflare Workers is documented separately. Detailed self-host instructions land alongside the v1.0 release.
+Sift is a static SPA plus a ~60-line stateless edge proxy. There is nothing to provision, no database, no persistent state.
+
+### Vercel (canonical, zero-config)
+
+```bash
+# 1. Fork or clone this repo
+# 2. Push to GitHub and import the repo into Vercel
+#    Framework preset: Vite  |  Build command: pnpm build  |  Output dir: dist
+# 3. No environment variables are required for v1.0
+```
+
+The proxy function lives in `api/sonar/[...path].ts` and is auto-deployed by Vercel as a Serverless Function. Vercel detects it from the `api/` directory with no extra configuration.
+
+### Cloudflare Workers
+
+A Cloudflare Workers adapter is provided in `proxy/adapters/cloudflare.ts`. Full instructions are in [`docs/deploy-cloudflare.md`](./docs/deploy-cloudflare.md).
+
+### Other platforms
+
+Any platform that can serve a Vite SPA and run a small Node.js or Web Standards function works. Point the platform at `proxy/core.ts` (vendor-neutral, ~60 lines, no imports beyond Web Standards) and expose it under `/api/sonar/v1/` on the same origin as the SPA.
 
 ### Build-time configuration (env vars)
 
@@ -47,6 +68,23 @@ Self-hosters can override the cold-start defaults at build time without forking 
 | --------------------------- | ----------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `VITE_DEFAULT_STORAGE_MODE` | `local` / `session` / `cookie` / `memory` | `local` | Where the SPA holds the SonarCloud token by default. Pick `session` for shared-machine deployments where tokens shouldn't survive tab close. See [`SECURITY.md`](./SECURITY.md#token-storage-modes). |
 | `VITE_DEFAULT_REGION`       | `eu` / `us`                               | `eu`    | SonarCloud region pre-selected for new users. Pick `us` for organisations on `sonarqube.us`.                                                                                                         |
+
+## FAQ
+
+**Does Sift store my token?**
+Your token is held in the browser only (localStorage by default, or sessionStorage / cookie / memory — your choice in Settings). It is never sent to any server other than SonarCloud via the stateless proxy. See [`SECURITY.md`](./SECURITY.md).
+
+**Does the proxy log anything?**
+No. The proxy is stateless: no logging of tokens, request bodies, or headers; no caching; no persistence of any kind. Verified by CI.
+
+**Can I use this with SonarQube Server (self-managed)?**
+v1.0 supports SonarCloud (EU at `sonarcloud.io` and US at `sonarqube.us`). SonarQube Server support is planned for v1.1.
+
+**What happens if I have thousands of issues?**
+Sift fetches up to 10,000 issues per query (SonarCloud's hard ceiling). If your project exceeds this, Sift shows an over-cap warning with the total count and suggests narrowing filters before exporting.
+
+**Can I contribute?**
+Yes. See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ## Contributing
 
