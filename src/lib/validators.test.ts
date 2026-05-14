@@ -430,6 +430,19 @@ describe('parseQualityGate', () => {
     const cond = result.value.projectStatus.conditions[0] as unknown as WithExtra;
     expect(cond.warnThreshold).toBe('0.5');
   });
+
+  it('accepts a condition with no actualValue and coerces it to empty string', () => {
+    const fixture = clone(loadFixture('qualitygates-project-status')) as {
+      projectStatus: { conditions: Record<string, unknown>[] };
+    };
+    const cond = fixture.projectStatus.conditions[0];
+    if (cond) delete cond.actualValue;
+
+    const result = parseQualityGate(fixture);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.projectStatus.conditions[0]?.actualValue).toBe('');
+  });
 });
 
 describe('parseMeasuresComponentResponse', () => {
