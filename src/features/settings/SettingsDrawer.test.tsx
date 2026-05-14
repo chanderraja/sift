@@ -102,4 +102,11 @@ describe('SettingsDrawer', () => {
     await userEvent.keyboard('{Escape}');
     expect(useUiStore.getState().settingsOpen).toBe(false);
   });
+
+  it('displays app version and commit hash in the footer', () => {
+    openDrawer();
+    render(<SettingsDrawer />);
+    expect(screen.getByText(/v\d+\.\d+\.\d+/)).toBeInTheDocument();
+    expect(screen.getByText(/[0-9a-f]{6,}/i)).toBeInTheDocument();
+  });
 });

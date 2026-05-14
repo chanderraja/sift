@@ -11,8 +11,10 @@ import {
   markdownHotspotGroupedByCategory,
   markdownHotspotLlmSecurityReview,
   markdownQualityGateSnapshot,
+  markdownQualityGateActionable,
 } from './markdown';
 import type { Hotspot, Issue } from '../types/sonar';
+import { DRIVER_LIMIT, type ConditionWithDrivers } from './qgDrivers';
 import { baseHotspot, baseQualityGate, baseMeasures } from '../../tests/hotspot-fixtures';
 
 const hotspot1 = baseHotspot;
@@ -77,7 +79,8 @@ const issue2: Issue = {
   message: 'Another cognitive complexity issue.',
 };
 
-const context = {
+const issueCtx = {
+  tab: 'issues' as const,
   projectKey: 'acme',
   branch: 'main',
   generatedAt: '2026-05-11T00:00:00.000Z',
@@ -85,14 +88,47 @@ const context = {
   appliedFilters: 'severity=BLOCKER,CRITICAL',
 };
 
-function expectHeaderBlock(md: string): void {
+const hotspotCtx = {
+  tab: 'hotspots' as const,
+  projectKey: 'acme',
+  branch: 'main',
+  generatedAt: '2026-05-11T00:00:00.000Z',
+  totalHotspots: 2,
+  appliedFilters: '{}',
+};
+
+const qgCtx = {
+  tab: 'quality-gate' as const,
+  projectKey: 'acme',
+  branch: 'main',
+  generatedAt: '2026-05-11T00:00:00.000Z',
+  qualityGateStatus: 'ERROR',
+  conditionsFailing: '1/2',
+  appliedFilters: '{}',
+};
+
+function expectIssueHeader(md: string): void {
   expect(md).toContain('acme');
   expect(md).toContain('main');
+  expect(md).toContain('total_findings: 2');
+}
+
+function expectHotspotHeader(md: string): void {
+  expect(md).toContain('acme');
+  expect(md).toContain('main');
+  expect(md).toContain('total_hotspots: 2');
+}
+
+function expectQgHeader(md: string): void {
+  expect(md).toContain('acme');
+  expect(md).toContain('main');
+  expect(md).toContain('quality_gate_status: ERROR');
+  expect(md).toContain('conditions_failing: 1/2');
 }
 
 describe('markdownTriage', () => {
   it('produces numbered list with severity prefix and file:line in code', () => {
-    const md = markdownTriage([issue1, issue2], context);
+    const md = markdownTriage([issue1, issue2], issueCtx);
     expect(md).toContain('1. BLOCKER');
     expect(md).toContain('`src/services/payment.ts:142`');
     expect(md).toContain('typescript:S6571');
@@ -101,41 +137,41 @@ describe('markdownTriage', () => {
   });
 
   it('includes header block', () => {
-    const md = markdownTriage([issue1], context);
-    expectHeaderBlock(md);
+    const md = markdownTriage([issue1], issueCtx);
+    expectIssueHeader(md);
     expect(md).toContain('2026-05-11');
   });
 });
 
 describe('markdownGroupedByFile', () => {
   it('produces H2 per file with bullets for findings', () => {
-    const md = markdownGroupedByFile([issue1, issue2], context);
+    const md = markdownGroupedByFile([issue1, issue2], issueCtx);
     expect(md).toContain('## src/services/payment.ts');
     expect(md).toContain('## src/services/auth.ts');
     expect(md).toMatch(/^-\s/m);
   });
 
   it('includes header block', () => {
-    expectHeaderBlock(markdownGroupedByFile([issue1], context));
+    expectIssueHeader(markdownGroupedByFile([issue1], issueCtx));
   });
 });
 
 describe('markdownGroupedByRule', () => {
   it('produces H2 per rule key with bullets for each occurrence', () => {
-    const md = markdownGroupedByRule([issue1, issue2], context);
+    const md = markdownGroupedByRule([issue1, issue2], issueCtx);
     expect(md).toContain('## typescript:S6571');
     const occurrences = md.match(/src\/services\//g);
     expect(occurrences?.length).toBeGreaterThanOrEqual(2);
   });
 
   it('includes header block', () => {
-    expectHeaderBlock(markdownGroupedByRule([issue1], context));
+    expectIssueHeader(markdownGroupedByRule([issue1], issueCtx));
   });
 });
 
 describe('markdownLlmRemediation', () => {
   it('prepends an instruction and includes structured findings', () => {
-    const md = markdownLlmRemediation([issue1, issue2], context);
+    const md = markdownLlmRemediation([issue1, issue2], issueCtx);
     // Instruction is present near the top
     const instructionIdx = md.indexOf('You are');
     const findingsIdx = md.indexOf('### Findings');
@@ -144,8 +180,8 @@ describe('markdownLlmRemediation', () => {
   });
 
   it('includes header block and all issues', () => {
-    const md = markdownLlmRemediation([issue1, issue2], context);
-    expectHeaderBlock(md);
+    const md = markdownLlmRemediation([issue1, issue2], issueCtx);
+    expectIssueHeader(md);
     expect(md).toContain('payment.ts');
     expect(md).toContain('auth.ts');
   });
@@ -153,7 +189,7 @@ describe('markdownLlmRemediation', () => {
 
 describe('markdownHotspotTriage', () => {
   it('produces numbered list with probability prefix and file:line in code', () => {
-    const md = markdownHotspotTriage([hotspot1, hotspot2], context);
+    const md = markdownHotspotTriage([hotspot1, hotspot2], hotspotCtx);
     expect(md).toContain('1. HIGH');
     expect(md).toContain('`src/auth/legacy.java:47`');
     expect(md).toContain('java:S2068');
@@ -162,18 +198,18 @@ describe('markdownHotspotTriage', () => {
   });
 
   it('includes header block', () => {
-    expectHeaderBlock(markdownHotspotTriage([hotspot1], context));
+    expectHotspotHeader(markdownHotspotTriage([hotspot1], hotspotCtx));
   });
 
   it('handles empty list gracefully', () => {
-    const md = markdownHotspotTriage([], context);
+    const md = markdownHotspotTriage([], hotspotCtx);
     expect(md).toContain('# Hotspot Triage List');
   });
 });
 
 describe('markdownHotspotGroupedByFile', () => {
   it('produces H2 per file with bullets for hotspots', () => {
-    const md = markdownHotspotGroupedByFile([hotspot1, hotspot2], context);
+    const md = markdownHotspotGroupedByFile([hotspot1, hotspot2], hotspotCtx);
     expect(md).toContain('## src/auth/legacy.java');
     expect(md).toContain('## src/crypto/utils.java');
     expect(md).toMatch(/^-\s/m);
@@ -181,19 +217,19 @@ describe('markdownHotspotGroupedByFile', () => {
 
   it('groups two hotspots in the same file under a single H2', () => {
     const hs2sameFile: Hotspot = { ...hotspot2, component: 'acme:src/auth/legacy.java', line: 99 };
-    const md = markdownHotspotGroupedByFile([hotspot1, hs2sameFile], context);
+    const md = markdownHotspotGroupedByFile([hotspot1, hs2sameFile], hotspotCtx);
     const h2Count = (md.match(/^## /gm) ?? []).length;
     expect(h2Count).toBe(1);
   });
 
   it('includes header block', () => {
-    expectHeaderBlock(markdownHotspotGroupedByFile([hotspot1], context));
+    expectHotspotHeader(markdownHotspotGroupedByFile([hotspot1], hotspotCtx));
   });
 });
 
 describe('markdownHotspotGroupedByCategory', () => {
   it('produces H2 per security category with bullets', () => {
-    const md = markdownHotspotGroupedByCategory([hotspot1, hotspot2], context);
+    const md = markdownHotspotGroupedByCategory([hotspot1, hotspot2], hotspotCtx);
     expect(md).toContain('## auth');
     expect(md).toContain('## cryptography');
     expect(md).toMatch(/^-\s/m);
@@ -201,19 +237,19 @@ describe('markdownHotspotGroupedByCategory', () => {
 
   it('groups hotspots sharing a category under one H2', () => {
     const hs2sameCategory: Hotspot = { ...hotspot2, securityCategory: 'auth' };
-    const md = markdownHotspotGroupedByCategory([hotspot1, hs2sameCategory], context);
+    const md = markdownHotspotGroupedByCategory([hotspot1, hs2sameCategory], hotspotCtx);
     const h2Count = (md.match(/^## /gm) ?? []).length;
     expect(h2Count).toBe(1);
   });
 
   it('includes header block', () => {
-    expectHeaderBlock(markdownHotspotGroupedByCategory([hotspot1], context));
+    expectHotspotHeader(markdownHotspotGroupedByCategory([hotspot1], hotspotCtx));
   });
 });
 
 describe('markdownHotspotLlmSecurityReview', () => {
   it('prepends security engineer instruction and lists hotspots', () => {
-    const md = markdownHotspotLlmSecurityReview([hotspot1, hotspot2], context);
+    const md = markdownHotspotLlmSecurityReview([hotspot1, hotspot2], hotspotCtx);
     const instructionIdx = md.indexOf('You are a senior security engineer');
     const hotspotIdx = md.indexOf('### Hotspots');
     expect(instructionIdx).toBeGreaterThanOrEqual(0);
@@ -221,7 +257,7 @@ describe('markdownHotspotLlmSecurityReview', () => {
   });
 
   it('includes probability, rule, file, and category for each hotspot', () => {
-    const md = markdownHotspotLlmSecurityReview([hotspot1], context);
+    const md = markdownHotspotLlmSecurityReview([hotspot1], hotspotCtx);
     expect(md).toContain('HIGH');
     expect(md).toContain('java:S2068');
     expect(md).toContain('src/auth/legacy.java');
@@ -229,27 +265,115 @@ describe('markdownHotspotLlmSecurityReview', () => {
   });
 });
 
+describe('markdownQualityGateActionable', () => {
+  const condition1 = {
+    status: 'ERROR' as const,
+    metricKey: 'reliability_rating',
+    comparator: 'GT' as const,
+    errorThreshold: '1',
+    actualValue: '3.0',
+  };
+
+  const condition2 = {
+    status: 'ERROR' as const,
+    metricKey: 'security_hotspots_reviewed',
+    comparator: 'LT' as const,
+    errorThreshold: '80',
+    actualValue: '50',
+  };
+
+  it('includes header block with QG-specific fields', () => {
+    expectQgHeader(markdownQualityGateActionable(qg, measures, [], qgCtx));
+  });
+
+  it('produces H1 with gate status', () => {
+    const md = markdownQualityGateActionable(qg, measures, [], qgCtx);
+    expect(md).toContain('# Quality Gate: ERROR');
+  });
+
+  it('renders an issues driver with issue rows', () => {
+    const condWithDriver: ConditionWithDrivers = {
+      condition: condition1,
+      driverResult: { kind: 'issues', items: [issue1, issue2] },
+    };
+    const md = markdownQualityGateActionable(qg, measures, [condWithDriver], qgCtx);
+    expect(md).toContain('reliability_rating');
+    expect(md).toContain('payment.ts');
+    expect(md).toContain('BLOCKER');
+  });
+
+  it('renders a hotspot driver with hotspot rows', () => {
+    const condWithDriver: ConditionWithDrivers = {
+      condition: condition2,
+      driverResult: { kind: 'hotspots', items: [hotspot1] },
+    };
+    const md = markdownQualityGateActionable(qg, measures, [condWithDriver], qgCtx);
+    expect(md).toContain('security_hotspots_reviewed');
+    expect(md).toContain('src/auth/legacy.java');
+    expect(md).toContain('HIGH');
+  });
+
+  it('renders a note driver', () => {
+    const condWithDriver: ConditionWithDrivers = {
+      condition: { ...condition1, metricKey: 'coverage' },
+      driverResult: { kind: 'note', message: 'Requires test coverage improvements.' },
+    };
+    const md = markdownQualityGateActionable(qg, measures, [condWithDriver], qgCtx);
+    expect(md).toContain('coverage');
+    expect(md).toContain('Requires test coverage improvements.');
+  });
+
+  it('renders an error driver', () => {
+    const condWithDriver: ConditionWithDrivers = {
+      condition: condition1,
+      driverResult: { kind: 'error', message: 'Request failed.' },
+    };
+    const md = markdownQualityGateActionable(qg, measures, [condWithDriver], qgCtx);
+    expect(md).toContain('reliability_rating');
+    expect(md).toContain('Request failed.');
+  });
+
+  it('caps issue rows at DRIVER_LIMIT', () => {
+    const manyIssues = Array.from({ length: DRIVER_LIMIT + 5 }, (_, i) => ({
+      ...issue1,
+      key: `KEY${i}` as Issue['key'],
+    }));
+    const condWithDriver: ConditionWithDrivers = {
+      condition: condition1,
+      driverResult: { kind: 'issues', items: manyIssues },
+    };
+    const md = markdownQualityGateActionable(qg, measures, [condWithDriver], qgCtx);
+    const rows = (md.match(/^- \*\*/gm) ?? []).length;
+    expect(rows).toBe(DRIVER_LIMIT);
+  });
+
+  it('includes the LLM prompt', () => {
+    const md = markdownQualityGateActionable(qg, measures, [], qgCtx);
+    expect(md).toMatch(/You are a senior engineer/i);
+  });
+});
+
 describe('markdownQualityGateSnapshot', () => {
   it('produces H1 with gate status', () => {
-    const md = markdownQualityGateSnapshot(qg, measures, context);
+    const md = markdownQualityGateSnapshot(qg, measures, qgCtx);
     expect(md).toContain('# Quality Gate: ERROR');
   });
 
   it('includes conditions table with all rows', () => {
-    const md = markdownQualityGateSnapshot(qg, measures, context);
+    const md = markdownQualityGateSnapshot(qg, measures, qgCtx);
     expect(md).toContain('new_coverage');
     expect(md).toContain('65.4');
     expect(md).toContain('new_duplicated_lines_density');
   });
 
   it('includes measures table', () => {
-    const md = markdownQualityGateSnapshot(qg, measures, context);
+    const md = markdownQualityGateSnapshot(qg, measures, qgCtx);
     expect(md).toContain('ncloc');
     expect(md).toContain('4849');
     expect(md).toContain('reliability_rating');
   });
 
   it('includes header block', () => {
-    expectHeaderBlock(markdownQualityGateSnapshot(qg, measures, context));
+    expectQgHeader(markdownQualityGateSnapshot(qg, measures, qgCtx));
   });
 });

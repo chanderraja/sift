@@ -825,6 +825,27 @@ SPEC.md §7.4 originally specified only Issues-tab templates. This PR closed tha
 - `hotspotsToCsv` and `qualityGateToCsv` added to `src/lib/csv.ts` with the column schemas defined in SPEC.md §7.4 "CSV schemas per tab".
 - `ExportModal` made tab-aware: reads `filtersStore.tab`, swaps template list and data source accordingly. QG tab collapses to a single non-interactive "Snapshot" label. `App.tsx` gained `useVisibleHotspots`, `useVisibleQualityGate`, and `useVisibleMeasures` hooks to supply the additional data.
 
+**Phase 10 follow-up — QG Actionable composite export (shipped in `feat/qg-actionable-export`).**
+
+SPEC.md §7.4 called for an "Actionable" QG template that fetches the specific issues and hotspots
+driving each failing condition and prepends an LLM remediation prompt. This PR delivered that:
+
+- `MarkdownContext` refactored into a discriminated union keyed on `tab`
+  (`IssuesMarkdownContext` / `HotspotsMarkdownContext` / `QualityGateMarkdownContext`), fixing a
+  `total_findings: 0` bug on QG exports. Each variant emits the appropriate count field in the
+  YAML front-matter header block.
+- `src/lib/qgDrivers.ts` maps each failing QG condition to a `DriverSpec` (issues, hotspots, or
+  note). Severity is derived from the condition's rating value (B→MINOR+, C→MAJOR+, D/E→CRITICAL+).
+- `markdownQualityGateActionable(qg, measures, conditionDrivers, ctx)` renders failing conditions
+  with their per-condition driver results (capped at `DRIVER_LIMIT = 25`), a measures table, and
+  `QG_ACTIONABLE_LLM_PROMPT`.
+- `src/features/export-modal/orchestrateActionable.ts` fans out `ConditionDriver[]` over
+  `searchIssues` / `searchHotspots` in parallel (`Promise.allSettled`), reports progress, and
+  surfaces per-driver errors without aborting the whole export. Notes resolve synchronously.
+- `ExportModal` QG tab gains a Snapshot/Actionable radio (Snapshot default). Actionable triggers
+  orchestration, shows a "Fetching N/M…" progress label, disables Copy/Download during fetch, and
+  shows an inline yellow warning when some drivers errored.
+
 ---
 
 ## Phase 11 — Settings, Theme, Polish

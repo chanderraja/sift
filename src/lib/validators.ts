@@ -215,7 +215,10 @@ export const QualityGateSchema = z
               metricKey: z.string(),
               comparator: comparatorSchema,
               errorThreshold: z.string(),
-              actualValue: z.string(),
+              actualValue: z
+                .string()
+                .optional()
+                .transform((v) => v ?? ''),
             })
             .passthrough(),
         ),
