@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useFiltersStore, useSelectionStore, useUiStore } from '../../app/stores';
-import type { Issue } from '../../types/sonar';
+import { sonarClient, useFiltersStore, useSelectionStore, useUiStore } from '../../app/stores';
+import type { Issue, IssuesPage } from '../../types/sonar';
 import { baseHotspot, baseQualityGate, baseMeasures } from '../../../tests/hotspot-fixtures';
 import { wrap } from '../test-helpers/sessionWrap';
 
@@ -269,5 +269,326 @@ describe('ExportModal — tab-aware templates', () => {
       expect(c).toContain('condition');
       expect(c).toContain('new_coverage');
     });
+  });
+});
+
+const okIssuesPage: IssuesPage = {
+  items: [issue],
+  pageIndex: 1,
+  pageSize: 200,
+  total: 1,
+  facets: [],
+};
+
+describe('ExportModal — scope radio', () => {
+  beforeEach(() => {
+    useUiStore.setState({ exportOpen: true });
+    vi.spyOn(sonarClient, 'searchIssues').mockResolvedValue({ kind: 'ok', value: okIssuesPage });
+    vi.spyOn(sonarClient, 'searchHotspots').mockResolvedValue({
+      kind: 'ok',
+      value: { items: [baseHotspot], pageIndex: 1, pageSize: 200, total: 1 },
+    });
+  });
+
+  it('renders 3 scope options on Issues tab with default All in current filter', () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
+    expect(screen.getByRole('radio', { name: /visible/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /all in current filter/i })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /all in project/i })).toBeInTheDocument();
+  });
+
+  it('renders 3 scope options on Hotspots tab', () => {
+    useFiltersStore.setState({ tab: 'hotspots' });
+    render(
+      wrap(<ExportModal issues={[]} hotspots={[baseHotspot]} qualityGate={null} measures={[]} />),
+    );
+    expect(screen.getByRole('radio', { name: /visible/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /all in current filter/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /all in project/i })).toBeInTheDocument();
+  });
+
+  it('QG tab has no scope radio', () => {
+    useFiltersStore.setState({ tab: 'quality-gate' });
+    render(wrap(<ExportModal issues={[]} hotspots={[]} qualityGate={qg} measures={measures} />));
+    expect(screen.queryByRole('radio', { name: /visible/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /all in current filter/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /all in project/i })).not.toBeInTheDocument();
+  });
+
+  it('Visible scope uses props directly and does not call sonarClient.searchIssues', async () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
+    await userEvent.click(screen.getByRole('radio', { name: /visible/i }));
+    await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
+    await assertClipboard((c) => expect(c).toContain('acme'));
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(sonarClient.searchIssues).not.toHaveBeenCalled();
+  });
+
+  it('All in current filter calls sonarClient.searchIssues with current filters', async () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
+    // default scope is all-filtered
+    await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
+    await waitFor(() => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(sonarClient.searchIssues).toHaveBeenCalledWith(
+        expect.objectContaining({ componentKeys: ['acme'] }),
+        expect.anything(),
+      );
+    });
+  });
+
+  it('All in project calls sonarClient.searchIssues with only componentKeys and branch', async () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
+    await userEvent.click(screen.getByRole('radio', { name: /all in project/i }));
+    await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
+    await waitFor(() => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(sonarClient.searchIssues).toHaveBeenCalledWith(
+        { componentKeys: ['acme'], branch: 'main' },
+        expect.anything(),
+      );
+    });
+  });
+
+  it('over-cap banner appears when totalIssues > 10000 and scope is all-filtered', () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(
+      wrap(
+        <ExportModal
+          issues={[issue]}
+          hotspots={[]}
+          qualityGate={null}
+          measures={[]}
+          totalIssues={10001}
+        />,
+      ),
+    );
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+
+  it('over-cap banner absent when scope is Visible even with totalIssues > 10000', async () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(
+      wrap(
+        <ExportModal
+          issues={[issue]}
+          hotspots={[]}
+          qualityGate={null}
+          measures={[]}
+          totalIssues={10001}
+        />,
+      ),
+    );
+    await userEvent.click(screen.getByRole('radio', { name: /visible/i }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('action buttons disabled when over-cap is active', () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(
+      wrap(
+        <ExportModal
+          issues={[issue]}
+          hotspots={[]}
+          qualityGate={null}
+          measures={[]}
+          totalIssues={10001}
+        />,
+      ),
+    );
+    expect(screen.getByRole('button', { name: /download/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /copy to clipboard/i })).toBeDisabled();
+  });
+
+  it('hotspots over-cap banner appears when totalHotspots > 10000', () => {
+    useFiltersStore.setState({ tab: 'hotspots' });
+    render(
+      wrap(
+        <ExportModal
+          issues={[]}
+          hotspots={[baseHotspot]}
+          qualityGate={null}
+          measures={[]}
+          totalHotspots={10001}
+        />,
+      ),
+    );
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+
+  it('All in current filter on hotspots tab calls sonarClient.searchHotspots', async () => {
+    useFiltersStore.setState({ tab: 'hotspots' });
+    render(
+      wrap(<ExportModal issues={[]} hotspots={[baseHotspot]} qualityGate={null} measures={[]} />),
+    );
+    await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
+    await waitFor(() => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(sonarClient.searchHotspots).toHaveBeenCalledWith(
+        expect.objectContaining({ projectKey: 'acme' }),
+        expect.anything(),
+      );
+    });
+  });
+});
+
+describe('ExportModal — field selector', () => {
+  beforeEach(() => {
+    useUiStore.setState({ exportOpen: true });
+  });
+
+  it('Issues tab renders 11 field chips', () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
+    const group = screen.getByRole('group', { name: /fields/i });
+    const chips = within(group).getAllByRole('button');
+    expect(chips).toHaveLength(11);
+  });
+
+  it('Hotspots tab renders 8 field chips', () => {
+    useFiltersStore.setState({ tab: 'hotspots' });
+    render(
+      wrap(<ExportModal issues={[]} hotspots={[baseHotspot]} qualityGate={null} measures={[]} />),
+    );
+    const group = screen.getByRole('group', { name: /fields/i });
+    const chips = within(group).getAllByRole('button');
+    expect(chips).toHaveLength(8);
+  });
+
+  it('QG tab has no field selector chips', () => {
+    useFiltersStore.setState({ tab: 'quality-gate' });
+    render(wrap(<ExportModal issues={[]} hotspots={[]} qualityGate={qg} measures={measures} />));
+    expect(screen.queryByRole('group', { name: /fields/i })).not.toBeInTheDocument();
+  });
+
+  it('all chips default to aria-pressed="true"', () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
+    const group = screen.getByRole('group', { name: /fields/i });
+    const chips = within(group).getAllByRole('button');
+    for (const chip of chips) {
+      expect(chip).toHaveAttribute('aria-pressed', 'true');
+    }
+  });
+
+  it('unchecking Severity chip removes severity from issues CSV output', async () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
+    // Switch to CSV
+    await userEvent.click(screen.getByRole('radio', { name: /csv/i }));
+    // Switch scope to visible so no fetch needed
+    await userEvent.click(screen.getByRole('radio', { name: /visible/i }));
+    // Uncheck Severity
+    const group = screen.getByRole('group', { name: /fields/i });
+    await userEvent.click(within(group).getByRole('button', { name: /severity/i }));
+    expect(within(group).getByRole('button', { name: /severity/i })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
+    await assertClipboard((c) => {
+      expect(c).not.toContain('severity');
+      expect(c).not.toContain('BLOCKER');
+    });
+  });
+
+  it('unchecking Severity chip removes "BLOCKER" from issues Markdown triage output', async () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
+    await userEvent.click(screen.getByRole('radio', { name: /visible/i }));
+    const group = screen.getByRole('group', { name: /fields/i });
+    await userEvent.click(within(group).getByRole('button', { name: /severity/i }));
+    await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
+    await assertClipboard((c) => {
+      expect(c).not.toContain('BLOCKER');
+    });
+  });
+
+  it('unchecking Probability chip removes it from hotspot CSV output', async () => {
+    useFiltersStore.setState({ tab: 'hotspots' });
+    render(
+      wrap(<ExportModal issues={[]} hotspots={[baseHotspot]} qualityGate={null} measures={[]} />),
+    );
+    await userEvent.click(screen.getByRole('radio', { name: /csv/i }));
+    await userEvent.click(screen.getByRole('radio', { name: /visible/i }));
+    const group = screen.getByRole('group', { name: /fields/i });
+    await userEvent.click(within(group).getByRole('button', { name: /probability/i }));
+    await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
+    await assertClipboard((c) => {
+      expect(c).not.toContain('Probability');
+      expect(c).not.toContain('HIGH');
+    });
+  });
+});
+
+describe('ExportModal — footer size estimate', () => {
+  beforeEach(() => {
+    useUiStore.setState({ exportOpen: true });
+  });
+
+  it('footer shows "~N KB" size estimate on Issues tab', () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
+    expect(screen.getByText(/~[\d.]+ KB/i)).toBeInTheDocument();
+  });
+
+  it('footer shows "header includes" summary text', () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
+    expect(screen.getByText(/header includes/i)).toBeInTheDocument();
+  });
+
+  it('footer includes tab-specific count for issues', () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
+    expect(screen.getByText(/total_findings/i)).toBeInTheDocument();
+  });
+
+  it('size estimate becomes smaller when a field chip is unchecked', async () => {
+    useFiltersStore.setState({ tab: 'issues' });
+    render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
+    const sizeBefore = screen.getByText(/~[\d.]+ KB/i).textContent ?? '';
+    const group = screen.getByRole('group', { name: /fields/i });
+    await userEvent.click(within(group).getByRole('button', { name: /severity/i }));
+    await userEvent.click(within(group).getByRole('button', { name: /type/i }));
+    await userEvent.click(within(group).getByRole('button', { name: /status/i }));
+    const sizeAfter = screen.getByText(/~[\d.]+ KB/i).textContent ?? '';
+    const numBefore = Number.parseFloat(sizeBefore.replaceAll(/[^0-9.]/g, ''));
+    const numAfter = Number.parseFloat(sizeAfter.replaceAll(/[^0-9.]/g, ''));
+    expect(numAfter).toBeLessThanOrEqual(numBefore);
+  });
+
+  it('QG tab shows footer size estimate', () => {
+    useFiltersStore.setState({ tab: 'quality-gate' });
+    render(wrap(<ExportModal issues={[]} hotspots={[]} qualityGate={qg} measures={measures} />));
+    expect(screen.getByText(/~[\d.]+ KB/i)).toBeInTheDocument();
+  });
+});
+
+describe('ExportModal — QG tab hides scope and field selector', () => {
+  beforeEach(() => {
+    useUiStore.setState({ exportOpen: true });
+    useFiltersStore.setState({ tab: 'quality-gate' });
+  });
+
+  it('QG tab has no scope radio', () => {
+    render(wrap(<ExportModal issues={[]} hotspots={[]} qualityGate={qg} measures={measures} />));
+    expect(screen.queryByRole('radio', { name: /visible/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /all in current filter/i })).not.toBeInTheDocument();
+  });
+
+  it('QG tab has no field chips', () => {
+    render(wrap(<ExportModal issues={[]} hotspots={[]} qualityGate={qg} measures={measures} />));
+    expect(screen.queryByRole('group', { name: /fields/i })).not.toBeInTheDocument();
+  });
+
+  it('QG tab footer shows size estimate and "header includes" text', () => {
+    render(wrap(<ExportModal issues={[]} hotspots={[]} qualityGate={qg} measures={measures} />));
+    expect(screen.getByText(/~[\d.]+ KB/i)).toBeInTheDocument();
+    expect(screen.getByText(/header includes/i)).toBeInTheDocument();
   });
 });

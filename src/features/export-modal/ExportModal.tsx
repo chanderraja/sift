@@ -33,6 +33,28 @@ type HotspotMdTemplate =
   | 'hs-grouped-by-file'
   | 'hs-grouped-by-category'
   | 'hs-llm-security';
+export type ExportScope = 'visible' | 'all-filtered' | 'all-project';
+export type IssueFieldId =
+  | 'severity'
+  | 'type'
+  | 'status'
+  | 'rule'
+  | 'message'
+  | 'file'
+  | 'line'
+  | 'effort'
+  | 'tags'
+  | 'creationDate'
+  | 'assignee';
+export type HotspotFieldId =
+  | 'vulnerabilityProbability'
+  | 'status'
+  | 'securityCategory'
+  | 'ruleKey'
+  | 'message'
+  | 'file'
+  | 'line'
+  | 'creationDate';
 
 const LIMIT_DEFAULT = 200;
 const LIMIT_MAX = 1000;
@@ -150,6 +172,8 @@ export interface ExportModalProps {
   readonly hotspots: readonly Hotspot[];
   readonly qualityGate: QualityGate | null;
   readonly measures: readonly Measure[];
+  readonly totalIssues?: number;
+  readonly totalHotspots?: number;
 }
 
 export function ExportModal({
