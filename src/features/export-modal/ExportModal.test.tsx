@@ -114,17 +114,58 @@ describe('ExportModal', () => {
     expect(screen.queryByText(/triage list/i)).not.toBeInTheDocument();
   });
 
-  it('limit input defaults to 200 and clamps to 1000 on excessive input', async () => {
+  it('limit input defaults to totalIssues and clamps to 10000 on excessive input', async () => {
+    useUiStore.setState({ exportOpen: true });
+    render(
+      wrap(
+        <ExportModal
+          issues={[issue]}
+          hotspots={[]}
+          qualityGate={null}
+          measures={[]}
+          totalIssues={373}
+        />,
+      ),
+    );
+
+    const limitInput = screen.getByRole('spinbutton', { name: /limit/i });
+    expect(limitInput).toHaveValue(373);
+
+    await userEvent.clear(limitInput);
+    await userEvent.type(limitInput, '99999');
+    fireEvent.blur(limitInput);
+    expect(limitInput).toHaveValue(10000);
+  });
+
+  it('limit defaults to 10000 when no totalIssues prop provided', () => {
     useUiStore.setState({ exportOpen: true });
     render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
 
     const limitInput = screen.getByRole('spinbutton', { name: /limit/i });
-    expect(limitInput).toHaveValue(200);
+    expect(limitInput).toHaveValue(10000);
+  });
 
-    await userEvent.clear(limitInput);
-    await userEvent.type(limitInput, '9999');
-    fireEvent.blur(limitInput);
-    expect(limitInput).toHaveValue(1000);
+  it('limit resets to totalHotspots when switching to hotspots tab', async () => {
+    useUiStore.setState({ exportOpen: true });
+    render(
+      wrap(
+        <ExportModal
+          issues={[issue]}
+          hotspots={[baseHotspot]}
+          qualityGate={null}
+          measures={[]}
+          totalIssues={373}
+          totalHotspots={42}
+        />,
+      ),
+    );
+
+    const limitInput = screen.getByRole('spinbutton', { name: /limit/i });
+    expect(limitInput).toHaveValue(373);
+
+    // Switch to hotspots tab
+    useFiltersStore.setState({ tab: 'hotspots' });
+    await waitFor(() => expect(limitInput).toHaveValue(42));
   });
 
   it('"Copy to clipboard" calls navigator.clipboard.writeText with generated content', async () => {
@@ -448,6 +489,62 @@ describe('ExportModal — scope radio', () => {
         expect.anything(),
       );
     });
+  });
+
+  it('paginates searchIssues when limit exceeds 500 (SONAR_PAGE_CAP)', async () => {
+    useFiltersStore.setState({ tab: 'issues' });
+
+    // Simulate 600 total issues: page 1 returns 500, page 2 returns 100
+    const page1 = Array.from({ length: 500 }, (_, i) => ({
+      ...issue,
+      key: `KEY${i}` as Issue['key'],
+    }));
+    const page2 = Array.from({ length: 100 }, (_, i) => ({
+      ...issue,
+      key: `KEY${i + 500}` as Issue['key'],
+    }));
+    vi.spyOn(sonarClient, 'searchIssues')
+      .mockResolvedValueOnce({
+        kind: 'ok',
+        value: { items: page1, pageIndex: 1, pageSize: 500, total: 600, facets: [] },
+      })
+      .mockResolvedValueOnce({
+        kind: 'ok',
+        value: { items: page2, pageIndex: 2, pageSize: 100, total: 600, facets: [] },
+      });
+
+    render(
+      wrap(
+        <ExportModal
+          issues={[issue]}
+          hotspots={[]}
+          qualityGate={null}
+          measures={[]}
+          totalIssues={600}
+        />,
+      ),
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
+
+    await waitFor(() => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(sonarClient.searchIssues).toHaveBeenCalledTimes(2);
+    });
+    // First call: page 1 with ps=500
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(sonarClient.searchIssues).toHaveBeenNthCalledWith(
+      1,
+      expect.anything(),
+      expect.objectContaining({ p: 1, ps: 500 }),
+    );
+    // Second call: page 2 for remaining 100
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(sonarClient.searchIssues).toHaveBeenNthCalledWith(
+      2,
+      expect.anything(),
+      expect.objectContaining({ p: 2 }),
+    );
   });
 });
 
