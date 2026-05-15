@@ -18,7 +18,7 @@ Visual references for design phases live in `docs/mocks/` (1440×900 PNGs of all
 
 ## Current phase
 
-**Phase 12 — Deploy and Release.** See `IMPLEMENTATION.md` §"Phase 12". Phases 1–11 are merged on `master`. App is live at https://sift-red.vercel.app.
+**Phase 12 — Deploy and Release — complete.** All 12 phases merged on `master`. App is live at https://sift-red.vercel.app. v1.0.0 tagged.
 
 When this phase is complete (all acceptance criteria met, CI green on `master`, maintainer has merged the phase's PR), update this line to the next phase. Do not advance phases without maintainer sign-off on the current one.
 
