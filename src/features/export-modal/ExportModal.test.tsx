@@ -290,11 +290,11 @@ describe('ExportModal — scope radio', () => {
     });
   });
 
-  it('renders 3 scope options on Issues tab with default All in current filter', () => {
+  it('renders 3 scope options on Issues tab with default Visible', () => {
     useFiltersStore.setState({ tab: 'issues' });
     render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
-    expect(screen.getByRole('radio', { name: /visible/i })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /all in current filter/i })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /visible/i })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /all in current filter/i })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /all in project/i })).toBeInTheDocument();
   });
 
@@ -329,7 +329,7 @@ describe('ExportModal — scope radio', () => {
   it('All in current filter calls sonarClient.searchIssues with current filters', async () => {
     useFiltersStore.setState({ tab: 'issues' });
     render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
-    // default scope is all-filtered
+    await userEvent.click(screen.getByRole('radio', { name: /all in current filter/i }));
     await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
     await waitFor(() => {
       // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -354,7 +354,7 @@ describe('ExportModal — scope radio', () => {
     });
   });
 
-  it('over-cap banner appears when totalIssues > 10000 and scope is all-filtered', () => {
+  it('over-cap banner appears when totalIssues > 10000 and scope is all-filtered', async () => {
     useFiltersStore.setState({ tab: 'issues' });
     render(
       wrap(
@@ -367,10 +367,11 @@ describe('ExportModal — scope radio', () => {
         />,
       ),
     );
+    await userEvent.click(screen.getByRole('radio', { name: /all in current filter/i }));
     expect(screen.getByRole('alert')).toBeInTheDocument();
   });
 
-  it('over-cap banner absent when scope is Visible even with totalIssues > 10000', async () => {
+  it('over-cap banner absent when scope is Visible even with totalIssues > 10000', () => {
     useFiltersStore.setState({ tab: 'issues' });
     render(
       wrap(
@@ -383,11 +384,11 @@ describe('ExportModal — scope radio', () => {
         />,
       ),
     );
-    await userEvent.click(screen.getByRole('radio', { name: /visible/i }));
+    // default scope is visible — no banner
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  it('action buttons disabled when over-cap is active', () => {
+  it('action buttons disabled when over-cap is active', async () => {
     useFiltersStore.setState({ tab: 'issues' });
     render(
       wrap(
@@ -400,11 +401,12 @@ describe('ExportModal — scope radio', () => {
         />,
       ),
     );
+    await userEvent.click(screen.getByRole('radio', { name: /all in current filter/i }));
     expect(screen.getByRole('button', { name: /download/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /copy to clipboard/i })).toBeDisabled();
   });
 
-  it('hotspots over-cap banner appears when totalHotspots > 10000', () => {
+  it('hotspots over-cap banner appears when totalHotspots > 10000 and scope is non-visible', async () => {
     useFiltersStore.setState({ tab: 'hotspots' });
     render(
       wrap(
@@ -417,6 +419,7 @@ describe('ExportModal — scope radio', () => {
         />,
       ),
     );
+    await userEvent.click(screen.getByRole('radio', { name: /all in current filter/i }));
     expect(screen.getByRole('alert')).toBeInTheDocument();
   });
 
@@ -425,6 +428,7 @@ describe('ExportModal — scope radio', () => {
     render(
       wrap(<ExportModal issues={[]} hotspots={[baseHotspot]} qualityGate={null} measures={[]} />),
     );
+    await userEvent.click(screen.getByRole('radio', { name: /all in current filter/i }));
     await userEvent.click(screen.getByRole('button', { name: /copy to clipboard/i }));
     await waitFor(() => {
       // eslint-disable-next-line @typescript-eslint/unbound-method

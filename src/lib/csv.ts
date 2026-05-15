@@ -53,35 +53,55 @@ export function issuesToCsv(issues: readonly Issue[], fields: CsvField[] = DEFAU
   return UTF8_BOM + csv;
 }
 
-const HOTSPOT_HEADERS = [
-  'Probability',
-  'Status',
-  'Category',
-  'Rule',
-  'Message',
-  'File',
-  'Line',
-  'Created',
-] as const;
+export type HotspotCsvFieldId =
+  | 'vulnerabilityProbability'
+  | 'status'
+  | 'securityCategory'
+  | 'ruleKey'
+  | 'message'
+  | 'file'
+  | 'line'
+  | 'creationDate';
 
-export function hotspotsToCsv(hotspots: readonly Hotspot[]): string {
-  const headers = [...HOTSPOT_HEADERS];
+interface HotspotCsvField {
+  id: HotspotCsvFieldId;
+  header: string;
+  value: (h: Hotspot) => string | number | null | undefined;
+}
+
+const HOTSPOT_FIELDS: HotspotCsvField[] = [
+  {
+    id: 'vulnerabilityProbability',
+    header: 'Probability',
+    value: (h) => h.vulnerabilityProbability,
+  },
+  { id: 'status', header: 'Status', value: (h) => h.status },
+  { id: 'securityCategory', header: 'Category', value: (h) => h.securityCategory },
+  { id: 'ruleKey', header: 'Rule', value: (h) => h.ruleKey },
+  { id: 'message', header: 'Message', value: (h) => h.message },
+  { id: 'file', header: 'File', value: (h) => filePathFromComponent(h.component) },
+  { id: 'line', header: 'Line', value: (h) => h.line ?? '' },
+  { id: 'creationDate', header: 'Created', value: (h) => h.creationDate },
+];
+
+export function hotspotsToCsv(
+  hotspots: readonly Hotspot[],
+  enabledFields?: ReadonlySet<HotspotCsvFieldId>,
+): string {
+  const fields =
+    enabledFields !== undefined
+      ? HOTSPOT_FIELDS.filter((f) => enabledFields.has(f.id))
+      : HOTSPOT_FIELDS;
+  const headers = fields.map((f) => f.header);
 
   if (hotspots.length === 0) {
     const headerRow = Papa.unparse([{}], { columns: headers, newline: '\r\n' }).split('\r\n')[0];
     return UTF8_BOM + (headerRow ?? headers.join(','));
   }
 
-  const data = hotspots.map((h) => ({
-    Probability: h.vulnerabilityProbability,
-    Status: h.status,
-    Category: h.securityCategory,
-    Rule: h.ruleKey,
-    Message: h.message,
-    File: filePathFromComponent(h.component),
-    Line: h.line ?? '',
-    Created: h.creationDate,
-  }));
+  const data = hotspots.map((h) =>
+    Object.fromEntries(fields.map((f) => [f.header, f.value(h) ?? ''])),
+  );
 
   return UTF8_BOM + Papa.unparse(data, { columns: headers, newline: '\r\n' });
 }
