@@ -607,3 +607,47 @@ describe('ExportModal — QG tab hides scope and field selector', () => {
     expect(screen.getByText(/header includes/i)).toBeInTheDocument();
   });
 });
+
+describe('ExportModal — subtitle total count', () => {
+  beforeEach(() => {
+    useUiStore.setState({ exportOpen: true });
+    useSelectionStore.setState({ projectKey: 'acme' as Issue['project'], branchName: 'main' });
+  });
+
+  it('shows totalIssues in subtitle when provided (not page count)', () => {
+    render(
+      wrap(
+        <ExportModal
+          issues={[issue]}
+          hotspots={[]}
+          qualityGate={null}
+          measures={[]}
+          totalIssues={373}
+        />,
+      ),
+    );
+    expect(screen.getByRole('dialog')).toHaveTextContent('373 findings');
+  });
+
+  it('falls back to issues.length when totalIssues not provided', () => {
+    render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
+    expect(screen.getByRole('dialog')).toHaveTextContent('1 findings');
+  });
+
+  it('shows totalHotspots in subtitle on hotspots tab', () => {
+    useUiStore.setState({ exportOpen: true });
+    useFiltersStore.setState({ tab: 'hotspots' });
+    render(
+      wrap(
+        <ExportModal
+          issues={[]}
+          hotspots={[baseHotspot]}
+          qualityGate={null}
+          measures={[]}
+          totalHotspots={42}
+        />,
+      ),
+    );
+    expect(screen.getByRole('dialog')).toHaveTextContent('42 findings');
+  });
+});

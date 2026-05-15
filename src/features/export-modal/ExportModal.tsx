@@ -292,13 +292,13 @@ export function ExportModal({
   let findingCount: number;
   let ctx: MarkdownContext;
   if (tab === 'hotspots') {
-    findingCount = hotspots.length;
+    findingCount = totalHotspots > 0 ? totalHotspots : hotspots.length;
     ctx = {
       tab: 'hotspots',
       projectKey,
       branch: branchName,
       generatedAt: new Date().toISOString(),
-      totalHotspots: hotspots.length,
+      totalHotspots: findingCount,
       appliedFilters: JSON.stringify(issuesFilters),
     };
   } else if (tab === 'quality-gate') {
@@ -316,13 +316,13 @@ export function ExportModal({
       appliedFilters: JSON.stringify(issuesFilters),
     };
   } else {
-    findingCount = issues.length;
+    findingCount = totalIssues > 0 ? totalIssues : issues.length;
     ctx = {
       tab: 'issues',
       projectKey,
       branch: branchName,
       generatedAt: new Date().toISOString(),
-      totalFindings: issues.length,
+      totalFindings: findingCount,
       appliedFilters: JSON.stringify(issuesFilters),
     };
   }
