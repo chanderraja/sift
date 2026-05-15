@@ -405,14 +405,6 @@ describe('SonarClient.searchHotspots', () => {
     expect(params.get('resolution')).toBe('SAFE');
   });
 
-  it('sends status=ACKNOWLEDGED directly (not as resolution)', async () => {
-    const cap = captureUrl(PATH, emptyPage('hotspots'));
-    await makeClient().searchHotspots({ projectKey, status: 'ACKNOWLEDGED' });
-    const params = new URL(cap.read()).searchParams;
-    expect(params.get('status')).toBe('ACKNOWLEDGED');
-    expect(params.get('resolution')).toBeNull();
-  });
-
   it('encodes pagination opts', async () => {
     const cap = captureUrl(PATH, emptyPage('hotspots'));
     await makeClient().searchHotspots({ projectKey }, { p: 3, ps: 200 });

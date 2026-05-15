@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 
 // HotspotsFilterSidebar — narrower filter surface than Issues since
-// SonarCloud's hotspots search exposes only two single-valued
-// dimensions: status (TO_REVIEW / REVIEWED) and resolution (FIXED /
-// SAFE). Each group is a radio set with an "Any"
-// option that clears the filter.
+// SonarCloud's hotspots/search only accepts two filterable status values
+// (TO_REVIEW / REVIEWED) and two resolution values (FIXED / SAFE).
+// ACKNOWLEDGED is a valid domain status but not a supported filter param
+// in the v1 API. Each group is a radio set with an "Any" option that
+// clears the filter.
 
 import { FilterGroup } from '../../components/primitives/FilterGroup';
 import { Radio, RadioGroup } from '../../components/primitives/RadioGroup';
@@ -16,7 +17,7 @@ const ANY = '__any__';
 type StatusValue = NonNullable<HotspotFilters['status']>;
 type ResolutionValue = NonNullable<HotspotFilters['resolution']>;
 
-const STATUSES: readonly StatusValue[] = ['TO_REVIEW', 'ACKNOWLEDGED', 'REVIEWED'];
+const STATUSES: readonly StatusValue[] = ['TO_REVIEW', 'REVIEWED'];
 const RESOLUTIONS: readonly ResolutionValue[] = ['FIXED', 'SAFE'];
 
 // "Any" clears the dimension by removing the key from hotspotsFilters
