@@ -273,7 +273,7 @@ export function ExportModal({
   const [hotspotTemplate, setHotspotTemplate] = useState<HotspotMdTemplate>('hs-triage');
   const [qgTemplate, setQgTemplate] = useState<QgMdTemplate>('snapshot');
   const [limit, setLimit] = useState(LIMIT_DEFAULT);
-  const [scope, setScope] = useState<ExportScope>('visible');
+  const [scope, setScope] = useState<ExportScope>('all-filtered');
   const [enabledIssueFields, setEnabledIssueFields] =
     useState<ReadonlySet<IssueFieldId>>(ALL_ISSUE_FIELD_IDS);
   const [enabledHotspotFields, setEnabledHotspotFields] =

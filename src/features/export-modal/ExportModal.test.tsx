@@ -61,6 +61,17 @@ beforeEach(() => {
   });
 
   vi.mocked(orchestrateActionable).mockResolvedValue([]);
+
+  // Scope 'all-filtered' is the default; stub the fetches so existing copy tests
+  // are unaffected. Scope-specific describe blocks override these with their own mocks.
+  vi.spyOn(sonarClient, 'searchIssues').mockResolvedValue({
+    kind: 'ok',
+    value: { items: [issue], pageIndex: 1, pageSize: 200, total: 1, facets: [] },
+  });
+  vi.spyOn(sonarClient, 'searchHotspots').mockResolvedValue({
+    kind: 'ok',
+    value: { items: [baseHotspot], pageIndex: 1, pageSize: 200, total: 1 },
+  });
 });
 
 afterEach(() => {
@@ -290,10 +301,10 @@ describe('ExportModal — scope radio', () => {
     });
   });
 
-  it('renders 3 scope options on Issues tab with default Visible', () => {
+  it('renders 3 scope options on Issues tab with default All in current filter', () => {
     useFiltersStore.setState({ tab: 'issues' });
     render(wrap(<ExportModal issues={[issue]} hotspots={[]} qualityGate={null} measures={[]} />));
-    expect(screen.getByRole('radio', { name: /visible/i })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /all in current filter/i })).toBeChecked();
     expect(screen.getByRole('radio', { name: /all in current filter/i })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /all in project/i })).toBeInTheDocument();
   });
@@ -371,7 +382,7 @@ describe('ExportModal — scope radio', () => {
     expect(screen.getByRole('alert')).toBeInTheDocument();
   });
 
-  it('over-cap banner absent when scope is Visible even with totalIssues > 10000', () => {
+  it('over-cap banner absent when scope is Visible even with totalIssues > 10000', async () => {
     useFiltersStore.setState({ tab: 'issues' });
     render(
       wrap(
@@ -384,7 +395,7 @@ describe('ExportModal — scope radio', () => {
         />,
       ),
     );
-    // default scope is visible — no banner
+    await userEvent.click(screen.getByRole('radio', { name: /visible/i }));
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
