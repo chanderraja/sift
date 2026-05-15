@@ -7,7 +7,7 @@ import { Button } from '../../components/primitives/Button';
 import { Input } from '../../components/primitives/Input';
 import { Modal } from '../../components/primitives/Modal';
 import { Radio, RadioGroup } from '../../components/primitives/RadioGroup';
-import { hotspotsToCsv, issuesToCsv, qualityGateToCsv } from '../../lib/csv';
+import { hotspotsToCsv, issuesToCsv, qualityGateToCsv, type CsvField } from '../../lib/csv';
 import {
   markdownGroupedByFile,
   markdownGroupedByRule,
@@ -23,7 +23,16 @@ import {
   type QualityGateMarkdownContext,
 } from '../../lib/markdown';
 import { getConditionDrivers } from '../../lib/qgDrivers';
-import type { Hotspot, Issue, Measure, QualityGate } from '../../types/sonar';
+import type {
+  Hotspot,
+  HotspotFilters,
+  Issue,
+  IssueFilters,
+  Measure,
+  ProjectKey,
+  QualityGate,
+} from '../../types/sonar';
+import { OverCapBanner } from '../issues/OverCapBanner';
 import { orchestrateActionable } from './orchestrateActionable';
 
 type Format = 'markdown' | 'csv';
@@ -33,9 +42,82 @@ type HotspotMdTemplate =
   | 'hs-grouped-by-file'
   | 'hs-grouped-by-category'
   | 'hs-llm-security';
+export type ExportScope = 'visible' | 'all-filtered' | 'all-project';
+export type IssueFieldId =
+  | 'severity'
+  | 'type'
+  | 'status'
+  | 'rule'
+  | 'message'
+  | 'file'
+  | 'line'
+  | 'effort'
+  | 'tags'
+  | 'creationDate'
+  | 'assignee';
+export type HotspotFieldId =
+  | 'vulnerabilityProbability'
+  | 'status'
+  | 'securityCategory'
+  | 'ruleKey'
+  | 'message'
+  | 'file'
+  | 'line'
+  | 'creationDate';
 
 const LIMIT_DEFAULT = 200;
 const LIMIT_MAX = 1000;
+// SonarCloud V1 issues/search caps page size at 500.
+const SONAR_PAGE_CAP = 500;
+
+const ISSUE_FIELD_LABELS: { id: IssueFieldId; label: string }[] = [
+  { id: 'severity', label: 'Severity' },
+  { id: 'type', label: 'Type' },
+  { id: 'status', label: 'Status' },
+  { id: 'rule', label: 'Rule' },
+  { id: 'message', label: 'Message' },
+  { id: 'file', label: 'File' },
+  { id: 'line', label: 'Line' },
+  { id: 'effort', label: 'Effort' },
+  { id: 'tags', label: 'Tags' },
+  { id: 'creationDate', label: 'Created' },
+  { id: 'assignee', label: 'Assignee' },
+];
+
+const HOTSPOT_FIELD_LABELS: { id: HotspotFieldId; label: string }[] = [
+  { id: 'vulnerabilityProbability', label: 'Probability' },
+  { id: 'status', label: 'Status' },
+  { id: 'securityCategory', label: 'Category' },
+  { id: 'ruleKey', label: 'Rule' },
+  { id: 'message', label: 'Message' },
+  { id: 'file', label: 'File' },
+  { id: 'line', label: 'Line' },
+  { id: 'creationDate', label: 'Created' },
+];
+
+// Always-included CSV columns that are not in the chip picker.
+const ISSUE_CSV_FIXED_FIELDS: CsvField[] = [
+  { header: 'key', value: (i) => i.key },
+  { header: 'resolution', value: (i) => i.resolution ?? '' },
+  { header: 'updateDate', value: (i) => i.updateDate },
+];
+
+const ISSUE_CSV_FIELD_MAP: Record<IssueFieldId, CsvField> = {
+  severity: { header: 'severity', value: (i) => i.severity },
+  type: { header: 'type', value: (i) => i.type },
+  status: { header: 'status', value: (i) => i.status },
+  rule: { header: 'rule', value: (i) => i.rule },
+  message: { header: 'message', value: (i) => i.message },
+  file: { header: 'component', value: (i) => i.component },
+  line: { header: 'line', value: (i) => i.line ?? '' },
+  effort: { header: 'effort', value: (i) => i.effort ?? '' },
+  tags: { header: 'tags', value: (i) => i.tags.join(';') },
+  creationDate: { header: 'creationDate', value: (i) => i.creationDate },
+  assignee: { header: 'assignee', value: (i) => i.assignee ?? '' },
+};
+
+const ALL_ISSUE_FIELD_IDS = new Set<IssueFieldId>(ISSUE_FIELD_LABELS.map((f) => f.id));
+const ALL_HOTSPOT_FIELD_IDS = new Set<HotspotFieldId>(HOTSPOT_FIELD_LABELS.map((f) => f.id));
 
 const ISSUE_TEMPLATES: { id: IssueMdTemplate; label: string; description: string }[] = [
   { id: 'triage', label: 'Triage list', description: 'Numbered list, severity-prefixed.' },
@@ -86,6 +168,8 @@ interface GenerateOpts {
   hotspotTemplate: HotspotMdTemplate;
   limit: number;
   ctx: MarkdownContext;
+  enabledIssueFields: ReadonlySet<IssueFieldId>;
+  enabledHotspotFields: ReadonlySet<HotspotFieldId>;
 }
 
 function generateContent({
@@ -99,13 +183,17 @@ function generateContent({
   hotspotTemplate,
   limit,
   ctx,
+  enabledIssueFields,
+  enabledHotspotFields,
 }: GenerateOpts): string {
   if (tab === 'hotspots') {
     const slice = hotspots.slice(0, limit);
-    if (format === 'csv') return hotspotsToCsv(slice);
+    if (format === 'csv') {
+      return hotspotsToCsv(slice, enabledHotspotFields);
+    }
     switch (hotspotTemplate) {
       case 'hs-triage':
-        return markdownHotspotTriage(slice, ctx);
+        return markdownHotspotTriage(slice, ctx, enabledHotspotFields);
       case 'hs-grouped-by-file':
         return markdownHotspotGroupedByFile(slice, ctx);
       case 'hs-grouped-by-category':
@@ -122,10 +210,18 @@ function generateContent({
 
   // issues tab (default)
   const slice = issues.slice(0, limit);
-  if (format === 'csv') return issuesToCsv(slice);
+  if (format === 'csv') {
+    const fields = [
+      ...ISSUE_CSV_FIXED_FIELDS,
+      ...ISSUE_FIELD_LABELS.filter((f) => enabledIssueFields.has(f.id)).map(
+        (f) => ISSUE_CSV_FIELD_MAP[f.id],
+      ),
+    ];
+    return issuesToCsv(slice, fields);
+  }
   switch (issueTemplate) {
     case 'triage':
-      return markdownTriage(slice, ctx);
+      return markdownTriage(slice, ctx, enabledIssueFields);
     case 'grouped-by-file':
       return markdownGroupedByFile(slice, ctx);
     case 'grouped-by-rule':
@@ -150,6 +246,8 @@ export interface ExportModalProps {
   readonly hotspots: readonly Hotspot[];
   readonly qualityGate: QualityGate | null;
   readonly measures: readonly Measure[];
+  readonly totalIssues?: number;
+  readonly totalHotspots?: number;
 }
 
 export function ExportModal({
@@ -157,6 +255,8 @@ export function ExportModal({
   hotspots,
   qualityGate,
   measures,
+  totalIssues = 0,
+  totalHotspots = 0,
 }: ExportModalProps): React.JSX.Element | null {
   const exportOpen = useUiStore((s) => s.exportOpen);
   // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -173,12 +273,21 @@ export function ExportModal({
   const [hotspotTemplate, setHotspotTemplate] = useState<HotspotMdTemplate>('hs-triage');
   const [qgTemplate, setQgTemplate] = useState<QgMdTemplate>('snapshot');
   const [limit, setLimit] = useState(LIMIT_DEFAULT);
+  const [scope, setScope] = useState<ExportScope>('all-filtered');
+  const [enabledIssueFields, setEnabledIssueFields] =
+    useState<ReadonlySet<IssueFieldId>>(ALL_ISSUE_FIELD_IDS);
+  const [enabledHotspotFields, setEnabledHotspotFields] =
+    useState<ReadonlySet<HotspotFieldId>>(ALL_HOTSPOT_FIELD_IDS);
   const [copyDone, setCopyDone] = useState(false);
   const [orchestrating, setOrchestrating] = useState(false);
   const [orchestrationProgress, setOrchestrationProgress] = useState<[number, number] | null>(null);
   const [partialFailures, setPartialFailures] = useState(0);
 
   const limitId = useId();
+
+  const overCap =
+    scope !== 'visible' &&
+    ((tab === 'issues' && totalIssues > 10_000) || (tab === 'hotspots' && totalHotspots > 10_000));
 
   let findingCount: number;
   let ctx: MarkdownContext;
@@ -223,11 +332,14 @@ export function ExportModal({
       ? `sift-${projectKey}-${branchName}-${tab}-${new Date().toISOString().slice(0, 10)}.csv`
       : `sift-${projectKey}-${branchName}-${tab}-${new Date().toISOString().slice(0, 10)}.md`;
 
-  const getContent = (): string =>
+  const getContent = (
+    overrideIssues?: readonly Issue[],
+    overrideHotspots?: readonly Hotspot[],
+  ): string =>
     generateContent({
       tab,
-      issues,
-      hotspots,
+      issues: overrideIssues ?? issues,
+      hotspots: overrideHotspots ?? hotspots,
       qualityGate,
       measures,
       format,
@@ -235,7 +347,62 @@ export function ExportModal({
       hotspotTemplate,
       limit,
       ctx,
+      enabledIssueFields,
+      enabledHotspotFields,
     });
+
+  // Fetches all items when scope is not 'visible'. Falls back to props on any error.
+  const resolveExportData = async (): Promise<{
+    resolvedIssues: readonly Issue[];
+    resolvedHotspots: readonly Hotspot[];
+  }> => {
+    if (scope === 'visible') {
+      return { resolvedIssues: issues, resolvedHotspots: hotspots };
+    }
+
+    if (tab === 'issues') {
+      const baseFilters: IssueFilters =
+        scope === 'all-project'
+          ? { componentKeys: [projectKey as ProjectKey], branch: branchName }
+          : {
+              ...issuesFilters,
+              componentKeys: [projectKey as ProjectKey],
+              branch: branchName,
+            };
+      try {
+        const result = await sonarClient.searchIssues(baseFilters, {
+          ps: Math.min(limit, SONAR_PAGE_CAP),
+        });
+        return {
+          resolvedIssues: result.kind === 'ok' ? result.value.items : issues,
+          resolvedHotspots: hotspots,
+        };
+      } catch {
+        return { resolvedIssues: issues, resolvedHotspots: hotspots };
+      }
+    }
+
+    if (tab === 'hotspots') {
+      const hf = useFiltersStore.getState().hotspotsFilters;
+      const baseFilters: HotspotFilters =
+        scope === 'all-project' || hf === null
+          ? { projectKey: projectKey as HotspotFilters['projectKey'], branch: branchName }
+          : { ...hf, projectKey: projectKey as HotspotFilters['projectKey'], branch: branchName };
+      try {
+        const result = await sonarClient.searchHotspots(baseFilters, {
+          ps: Math.min(limit, SONAR_PAGE_CAP),
+        });
+        return {
+          resolvedIssues: issues,
+          resolvedHotspots: result.kind === 'ok' ? result.value.items : hotspots,
+        };
+      } catch {
+        return { resolvedIssues: issues, resolvedHotspots: hotspots };
+      }
+    }
+
+    return { resolvedIssues: issues, resolvedHotspots: hotspots };
+  };
 
   const getActionableContent = (): Promise<string | null> => {
     if (!qualityGate) return Promise.resolve(null);
@@ -284,7 +451,11 @@ export function ExportModal({
       });
       return;
     }
-    void navigator.clipboard.writeText(getContent()).then(afterCopy);
+    void resolveExportData().then(({ resolvedIssues, resolvedHotspots }) => {
+      void navigator.clipboard
+        .writeText(getContent(resolvedIssues, resolvedHotspots))
+        .then(afterCopy);
+    });
   };
 
   const handleDownload = (): void => {
@@ -296,10 +467,27 @@ export function ExportModal({
       return;
     }
     const mimeType = format === 'csv' ? 'text/csv;charset=utf-8' : 'text/markdown;charset=utf-8';
-    triggerDownload(getContent(), filename, mimeType);
+    void resolveExportData().then(({ resolvedIssues, resolvedHotspots }) => {
+      triggerDownload(getContent(resolvedIssues, resolvedHotspots), filename, mimeType);
+    });
   };
 
   const copyLabel = copyDone ? 'Copied!' : 'Copy to clipboard';
+
+  // Size estimate based on visible items (approximation for non-visible scopes).
+  const sizeKb = (getContent().length / 1024).toFixed(1);
+
+  let footerCountText: string;
+  if (tab === 'issues') {
+    footerCountText = `, total_findings: ${findingCount}`;
+  } else if (tab === 'hotspots') {
+    footerCountText = `, total_hotspots: ${findingCount}`;
+  } else {
+    const qgCtx = ctx as QualityGateMarkdownContext;
+    footerCountText = `, conditions_failing: ${qgCtx.conditionsFailing}`;
+  }
+
+  const actionsDisabled = overCap || orchestrating;
 
   return (
     <Modal
@@ -388,6 +576,24 @@ export function ExportModal({
           </fieldset>
         )}
 
+        {/* Scope radio — Issues and Hotspots tabs only */}
+        {tab !== 'quality-gate' && (
+          <fieldset>
+            <legend className="mb-1 text-xs font-medium text-text-secondary">Scope</legend>
+            <RadioGroup
+              value={scope}
+              onValueChange={(v) => {
+                setScope(v as ExportScope);
+              }}
+              className="flex flex-row gap-4"
+            >
+              <Radio value="visible">Visible</Radio>
+              <Radio value="all-filtered">All in current filter</Radio>
+              <Radio value="all-project">All in project</Radio>
+            </RadioGroup>
+          </fieldset>
+        )}
+
         {/* Limit — not applicable for QG (single document) */}
         {tab !== 'quality-gate' && (
           <div className="flex items-center gap-3">
@@ -414,7 +620,87 @@ export function ExportModal({
           </div>
         )}
 
-        {/* Footer actions */}
+        {/* Field selector — Issues and Hotspots tabs only */}
+        {tab === 'issues' && (
+          <fieldset>
+            <legend className="mb-1 text-xs font-medium text-text-secondary">Fields</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {ISSUE_FIELD_LABELS.map(({ id, label }) => {
+                const enabled = enabledIssueFields.has(id);
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={enabled}
+                    onClick={() => {
+                      setEnabledIssueFields((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(id)) {
+                          next.delete(id);
+                        } else {
+                          next.add(id);
+                        }
+                        return next;
+                      });
+                    }}
+                    className={
+                      'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ' +
+                      'border transition-colors ' +
+                      (enabled
+                        ? 'border-accent bg-accent/10 text-accent'
+                        : 'border-border bg-bg-elevated text-text-tertiary')
+                    }
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+        )}
+
+        {tab === 'hotspots' && (
+          <fieldset>
+            <legend className="mb-1 text-xs font-medium text-text-secondary">Fields</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {HOTSPOT_FIELD_LABELS.map(({ id, label }) => {
+                const enabled = enabledHotspotFields.has(id);
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={enabled}
+                    onClick={() => {
+                      setEnabledHotspotFields((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(id)) {
+                          next.delete(id);
+                        } else {
+                          next.add(id);
+                        }
+                        return next;
+                      });
+                    }}
+                    className={
+                      'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ' +
+                      'border transition-colors ' +
+                      (enabled
+                        ? 'border-accent bg-accent/10 text-accent'
+                        : 'border-border bg-bg-elevated text-text-tertiary')
+                    }
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+        )}
+
+        {/* Over-cap banner */}
+        {overCap && <OverCapBanner total={tab === 'issues' ? totalIssues : totalHotspots} />}
+
+        {/* Orchestration progress */}
         {orchestrating && orchestrationProgress !== null && (
           <p className="text-xs text-text-secondary">
             Fetching {orchestrationProgress[0]}/{orchestrationProgress[1]}…
@@ -425,21 +711,31 @@ export function ExportModal({
             {partialFailures} condition{partialFailures > 1 ? 's' : ''} could not be fetched.
           </p>
         )}
-        <div className="flex justify-end gap-2 border-t border-border pt-2">
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setExportOpen(false);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button variant="secondary" onClick={handleDownload} disabled={orchestrating}>
-            Download
-          </Button>
-          <Button variant="primary" onClick={handleCopy} disabled={orchestrating}>
-            {orchestrating ? 'Fetching…' : copyLabel}
-          </Button>
+
+        {/* Footer: size estimate on the left, actions on the right */}
+        <div className="flex items-center justify-between gap-2 border-t border-border pt-2">
+          <div className="text-xs text-text-tertiary">
+            <span>~{sizeKb} KB</span>
+            <span className="ml-1">
+              · header includes filters, project, branch, timestamp{footerCountText}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setExportOpen(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button variant="secondary" onClick={handleDownload} disabled={actionsDisabled}>
+              Download
+            </Button>
+            <Button variant="primary" onClick={handleCopy} disabled={actionsDisabled}>
+              {orchestrating ? 'Fetching…' : copyLabel}
+            </Button>
+          </div>
         </div>
       </div>
     </Modal>

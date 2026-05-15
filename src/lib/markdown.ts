@@ -63,11 +63,25 @@ function headerBlock(ctx: MarkdownContext): string {
   ].join('\n');
 }
 
-export function markdownTriage(issues: readonly Issue[], ctx: MarkdownContext): string {
-  const lines = issues.map(
-    (issue, idx) =>
-      `${idx + 1}. ${issue.severity} · \`${filePath(issue.component)}:${issue.line ?? '?'}\` · ${issue.rule}\n   ${issue.message}`,
-  );
+export function markdownTriage(
+  issues: readonly Issue[],
+  ctx: MarkdownContext,
+  enabledFields?: ReadonlySet<string>,
+): string {
+  const show = (field: string): boolean => enabledFields === undefined || enabledFields.has(field);
+
+  const lines = issues.map((issue, idx) => {
+    const parts: string[] = [`${idx + 1}.`];
+    if (show('severity')) parts.push(issue.severity);
+    if (show('file') || show('line')) {
+      const loc = `\`${show('file') ? filePath(issue.component) : '...'}:${show('line') ? (issue.line ?? '?') : '?'}\``;
+      parts.push(loc);
+    }
+    if (show('rule')) parts.push(issue.rule);
+    const prefix = parts.join(' · ').replace(/^(\d+\.) · /, '$1 ');
+    const msg = show('message') ? `\n   ${issue.message}` : '';
+    return `${prefix}${msg}`;
+  });
 
   return [headerBlock(ctx), '# Triage List', '', ...lines, ''].join('\n');
 }
@@ -149,11 +163,25 @@ export function markdownLlmRemediation(issues: readonly Issue[], ctx: MarkdownCo
 
 // ===== Hotspot templates =====
 
-export function markdownHotspotTriage(hotspots: readonly Hotspot[], ctx: MarkdownContext): string {
-  const lines = hotspots.map(
-    (h, idx) =>
-      `${idx + 1}. ${h.vulnerabilityProbability} · \`${filePath(h.component)}:${h.line ?? '?'}\` · ${h.ruleKey}\n   ${h.message}`,
-  );
+export function markdownHotspotTriage(
+  hotspots: readonly Hotspot[],
+  ctx: MarkdownContext,
+  enabledFields?: ReadonlySet<string>,
+): string {
+  const show = (field: string): boolean => enabledFields === undefined || enabledFields.has(field);
+
+  const lines = hotspots.map((h, idx) => {
+    const parts: string[] = [`${idx + 1}.`];
+    if (show('vulnerabilityProbability')) parts.push(h.vulnerabilityProbability);
+    if (show('file') || show('line')) {
+      const loc = `\`${show('file') ? filePath(h.component) : '...'}:${show('line') ? (h.line ?? '?') : '?'}\``;
+      parts.push(loc);
+    }
+    if (show('ruleKey')) parts.push(h.ruleKey);
+    const prefix = parts.join(' · ').replace(/^(\d+\.) · /, '$1 ');
+    const msg = show('message') ? `\n   ${h.message}` : '';
+    return `${prefix}${msg}`;
+  });
   return [headerBlock(ctx), '# Hotspot Triage List', '', ...lines, ''].join('\n');
 }
 
