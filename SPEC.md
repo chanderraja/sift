@@ -3,7 +3,7 @@
 > A one-page browser dashboard for SonarCloud that gives developers a fast, filterable, exportable view of issues, security hotspots, and quality-gate status across their projects and branches. Designed for offline triage and LLM-assisted remediation planning.
 
 **Working title:** *Sift* (placeholder — see [§17 Naming](#17-naming))
-**Status:** Pre-implementation spec, v0.4
+**Status:** Pre-implementation spec, v0.5
 **License:** MIT
 **Architecture:** Static one-page SPA + thin proxy (Vercel Edge Function canonical, Cloudflare Workers alternative)
 **Companion documents:**
@@ -244,7 +244,10 @@ Layout: collapsible filter sidebar (left, ~280px) + results table (right). Sideb
 - Tag (type-ahead)
 - Rule (type-ahead)
 - Assignee (type-ahead)
-- File path prefix (text)
+- **Directory** (multi-select, type-ahead search). Shows directories present in the current result set with finding counts. Selected directories are hidden from the suggestion list. Cross-filters with other filters — selecting a directory updates counts in all other filter groups.
+- **File** (multi-select, type-ahead search). Shows files present in the current result set with finding counts. Selected files are hidden from the suggestion list. When directories are selected, the File filter narrows its suggestions to files within those directories. Cross-filters with other filters.
+
+*Both filters are powered by SonarCloud's `facets` parameter on `/api/issues/search` (`facets=directories,fileUuids`). This is the same API surface that already supplies count facets for Severity, Type, and Status — the new filters extend that pattern to path dimensions.*
 - Created date (range)
 - Updated date (range)
 - Has-comments (boolean)
@@ -268,6 +271,12 @@ Filter changes apply on selection (no Apply button); count next to each option u
 
 Row interaction: click expands an inline drawer with rule description, code snippet (if `textRange`/`flows` present), and a "Copy as Markdown" affordance for that single finding.
 
+**External link.** Each row includes a small external-link icon at the far right that opens the issue's SonarCloud page in a new tab. URL format:
+
+``https://{regionHost}/project/issues?id={projectKey}&issues={issueKey}&open={issueKey}&branch={branch}``
+
+where regionHost is `sonarcloud.io` for EU or `sonarqube.us` for US. The icon is visible on row hover for cleanliness but always focusable for keyboard and screen-reader users. Tooltip: "Open in SonarCloud."
+
 Sort: any column header. Default sort: severity desc, then type, then file path. Multi-column sort via shift-click.
 
 **Over-cap behavior.** When the active filter would yield more than 10,000 findings (SonarCloud's hard pagination ceiling), Sift surfaces a warning banner above the table containing:
@@ -281,6 +290,12 @@ The first page of results renders below the banner so users can begin scanning w
 #### 7.2 Hotspots tab
 
 Same skeleton as Issues, but with hotspot-specific columns: Security Category, Vulnerability Probability (High / Medium / Low), Status (To Review / Reviewed). Filters narrowed to hotspot-relevant ones.
+
+**External link.** Each row includes a small external-link icon at the far right that opens the hotspot's SonarCloud page in a new tab. URL format:
+
+``https://{regionHost}/project/security_hotspots?id={projectKey}&hotspots={hotspotKey}&branch={branch}``
+
+where regionHost is `sonarcloud.io` for EU or `sonarqube.us` for US. The icon is visible on row hover for cleanliness but always focusable for keyboard and screen-reader users. Tooltip: "Open in SonarCloud."
 
 #### 7.3 Quality Gate tab
 
@@ -724,6 +739,8 @@ Everything in §4 Scope.
 - Saved filter presets (named, persisted).
 - Compare two branches side-by-side.
 - Bulk "copy as Markdown" from row selection.
+- **Faceted Directory and File filters.** Replace the legacy "File path prefix" text input with two multi-select filters (Directory, File), each backed by SonarCloud's facets parameter, with cross-filter narrowing and "hide already-selected" behavior in the suggestion list.
+- **Per-row SonarCloud link.** External-link icon on every Issues and Hotspots row that opens the SonarCloud detail page for that finding. Saves a row-expand step for users who want to see the code in context.
 
 ### v1.2
 
@@ -944,4 +961,4 @@ Other candidates: **Findings**, **Sieve**, **Tally**, **Lens**, **Triage**.
 
 ---
 
-*End of spec, v0.4. Companion documents: `ARCHITECTURE.md` (modular architecture, living) and `IMPLEMENTATION.md` (phased TDD plan for Claude Code). Open a Discussion to propose changes.*
+*End of spec, v0.5. Companion documents: `ARCHITECTURE.md` (modular architecture, living) and `IMPLEMENTATION.md` (phased TDD plan for Claude Code). Open a Discussion to propose changes.*
