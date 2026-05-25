@@ -107,7 +107,7 @@ function TabContent(): React.JSX.Element {
  * ensures App re-renders when the query settles, so the Export dialog shows
  * the real count instead of 0.
  */
-function useVisibleIssues(): Issue[] {
+function useVisibleIssues(): { items: Issue[]; total: number } {
   const projectKey = useSelectionStore((s) => s.projectKey);
   const branchName = useSelectionStore((s) => s.branchName);
   const issuesFilters = useFiltersStore((s) => s.issuesFilters);
@@ -123,10 +123,12 @@ function useVisibleIssues(): Issue[] {
     ...issuesQuery(sonarClient, filters, { p: page, ps: pageSize }),
     enabled,
   });
-  return result.data?.kind === 'ok' ? result.data.value.items : [];
+  return result.data?.kind === 'ok'
+    ? { items: result.data.value.items, total: result.data.value.total }
+    : { items: [], total: 0 };
 }
 
-function useVisibleHotspots(): Hotspot[] {
+function useVisibleHotspots(): { items: Hotspot[]; total: number } {
   const projectKey = useSelectionStore((s) => s.projectKey);
   const branchName = useSelectionStore((s) => s.branchName);
   const hotspotsFilters = useFiltersStore((s) => s.hotspotsFilters);
@@ -137,7 +139,9 @@ function useVisibleHotspots(): Hotspot[] {
     : { projectKey: (projectKey ?? '') as HotspotFilters['projectKey'] };
 
   const result = useQuery({ ...hotspotsQuery(sonarClient, filters), enabled });
-  return result.data?.kind === 'ok' ? result.data.value.items : [];
+  return result.data?.kind === 'ok'
+    ? { items: result.data.value.items, total: result.data.value.total }
+    : { items: [], total: 0 };
 }
 
 const QG_MEASURE_KEYS = [
@@ -199,8 +203,8 @@ export default function App(): React.JSX.Element {
     });
   }, []);
 
-  const visibleIssues = useVisibleIssues();
-  const visibleHotspots = useVisibleHotspots();
+  const { items: visibleIssues, total: totalIssues } = useVisibleIssues();
+  const { items: visibleHotspots, total: totalHotspots } = useVisibleHotspots();
   const visibleQualityGate = useVisibleQualityGate();
   const visibleMeasures = useVisibleMeasures();
 
@@ -224,6 +228,8 @@ export default function App(): React.JSX.Element {
         hotspots={visibleHotspots}
         qualityGate={visibleQualityGate}
         measures={visibleMeasures}
+        totalIssues={totalIssues}
+        totalHotspots={totalHotspots}
       />
       <SettingsDrawer />
       <ShortcutsModal />

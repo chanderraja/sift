@@ -65,8 +65,7 @@ export type HotspotFieldId =
   | 'line'
   | 'creationDate';
 
-const LIMIT_DEFAULT = 200;
-const LIMIT_MAX = 1000;
+const LIMIT_MAX = 10_000;
 // SonarCloud V1 issues/search caps page size at 500.
 const SONAR_PAGE_CAP = 500;
 
@@ -272,7 +271,20 @@ export function ExportModal({
   const [issueTemplate, setIssueTemplate] = useState<IssueMdTemplate>('triage');
   const [hotspotTemplate, setHotspotTemplate] = useState<HotspotMdTemplate>('hs-triage');
   const [qgTemplate, setQgTemplate] = useState<QgMdTemplate>('snapshot');
-  const [limit, setLimit] = useState(LIMIT_DEFAULT);
+
+  const tabTotal = tab === 'issues' ? totalIssues : tab === 'hotspots' ? totalHotspots : 0;
+  const limitForTab = tabTotal > 0 ? Math.min(tabTotal, LIMIT_MAX) : LIMIT_MAX;
+
+  // null = use computed default; non-null = user has overridden the value.
+  const [userLimit, setUserLimit] = useState<number | null>(null);
+  // Reset override when the active tab changes so the new tab gets its own default.
+  const [prevTab, setPrevTab] = useState(tab);
+  if (tab !== prevTab) {
+    setPrevTab(tab);
+    setUserLimit(null);
+  }
+  const limit = userLimit ?? limitForTab;
+
   const [scope, setScope] = useState<ExportScope>('all-filtered');
   const [enabledIssueFields, setEnabledIssueFields] =
     useState<ReadonlySet<IssueFieldId>>(ALL_ISSUE_FIELD_IDS);
@@ -292,13 +304,13 @@ export function ExportModal({
   let findingCount: number;
   let ctx: MarkdownContext;
   if (tab === 'hotspots') {
-    findingCount = hotspots.length;
+    findingCount = totalHotspots > 0 ? totalHotspots : hotspots.length;
     ctx = {
       tab: 'hotspots',
       projectKey,
       branch: branchName,
       generatedAt: new Date().toISOString(),
-      totalHotspots: hotspots.length,
+      totalHotspots: findingCount,
       appliedFilters: JSON.stringify(issuesFilters),
     };
   } else if (tab === 'quality-gate') {
@@ -316,13 +328,13 @@ export function ExportModal({
       appliedFilters: JSON.stringify(issuesFilters),
     };
   } else {
-    findingCount = issues.length;
+    findingCount = totalIssues > 0 ? totalIssues : issues.length;
     ctx = {
       tab: 'issues',
       projectKey,
       branch: branchName,
       generatedAt: new Date().toISOString(),
-      totalFindings: issues.length,
+      totalFindings: findingCount,
       appliedFilters: JSON.stringify(issuesFilters),
     };
   }
@@ -370,11 +382,18 @@ export function ExportModal({
               branch: branchName,
             };
       try {
-        const result = await sonarClient.searchIssues(baseFilters, {
-          ps: Math.min(limit, SONAR_PAGE_CAP),
-        });
+        const collected: Issue[] = [];
+        let page = 1;
+        while (collected.length < limit) {
+          const ps = Math.min(limit - collected.length, SONAR_PAGE_CAP);
+          const result = await sonarClient.searchIssues(baseFilters, { p: page, ps });
+          if (result.kind !== 'ok') break;
+          collected.push(...result.value.items);
+          if (result.value.items.length < ps) break;
+          page++;
+        }
         return {
-          resolvedIssues: result.kind === 'ok' ? result.value.items : issues,
+          resolvedIssues: collected.length > 0 ? collected : issues,
           resolvedHotspots: hotspots,
         };
       } catch {
@@ -389,12 +408,19 @@ export function ExportModal({
           ? { projectKey: projectKey as HotspotFilters['projectKey'], branch: branchName }
           : { ...hf, projectKey: projectKey as HotspotFilters['projectKey'], branch: branchName };
       try {
-        const result = await sonarClient.searchHotspots(baseFilters, {
-          ps: Math.min(limit, SONAR_PAGE_CAP),
-        });
+        const collected: Hotspot[] = [];
+        let page = 1;
+        while (collected.length < limit) {
+          const ps = Math.min(limit - collected.length, SONAR_PAGE_CAP);
+          const result = await sonarClient.searchHotspots(baseFilters, { p: page, ps });
+          if (result.kind !== 'ok') break;
+          collected.push(...result.value.items);
+          if (result.value.items.length < ps) break;
+          page++;
+        }
         return {
           resolvedIssues: issues,
-          resolvedHotspots: result.kind === 'ok' ? result.value.items : hotspots,
+          resolvedHotspots: collected.length > 0 ? collected : hotspots,
         };
       } catch {
         return { resolvedIssues: issues, resolvedHotspots: hotspots };
@@ -607,11 +633,11 @@ export function ExportModal({
               max={LIMIT_MAX}
               value={limit}
               onChange={(e) => {
-                setLimit(Number(e.target.value));
+                setUserLimit(Number(e.target.value));
               }}
               onBlur={(e) => {
                 const v = Math.min(LIMIT_MAX, Math.max(1, Number(e.target.value)));
-                setLimit(v);
+                setUserLimit(v);
               }}
               className="w-24"
               aria-label="Limit"
