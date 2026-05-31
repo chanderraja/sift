@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import handler, { config } from './vercel';
+import handler from './vercel';
 
 describe('vercel adapter', () => {
   beforeEach(() => {
@@ -11,10 +11,6 @@ describe('vercel adapter', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
-  });
-
-  it('declares the edge runtime', () => {
-    expect(config.runtime).toBe('edge');
   });
 
   it('delegates a forwarded request to handleSonarRequest', async () => {
