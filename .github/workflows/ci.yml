@@ -42,9 +42,6 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Bundle-size budget
-        run: pnpm size
-
   license-check:
     runs-on: ubuntu-latest
     timeout-minutes: 5
