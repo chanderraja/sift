@@ -670,15 +670,17 @@ ADRs live in `docs/adr/NNNN-title.md`. Summaries below.
 
 ### ADR-003 — Vercel Edge Functions canonical, Cloudflare Workers documented
 
-**Status:** Accepted • **Date:** 2026-05-06
+**Status:** Superseded in part by ADR-012 • **Date:** 2026-05-06
 
 **Context.** The proxy can run on multiple platforms. Choosing one as canonical reduces decision fatigue for new contributors; supporting alternatives reduces lock-in.
 
-**Decision.** Vercel Edge Functions is the canonical deploy target — best DX (one repo, one deploy command, automatic preview deploys per PR). Cloudflare Workers is documented as an equally-supported alternative via `proxy/adapters/cloudflare.ts`.
+**Decision.** Vercel is the canonical deploy target — best DX (one repo, one deploy command, automatic preview deploys per PR). Cloudflare Workers is documented as an equally-supported alternative via `proxy/adapters/cloudflare.ts`.
 
 The proxy core is vendor-neutral: it imports nothing from any platform's SDK, accepts a Web Standard `Request`, and returns a Web Standard `Response`. The adapters are ~10 lines each.
 
 **Consequences.** Some users will prefer Cloudflare for its larger free tier and faster cold starts. Both paths are first-class.
+
+*Note: ADR-012 supersedes the Edge Functions runtime choice; Vercel's Fluid Compute (Node.js) is now canonical within the Vercel path.*
 
 ### ADR-004 — One-page UI, no router
 
@@ -761,6 +763,16 @@ The proxy core is vendor-neutral: it imports nothing from any platform's SDK, ac
 
 **Consequences.** Simpler build config (no `build.rolldownOptions.output.codeSplitting`). CI enforces the budget automatically. The KitchenSink dev route already uses `lazy()` and is tree-shaken from production — that pattern stays as the template if a future split is warranted.
 
+### ADR-012 — Switch Vercel adapter to Fluid Compute (supersedes ADR-003 runtime choice)
+
+**Status:** Accepted • **Date:** 2026-05-31
+
+**Context.** ADR-003 chose Vercel Edge Functions as the Vercel-canonical runtime. Vercel's 2026-02-27 guidance deprecates Edge Functions: "Edge functions have compatibility issues. Instead use Fluid Compute (default) which runs in the same regions and has the same price, but allows for regular Node.js." The proxy core already uses only Web Standard APIs, so the runtime switch is a config-only change.
+
+**Decision.** Remove `runtime: 'edge'` from `proxy/adapters/vercel.ts` and `api/sonar/[...path].ts`. Fluid Compute is the Vercel default; no explicit config is needed. The canonical-vs-alternative split (Vercel vs Cloudflare) from ADR-003 is unchanged.
+
+**Consequences.** Proxy runs under Node.js / Fluid Compute. Same regions, same price. Removes the Edge runtime compatibility risk. No behavioural change to caching (ADR-008) or auth (ADR-010).
+
 ### ADR-009 — Graceful fallback when a persisted selection key is missing
 
 **Status:** Accepted • **Date:** 2026-05-10 • **Closes:** Q-4
@@ -794,6 +806,7 @@ Decisions that are *not yet* made and must be resolved before the affected imple
 | 0.5 | 2026-05-09 | phase-4 | `FiltersStore.hotspotsFilters` typed as `HotspotFilters \| null` rather than `HotspotFilters`. The store has to represent the period before a project is selected, and `HotspotFilters.projectKey` is required — `null` is the cleanest "deliberately empty" marker under `exactOptionalPropertyTypes: true`. UI consumers gate the SonarClient call on a non-null value, so `searchHotspots` still receives the documented shape |
 | 0.6 | 2026-05-11 | live-testing | ADR-010 added (amends ADR-006): switch auth from Bearer to Basic. Live test showed legacy hex tokens return `{"valid":false}` with Bearer but `{"valid":true}` with Basic; Basic works for all SonarCloud token formats |
 | 0.7 | 2026-05-12 | phase-11 | ADR-011 added (closes Q-3): bundle 157 KB gzipped, no splitting needed for v1.0; CI budget check enforces ≤ 250 KB on every PR |
+| 0.8 | 2026-05-31 | housekeeping | ADR-012 added: switch Vercel adapter from Edge runtime to Fluid Compute (Node.js); ADR-003 marked superseded in part |
 
 When this document is updated, append a row here. Major restructures should also bump the version number visible at the top.
 
