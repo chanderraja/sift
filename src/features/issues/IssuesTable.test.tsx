@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { useFiltersStore } from '../../app/stores';
+import { useAuthStore, useFiltersStore, useSelectionStore } from '../../app/stores';
 import type { Issue, IssueKey, ProjectKey, RuleKey } from '../../types/sonar';
 
 import { IssuesTable } from './IssuesTable';
@@ -63,6 +63,7 @@ describe('IssuesTable', () => {
       'Effort',
       'Tags',
       'Created',
+      '',
     ]);
   });
 
@@ -164,5 +165,41 @@ describe('IssuesTable', () => {
     render(<IssuesTable items={[partial]} />);
     // The em-dash placeholders appear for line and effort.
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('IssuesTable — SonarCloud link column', () => {
+  const resetStores = (): void => {
+    useFiltersStore.setState({ sort: [], page: 1 });
+    useAuthStore.getState().clear();
+    useSelectionStore.getState().reset();
+  };
+
+  beforeEach(() => {
+    useAuthStore.setState({ token: 'squ_ok', validation: 'valid', region: 'eu' });
+    useSelectionStore.setState({
+      organizationKey: null,
+      projectKey: 'acme_widget' as ProjectKey,
+      branchName: 'main',
+    });
+  });
+  afterEach(resetStores);
+
+  it('renders a SonarCloud link for each row', () => {
+    render(<IssuesTable items={[ISSUE({ key: 'AYx8K1pQ-1' as IssueKey })]} />);
+    const link = screen.getByRole('link', { name: /open in sonarcloud/i });
+    expect(link).toHaveAttribute(
+      'href',
+      'https://sonarcloud.io/project/issues?id=acme_widget&issues=AYx8K1pQ-1&open=AYx8K1pQ-1&branch=main',
+    );
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noreferrer');
+  });
+
+  it('uses sonarqube.us host for US region', () => {
+    useAuthStore.setState({ region: 'us' });
+    render(<IssuesTable items={[ISSUE({ key: 'AYx8K1pQ-1' as IssueKey })]} />);
+    const link = screen.getByRole('link', { name: /open in sonarcloud/i });
+    expect(link).toHaveAttribute('href', expect.stringContaining('sonarqube.us'));
   });
 });

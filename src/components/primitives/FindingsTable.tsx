@@ -122,6 +122,7 @@ export function FindingsTable<T>({
               expandedContent={panel}
               expandedColSpan={columns.length}
               className={clsx(
+                'group',
                 panel !== null && 'cursor-pointer',
                 'focus-visible:bg-bg-surface-hover focus-visible:outline-none',
               )}
